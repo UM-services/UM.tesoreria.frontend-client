@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.0] - 2026-05-03
+
+### Added
+- feat: Docker support para todas las aplicaciones (compras, gestion, chequeras)
+- feat: Multi-stage Dockerfiles con Node.js 24-alpine y Nginx
+- feat: Configuración de Nginx para SPA routing en cada app
+- feat: Entrypoint scripts para inicialización de entorno en contenedores
+- feat: Actualización de configuraciones de entorno para producción
+
+### Changed
+- refactor(docs): Pipeline de documentación migrado de Node.js a Java/Maven para generación de dependency tree
+- refactor(docs): Wiki simplificada para actuar como portal a la documentación principal
+- refactor(docs): Eliminada generación de sitio HTML estático en favor de GitHub Pages
+- fix(deps): Sincronización de package-lock.json con dependencias @emnapi
+
+### Apps
+- `compras` - Dockerfile, nginx.conf, entrypoint.sh añadidos
+- `gestion` - Dockerfile, nginx.conf, entrypoint.sh añadidos
+- `chequeras` - Dockerfile, nginx.conf, entrypoint.sh añadidos
+
 ## [0.1.0] - 2026-05-03
 
 ### Added

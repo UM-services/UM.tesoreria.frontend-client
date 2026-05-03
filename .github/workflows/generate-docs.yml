@@ -44,96 +44,6 @@ jobs:
           curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/issues?state=all&per_page=100" > docs/issues.json
           curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/pulls?state=all&per_page=100" > docs/prs.json
 
-      - name: Generate Documentation Site
-        run: |
-          mkdir -p docs/site
-          # Consolidar archivos en docs/site para su despliegue
-          cp README.md CHANGELOG.md docs/site/
-          cp docs/architecture.md docs/site/
-          [ -f docs/dependency-tree.txt ] && cp docs/dependency-tree.txt docs/site/
-          [ -f docs/milestones.json ] && cp docs/milestones.json docs/site/
-          [ -f docs/issues.json ] && cp docs/issues.json docs/site/
-          [ -f docs/prs.json ] && cp docs/prs.json docs/site/
-
-          cat > docs/site/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="es">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>UM Tesorería - Documentación</title>
-              <style>
-                  * { margin: 0; padding: 0; box-sizing: border-box; }
-                  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; }
-                  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 2rem; text-align: center; }
-                  .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-                  .card { background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                  .card h2 { color: #1a1a2e; margin-bottom: 1rem; }
-                  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-                  .link-list { list-style: none; }
-                  .link-list li { padding: 0.5rem 0; border-bottom: 1px solid #eee; }
-                  .link-list a { color: #0066cc; text-decoration: none; }
-                  .link-list a:hover { text-decoration: underline; }
-                  .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: #e3f2fd; color: #1565c0; margin-right: 0.5rem; }
-              </style>
-          </head>
-          <body>
-              <div class="header">
-                  <h1>UM Tesorería - Frontend Client</h1>
-                  <p>Documentación del Sistema de Gestión de Tesorería</p>
-                  <p><span class="badge">Angular 21</span><span class="badge">Nx Workspace</span><span class="badge">v0.1.0</span></p>
-              </div>
-              <div class="container">
-                  <div class="grid">
-                      <div class="card">
-                          <h2>📚 Documentación</h2>
-                          <ul class="link-list">
-                              <li><a href="README.md">README - Inicio rápido</a></li>
-                              <li><a href="CHANGELOG.md">CHANGELOG - Historial de versiones</a></li>
-                              <li><a href="architecture.md">Arquitectura del Sistema</a></li>
-                          </ul>
-                      </div>
-                      <div class="card">
-                          <h2>🏗️ Aplicaciones</h2>
-                          <ul class="link-list">
-                              <li><strong>compras</strong> - Gestión de compras y proveedores (:4201)</li>
-                              <li><strong>gestion</strong> - Gestión administrativa (:4202)</li>
-                              <li><strong>chequeras</strong> - Gestión de chequeras (:4203)</li>
-                          </ul>
-                      </div>
-                      <div class="card">
-                          <h2>📦 Librerías</h2>
-                          <ul class="link-list">
-                              <li><strong>@tesoreria/shared-api</strong> - Servicios API y autenticación</li>
-                              <li><strong>@tesoreria/ui-auth</strong> - Componentes de autenticación</li>
-                              <li><strong>@tesoreria/ui-layout</strong> - Componentes de layout</li>
-                          </ul>
-                      </div>
-                      <div class="card">
-                          <h2>🔗 Enlaces Externos</h2>
-                          <ul class="link-list">
-                              <li><a href="https://github.com/${{ github.repository }}/issues">Issues</a></li>
-                              <li><a href="https://github.com/${{ github.repository }}/pulls">Pull Requests</a></li>
-                              <li><a href="https://github.com/${{ github.repository }}/milestones">Milestones</a></li>
-                              <li><a href="https://github.com/${{ github.repository }}/wiki">Wiki</a></li>
-                          </ul>
-                      </div>
-                  </div>
-                  <div class="card">
-                      <h2>📊 Dependencias</h2>
-                      <p>Árbol de dependencias generado automáticamente:</p>
-                      <pre style="background: #f5f5f5; padding: 1rem; margin-top: 1rem; overflow-x: auto; font-size: 0.875rem;"><code id="deps"></code></pre>
-                      <script>
-                          fetch('dependency-tree.txt')
-                              .then(r => r.text())
-                              .then(t => document.getElementById('deps').textContent = t);
-                      </script>
-                  </div>
-              </div>
-          </body>
-          </html>
-          EOF
-
       - name: Generate Wiki Content
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -152,35 +62,44 @@ jobs:
 
           cd wiki
 
+          # Create a simple Home.md as a portal
           cat > Home.md << EOF
           # 📋 Wiki - UM Tesorería Frontend
 
-          Esta wiki es un portal de acceso rápido a los recursos del proyecto.
+          Esta wiki sirve como un portal de acceso rápido a los recursos más importantes del proyecto.
 
-          La **documentación completa** está disponible en **GitHub Pages**.
+          Toda la **documentación detallada, interactiva y actualizada** se encuentra en nuestro sitio de **GitHub Pages**.
 
-          ## ➡️ [Acceder a la Documentación](https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.repository }} | cut -d'/' -f2)/)
+          ## ➡️ [Acceder a la Documentación Principal](https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.repository }} | cut -d'/' -f2)/)
 
           ---
 
-          ### Accesos Directos
+          ### Accesos Directos a GitHub
 
-          * **[Issues](https://github.com/${{ github.repository }}/issues)**: Ver issues abiertos y cerrados
-          * **[Pull Requests](https://github.com/${{ github.repository }}/pulls)**: Ver todos los PRs
-          * **[Milestones](https://github.com/${{ github.repository }}/milestones)**: Progreso del proyecto
+          *   **[Issues](https://github.com/${{ github.repository }}/issues)**: Ver todos los issues, abiertos y cerrados.
+          *   **[Pull Requests](https://github.com/${{ github.repository }}/pulls)**: Ver todos los Pull Requests.
+          *   **[Milestones](https://github.com/${{ github.repository }}/milestones)**: Ver el progreso de los hitos del proyecto.
           EOF
 
+          # Clean up old, now-unused wiki pages
+          rm -f "Estado-del-Proyecto.md" "Pull-Requests.md"
+
           git add .
-          git commit -m "Update wiki portal" || echo "No changes to commit"
+          git commit -m "Update wiki to act as a portal to the main documentation" || echo "No changes to commit"
 
           if [[ "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
             git push --set-upstream https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git master
           fi
 
+      - name: Prepare documentation for GitHub Pages
+        run: |
+          cp README.md CHANGELOG.md docs/
+          cp docs/architecture.md docs/index.md
+
       - name: Upload artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/site
+          path: docs
 
   deploy-pages:
     needs: generate-docs
