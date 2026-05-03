@@ -1,0 +1,15 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve",
+    "skipLibCheck": true,
+    "paths": {
+      "@tesoreria/ui-layout": ["./libs/ui-layout/src/index.ts"],
+      "@tesoreria/shared-api": ["./libs/shared-api/src/index.ts"],
+      "@tesoreria/ui-auth": ["./libs/ui-auth/src/index.ts"]
+    }
+  }
+}
