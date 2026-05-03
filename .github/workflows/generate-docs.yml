@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
   issues: read
@@ -32,7 +32,9 @@ jobs:
         run: npm ci
 
       - name: Generate Dependency Tree
-        run: npm list --all > docs/dependency-tree.txt || true
+        run: |
+          mkdir -p docs
+          npm list --all > docs/dependency-tree.txt || true
 
       - name: Fetch GitHub Data
         env:
@@ -45,6 +47,14 @@ jobs:
       - name: Generate Documentation Site
         run: |
           mkdir -p docs/site
+          # Consolidar archivos en docs/site para su despliegue
+          cp README.md CHANGELOG.md docs/site/
+          cp docs/architecture.md docs/site/
+          [ -f docs/dependency-tree.txt ] && cp docs/dependency-tree.txt docs/site/
+          [ -f docs/milestones.json ] && cp docs/milestones.json docs/site/
+          [ -f docs/issues.json ] && cp docs/issues.json docs/site/
+          [ -f docs/prs.json ] && cp docs/prs.json docs/site/
+
           cat > docs/site/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="es">
@@ -78,8 +88,8 @@ jobs:
                       <div class="card">
                           <h2>📚 Documentación</h2>
                           <ul class="link-list">
-                              <li><a href="../README.md">README - Inicio rápido</a></li>
-                              <li><a href="../CHANGELOG.md">CHANGELOG - Historial de versiones</a></li>
+                              <li><a href="README.md">README - Inicio rápido</a></li>
+                              <li><a href="CHANGELOG.md">CHANGELOG - Historial de versiones</a></li>
                               <li><a href="architecture.md">Arquitectura del Sistema</a></li>
                           </ul>
                       </div>
@@ -114,7 +124,7 @@ jobs:
                       <p>Árbol de dependencias generado automáticamente:</p>
                       <pre style="background: #f5f5f5; padding: 1rem; margin-top: 1rem; overflow-x: auto; font-size: 0.875rem;"><code id="deps"></code></pre>
                       <script>
-                          fetch('../dependency-tree.txt')
+                          fetch('dependency-tree.txt')
                               .then(r => r.text())
                               .then(t => document.getElementById('deps').textContent = t);
                       </script>
@@ -123,8 +133,6 @@ jobs:
           </body>
           </html>
           EOF
-
-          cp docs/architecture.md docs/site/
 
       - name: Generate Wiki Content
         env:
