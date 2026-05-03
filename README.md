@@ -89,12 +89,30 @@ graph TB
 | Tailwind CSS | 4.2.4 |
 | TypeScript | 5.9.2 |
 | Vitest | 4.0.8 |
+| Docker | 24-alpine (build) / nginx:alpine (runtime) |
+
+## Despliegue con Docker
+
+Cada aplicación incluye su propio Dockerfile con multi-stage build:
+
+```bash
+# Construir imagen para compras
+docker build -f apps/compras/Dockerfile -t um-tesoreria-compras .
+
+# Ejecutar contenedor
+docker run -p 8080:80 um-tesoreria-compras
+```
+
+Aplicaciones disponibles:
+- `apps/compras/Dockerfile` - Gestión de compras
+- `apps/gestion/Dockerfile` - Gestión administrativa
+- `apps/chequeras/Dockerfile` - Gestión de chequeras
 
 ## Versionado
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.1.0**
+Versión actual: **0.2.0**
 
 ## Licencia
 
