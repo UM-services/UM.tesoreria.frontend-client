@@ -91,10 +91,10 @@ jobs:
             git push --set-upstream https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git master
           fi
 
-      - name: Prepare documentation for GitHub Pages
-        run: |
-          cp README.md CHANGELOG.md docs/
-          cp docs/architecture.md docs/index.md
+       - name: Prepare documentation for GitHub Pages
+         run: |
+           cp README.md CHANGELOG.md docs/
+           cp README.md docs/index.md
 
       - name: Upload artifacts
         uses: actions/upload-pages-artifact@v3
