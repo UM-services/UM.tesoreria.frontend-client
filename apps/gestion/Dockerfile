@@ -21,6 +21,14 @@ RUN npx nx run gestion:build:production
 # Etapa 2: Nginx y ejecucion
 FROM nginx:alpine
 
+# Instalamos openssl y generamos un certificado auto-firmado al vuelo
+RUN apk add --no-cache openssl \
+    && mkdir -p /etc/nginx/ssl \
+    && openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt \
+    -subj "/C=AR/ST=Mendoza/L=Mendoza/O=UM/OU=Tesoreria/CN=tesoreria.local"
+
+
 # Copiamos el build desde la etapa anterior
 COPY --from=build /app/dist/apps/gestion/browser /usr/share/nginx/html
 
@@ -31,7 +39,7 @@ COPY apps/gestion/nginx.conf /etc/nginx/conf.d/default.conf
 COPY apps/gestion/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 80
+EXPOSE 80 443
 
 # Configuramos el entrypoint para que ejecute nuestro script antes de nginx
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

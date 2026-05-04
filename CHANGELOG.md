@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0] - 2026-05-04
+
+### Added
+- feat(docker): Soporte SSL/TLS con certificados auto-firmados para todas las aplicaciones
+- feat(docker): Proxy inverso en Nginx para rutas `/api/` hacia `tesoreria-gateway-service:8301`
+- feat(docker): Redirección automática de HTTP (80) a HTTPS (443) en configuraciones Nginx
+- feat(docker): Exposición del puerto 443 en todos los Dockerfiles de aplicaciones
+
+### Changed
+- refactor(docker): Actualización de configuraciones Nginx para escuchar en 443 SSL
+- refactor(docker): Instalación de OpenSSL y generación de certificados en etapa de build de Docker
+- refactor(docker): Adición de headers de proxy en configuración de Nginx para rutas `/api/`
+
 ## [0.2.0] - 2026-05-03
 
 ### Added

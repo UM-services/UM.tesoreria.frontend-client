@@ -93,15 +93,21 @@ graph TB
 
 ## Despliegue con Docker
 
-Cada aplicación incluye su propio Dockerfile con multi-stage build:
+Cada aplicación incluye su propio Dockerfile con multi-stage build, soporte SSL/TLS con certificados auto-firmados y proxy inverso para rutas `/api/` hacia el servicio `tesoreria-gateway-service:8301`.
 
+### Ejecutar contenedores
 ```bash
 # Construir imagen para compras
 docker build -f apps/compras/Dockerfile -t um-tesoreria-compras .
 
-# Ejecutar contenedor
-docker run -p 8080:80 um-tesoreria-compras
+# Ejecutar contenedor (puertos 80 redirigen a 443)
+docker run -p 8080:80 -p 8443:443 um-tesoreria-compras
 ```
+
+### Características Docker
+- **SSL/TLS**: Certificados auto-firmados generados al construir la imagen
+- **Proxy Inverso**: Rutas `/api/` se redirigen al gateway de tesorería
+- **Redirect**: HTTP (80) redirige automáticamente a HTTPS (443)
 
 Aplicaciones disponibles:
 - `apps/compras/Dockerfile` - Gestión de compras
@@ -112,7 +118,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.2.0**
+Versión actual: **0.3.0**
 
 ## Licencia
 
