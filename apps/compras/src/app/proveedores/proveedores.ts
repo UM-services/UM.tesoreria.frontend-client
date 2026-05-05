@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angu
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { BuscadorCuentaComponent, CuentaSearchResponse } from '../shared/buscador-cuenta/buscador-cuenta';
-import { catchError } from 'rxjs/operators';
+import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 
 export interface Proveedor {
@@ -35,8 +35,7 @@ export interface PaginatedResponse<T> {
   selector: 'app-proveedores',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, BuscadorCuentaComponent],
-  templateUrl: './proveedores.html',
-  styleUrls: ['./proveedores.css']
+  templateUrl: './proveedores.html'
 })
 export class ProveedoresComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -55,15 +54,12 @@ export class ProveedoresComponent implements OnInit {
   public successMessage = '';
   public isDownloadingSheet = false;
 
-  // UI State
-  
   public isModalOpen = false;
   public isBuscadorCuentaOpen = false;
 
   public searchQuery = new FormControl('');
   public isSearching = false;
 
-  // Pagination state
   public currentPage = 0;
   public pageSize = 20;
   public totalPages = 0;
@@ -86,89 +82,76 @@ export class ProveedoresComponent implements OnInit {
 
   ngOnInit() {
     this.loadProveedores(0);
+    this.searchQuery.valueChanges.pipe(
+      debounceTime(400)
+    ).subscribe(query => {
+      this.zone.run(() => {
+        const q = (query || '').trim();
+        if (q.length > 0) {
+          this.buscarProveedores(q);
+        } else {
+          this.loadProveedores(0);
+        }
+      });
+    });
   }
 
   loadProveedores(page: number) {
     this.isLoading = true;
     this.isSearching = false;
-    
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', this.pageSize.toString());
-
+    let params = new HttpParams().set('page', page.toString()).set('size', this.pageSize.toString());
     this.http.get<PaginatedResponse<Proveedor>>(`${this.baseUrl}/page`, { params }).pipe(
       catchError(err => {
-        console.error('Error al cargar la lista de proveedores.', err);
         this.showError('Error de conexión con el servidor.');
         return of(null);
       })
-    ).subscribe({
-      next: (response) => {
-        if (response) {
-          this.proveedores = response.data || [];
-          this.currentPage = response.currentPage;
-          this.totalPages = response.totalPages;
-        } else {
-          this.proveedores = [];
-        }
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
+    ).subscribe(response => {
+      if (response) {
+        this.proveedores = response.data || [];
+        this.currentPage = response.currentPage;
+        this.totalPages = response.totalPages;
+      } else {
+        this.proveedores = [];
       }
+      this.isLoading = false;
+      this.cdr.detectChanges();
     });
   }
 
-  buscarProveedores() {
-    const query = this.searchQuery.value?.trim();
-    if (!query) {
-      this.loadProveedores(0);
-      return;
-    }
-
+  buscarProveedores(query: string) {
     this.isLoading = true;
     this.isSearching = true;
-
-    this.http.post<any[]>(`${this.baseUrl}/search`, [query]).pipe(
+    const conditions = query.trim().split(/\s+/).filter(c => c.length > 0);
+    this.http.post<any[]>(`${this.baseUrl}/search`, conditions).pipe(
       catchError(err => {
-        console.error('Error en la búsqueda.', err);
         this.showError('Error al realizar la búsqueda.');
         return of([]);
       })
-    ).subscribe({
-      next: (data) => {
-        this.proveedores = data.map(p => ({
-            ...p,
-            numeroCuenta: p.numeroCuenta !== undefined ? p.numeroCuenta : p.cuenta
-        }));
-        this.currentPage = 0;
-        this.totalPages = 1;
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      }
+    ).subscribe(data => {
+      this.proveedores = data.map(p => ({
+          ...p,
+          numeroCuenta: p.numeroCuenta !== undefined ? p.numeroCuenta : p.cuenta
+      }));
+      this.currentPage = 0;
+      this.totalPages = 1;
+      this.isLoading = false;
+      this.cdr.detectChanges();
     });
   }
 
   limpiarBusqueda() {
-    this.searchQuery.setValue('');
+    this.searchQuery.setValue('', { emitEvent: false });
     this.loadProveedores(0);
   }
 
   nextPage() {
-    if (this.currentPage < this.totalPages - 1 && !this.isSearching) {
-      this.loadProveedores(this.currentPage + 1);
-    }
+    if (this.currentPage < this.totalPages - 1 && !this.isSearching) this.loadProveedores(this.currentPage + 1);
   }
 
   prevPage() {
-    if (this.currentPage > 0 && !this.isSearching) {
-      this.loadProveedores(this.currentPage - 1);
-    }
+    if (this.currentPage > 0 && !this.isSearching) this.loadProveedores(this.currentPage - 1);
   }
 
-  
   abrirBuscadorCuenta() {
     this.zone.run(() => {
       this.isBuscadorCuentaOpen = true;
@@ -178,10 +161,7 @@ export class ProveedoresComponent implements OnInit {
 
   onCuentaSelected(cuenta: CuentaSearchResponse) {
     this.zone.run(() => {
-      this.proveedorForm.patchValue({ 
-        numeroCuenta: cuenta.numeroCuenta,
-        nombreCuenta: cuenta.nombre
-      });
+      this.proveedorForm.patchValue({ numeroCuenta: cuenta.numeroCuenta, nombreCuenta: cuenta.nombre });
       this.isBuscadorCuentaOpen = false;
       this.cdr.detectChanges();
     });
@@ -195,13 +175,10 @@ export class ProveedoresComponent implements OnInit {
   }
 
   abrirModal(prov?: Proveedor) {
-    console.log('--- ABRIR MODAL EJECUTADO ---');
     this.zone.run(() => {
       this.errorMessage = '';
       this.successMessage = '';
-      
       if (prov) {
-        console.log('Editando:', prov.razonSocial);
         this.selectedProveedor = prov;
         this.proveedorForm.patchValue({
           proveedorId: prov.proveedorId,
@@ -219,20 +196,11 @@ export class ProveedoresComponent implements OnInit {
           cbu: prov.cbu
         });
       } else {
-        console.log('Nuevo');
         this.selectedProveedor = null;
         this.proveedorForm.reset();
       }
-      
-      // FORZAMOS LA ACTUALIZACION DEL ESTADO
       this.isModalOpen = true;
       this.cdr.detectChanges();
-      
-      // Doble comprobación: forzamos a Angular a evaluar la vista de nuevo tras un tick
-      setTimeout(() => {
-        this.isModalOpen = true;
-        this.cdr.detectChanges();
-      }, 50);
     });
   }
 
@@ -251,11 +219,9 @@ export class ProveedoresComponent implements OnInit {
       this.showError('Por favor, complete los campos obligatorios correctamente.');
       return;
     }
-
     const formValue = this.proveedorForm.getRawValue() as Proveedor;
     this.isLoading = true;
     this.cdr.detectChanges();
-    
     this.http.get<Proveedor>(`${this.baseUrl}/cuit/${formValue.cuit}`).pipe(
       catchError(() => of(null))
     ).subscribe(existingProv => {
@@ -265,41 +231,31 @@ export class ProveedoresComponent implements OnInit {
              return;
           }
       }
-
       this.zone.run(() => {
-        if (formValue.proveedorId) {
-          this.http.put<Proveedor>(`${this.baseUrl}/${formValue.proveedorId}`, formValue).subscribe({
-            next: () => {
-              this.cerrarModal();
-              this.showSuccess('Proveedor actualizado correctamente.');
-              if (this.isSearching) this.buscarProveedores(); else this.loadProveedores(this.currentPage);
-            },
-            error: () => this.showError('Error al actualizar proveedor.')
-          });
-        } else {
-          this.http.post<Proveedor>(`${this.baseUrl}/`, formValue).subscribe({
-            next: () => {
-              this.cerrarModal();
-              this.showSuccess('Proveedor guardado correctamente.');
-              if (this.isSearching) this.buscarProveedores(); else this.loadProveedores(0);
-            },
-            error: () => this.showError('Error al guardar proveedor.')
-          });
-        }
+        const req$ = formValue.proveedorId 
+          ? this.http.put<Proveedor>(`${this.baseUrl}/${formValue.proveedorId}`, formValue)
+          : this.http.post<Proveedor>(`${this.baseUrl}/`, formValue);
+        req$.subscribe({
+          next: () => {
+            this.cerrarModal();
+            this.showSuccess('Proveedor guardado correctamente.');
+            if (this.isSearching) this.buscarProveedores(this.searchQuery.value || ''); else this.loadProveedores(this.currentPage);
+          },
+          error: () => this.showError('Error al guardar proveedor.')
+        });
       });
     });
   }
 
   eliminar(prov: Proveedor) {
     if (!prov || !prov.proveedorId) return;
-    
     if (confirm(`¿Está seguro de eliminar permanentemente a "${prov.razonSocial}"?`)) {
       this.isLoading = true;
       this.cdr.detectChanges();
       this.http.delete(`${this.baseUrl}/${prov.proveedorId}`).subscribe({
         next: () => {
           this.showSuccess('Proveedor eliminado correctamente.');
-          if (this.isSearching) this.buscarProveedores(); else this.loadProveedores(this.currentPage);
+          if (this.isSearching) this.buscarProveedores(this.searchQuery.value || ''); else this.loadProveedores(this.currentPage);
         },
         error: () => this.showError('Error al eliminar proveedor.')
       });
@@ -307,11 +263,7 @@ export class ProveedoresComponent implements OnInit {
   }
 
   descargarPlanilla() {
-    this.zone.run(() => {
-      this.isDownloadingSheet = true;
-      this.cdr.detectChanges();
-    });
-
+    this.zone.run(() => { this.isDownloadingSheet = true; this.cdr.detectChanges(); });
     this.http.get(`${this.sheetUrl}/generateProveedores`, { responseType: 'blob' }).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
@@ -321,19 +273,9 @@ export class ProveedoresComponent implements OnInit {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        
-        this.zone.run(() => {
-          this.isDownloadingSheet = false;
-          this.cdr.detectChanges();
-        });
+        this.zone.run(() => { this.isDownloadingSheet = false; this.cdr.detectChanges(); });
       },
-      error: () => {
-        this.zone.run(() => {
-          this.isDownloadingSheet = false;
-          this.showError('Error al generar la planilla.');
-          this.cdr.detectChanges();
-        });
-      }
+      error: () => { this.zone.run(() => { this.isDownloadingSheet = false; this.showError('Error al generar la planilla.'); }); }
     });
   }
 
@@ -349,7 +291,6 @@ export class ProveedoresComponent implements OnInit {
 
   private showError(msg: string) {
     this.errorMessage = msg;
-    this.successMessage = '';
     this.isLoading = false;
     this.cdr.detectChanges();
     setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 5000);
@@ -357,7 +298,6 @@ export class ProveedoresComponent implements OnInit {
 
   private showSuccess(msg: string) {
     this.successMessage = msg;
-    this.errorMessage = '';
     this.isLoading = false;
     this.cdr.detectChanges();
     setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 5000);

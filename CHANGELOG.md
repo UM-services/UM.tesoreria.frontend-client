@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0] - 2026-05-05
+
+### Added
+- feat(compras): Nuevo módulo de Gastos con gestión de artículos y conceptos de gasto
+- feat(compras): Integración de Gastos en el menú de navegación con icono SVG
+- feat(compras): Buscador de gastos con debounce y paginación
+- feat(compras): Formulario de gastos con asignación directa y selector de cuenta contable
+- feat(compras): Modal de creación/edición de gastos con validación de formularios React Forms
+- feat(compras): Integración de BuscadorCuentaComponent en módulo Gastos
+
+### Changed
+- refactor(compras): Búsqueda de proveedores con debounce automático y limpieza de código
+- refactor(compras): Eliminación de console.log y comentarios innecesarios en ProveedoresComponent
+- refactor(compras): Mejora en manejo de errores y detección de cambios con NgZone en GastosComponent
+- fix(compras): Búsqueda de proveedores ahora acepta múltiples términos separados por espacios
+
 ## [0.3.0] - 2026-05-04
 
 ### Added

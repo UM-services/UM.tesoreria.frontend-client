@@ -1,3 +1,4 @@
+import { GastosComponent } from './gastos/gastos';
 import { Route } from '@angular/router';
 import { authGuard } from '@tesoreria/shared-api';
 import { LoginComponent } from '@tesoreria/ui-auth';
@@ -12,6 +13,11 @@ export const appRoutes: Route[] = [
   {
     path: '',
     component: BlankComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'gastos',
+    component: GastosComponent,
     canActivate: [authGuard],
   },
   {
