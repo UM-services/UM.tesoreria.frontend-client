@@ -61,8 +61,10 @@ graph TD
     AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
     AppRoutes --> Blank[Blank Component<br/>Contenedor protegido]
     AppRoutes --> Proveedores[Proveedores Component]
+    AppRoutes --> Gastos[Gastos Component]
 
     Proveedores --> BuscadorCuenta[BuscadorCuenta Component]
+    Gastos --> BuscadorCuenta[BuscadorCuenta Component]
 ```
 
 ## Modelos de Datos - Autenticación

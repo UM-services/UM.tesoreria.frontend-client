@@ -61,6 +61,12 @@ graph TB
         Q[Chequeras<br/>:4203]
     end
 
+    subgraph "Compras Modules"
+        PROV[Proveedores Component]
+        GAST[Gastos Component]
+        BUSC[BuscadorCuenta Component]
+    end
+
     subgraph Libs
         API[shared-api<br/>Auth Service<br/>API Models]
         AUTH[ui-auth<br/>Login Component]
@@ -70,6 +76,11 @@ graph TB
     C --> API
     C --> AUTH
     C --> LAYOUT
+    C --> PROV
+    C --> GAST
+    PROV --> BUSC
+    GAST --> BUSC
+
     G --> API
     G --> AUTH
     G --> LAYOUT
@@ -118,7 +129,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.3.0**
+Versión actual: **0.4.0**
 
 ## Licencia
 
