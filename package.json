@@ -1,10 +1,10 @@
 {
   "name": "frontend",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "scripts": {
     "ng": "ng",
     "start": "nx serve",
-    "serve:all": "npx concurrently \"nx serve compras --port 4201\" \"nx serve gestion --port 4202\" \"nx serve chequeras --port 4203\"",
+    "serve:all": "npx concurrently \"nx serve compras --port 4201\" \"nx serve pagos --port 4202\" \"nx serve chequeras --port 4203\" \"nx serve administrador --port 4204\" \"nx serve contable --port 4205\" \"nx serve contratados --port 4206\"",
     "build": "nx build",
     "watch": "nx build --watch --configuration development",
     "test": "nx test"

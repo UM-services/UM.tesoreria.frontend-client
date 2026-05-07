@@ -13,7 +13,7 @@ import { AuthService } from '@tesoreria/shared-api';
       <div class="flex h-screen overflow-hidden bg-gray-50">
         <!-- Sidebar -->
         <ui-sidebar 
-          moduleName="Tesorería - Compras" 
+          moduleName="Compras" 
           [menuItems]="menuItems"
           class="w-64 flex-shrink-0 border-r border-gray-200 bg-white hidden md:flex flex-col shadow-sm z-10">
         </ui-sidebar>

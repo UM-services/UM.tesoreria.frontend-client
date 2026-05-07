@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.0] - 2026-05-07
+
+### Added
+- feat(pagos): Nueva aplicación pagos con módulo de facturas pendientes y descarga de planillas Excel
+- feat(administrador): Nueva aplicación administrador (renombrada desde gestion)
+- feat(contable): Nueva aplicación contable para módulo financiero
+- feat(contratados): Nueva aplicación para gestión de contratados
+- feat(ui-layout): Integración de logo institucional en sidebar (logo.png)
+- feat(compras): Actualización de gastos con mejoras en formularios y validaciones
+
+### Changed
+- refactor(apps): Renombrado de gestion a pagos con nueva estructura de rutas y componentes
+- refactor(compras): Actualización de componente de gastos con mejoras en UI y lógica
+- refactor(ui-layout): Reemplazo de icono SVG por imagen de logo en sidebar
+- refactor(docker): Actualización de Dockerfiles para nuevas aplicaciones (administrador, contable, contratados, pagos)
+
+### Removed
+- remove(gestion-e2e): Eliminada aplicación de pruebas e2e para gestion
+- remove(gestion): Eliminada aplicación original, reemplazada por pagos y administrador
+
 ## [0.4.0] - 2026-05-05
 
 ### Added
