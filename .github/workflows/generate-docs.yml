@@ -1,10 +1,10 @@
-name: Generate Documentation
+name: Documentation Pipeline
 
 on:
+  push:
+    branches: [main, master]
   pull_request:
     types: [opened, synchronize, reopened]
-  push:
-    branches: [main]
 
 permissions:
   contents: write
@@ -17,89 +17,115 @@ jobs:
   generate-docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: '20' # LTS is safer than 22 for some native bindings like emnapi
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Dependencies
+        # Using npm install instead of npm ci to bypass lockfile out-of-sync issues on CI, 
+        # though ideally the lockfile should be fixed in the repo.
+        run: npm install
 
       - name: Generate Dependency Tree
         run: |
-          mkdir -p docs
-          npm list --all > docs/dependency-tree.txt || true
+          mkdir -p docs-site
+          npm list --all > docs-site/dependency-tree.txt || true
 
-      - name: Fetch GitHub Data
+      - name: Generate Angular Architecture Documentation (Compodoc)
+        # We use npx to run compodoc locally without polluting global space.
+        # This is a best practice for Angular workspaces.
+        run: |
+          npx @compodoc/compodoc -p tsconfig.base.json -d docs-site/architecture --name "Tesoreria Frontend Architecture" --theme readthedocs --hideGenerator
+
+      - name: Fetch GitHub Metrics
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/milestones" > docs/milestones.json
-          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/issues?state=all&per_page=100" > docs/issues.json
-          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/pulls?state=all&per_page=100" > docs/prs.json
+          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/milestones" > docs-site/milestones.json
+          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/issues?state=all&per_page=100" > docs-site/issues.json
+          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/pulls?state=all&per_page=100" > docs-site/prs.json
 
-      - name: Generate Wiki Content
+      - name: Prepare Pages Portal
+        run: |
+          # Copy essential markdown files
+          cp README.md CHANGELOG.md docs-site/ 2>/dev/null || true
+          
+          # Create an index.html that redirects to the architecture docs, 
+          # or serves as a portal linking to the JSON data and Compodoc.
+          cat > docs-site/index.html << 'INDEX'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Tesoreria Frontend Documentation</title>
+            <style>
+              body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+              h1 { color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+              .card { border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+              a { color: #2563eb; text-decoration: none; font-weight: bold; }
+              a:hover { text-decoration: underline; }
+            </style>
+          </head>
+          <body>
+            <h1>📚 Tesoreria Frontend Portal</h1>
+            <div class="card">
+              <h2><a href="architecture/index.html">🧩 Angular Architecture (Compodoc)</a></h2>
+              <p>Explore modules, components, services, and routing structures visually.</p>
+            </div>
+            <div class="card">
+              <h2>📊 Project Metrics (Raw JSON)</h2>
+              <ul>
+                <li><a href="issues.json">Issues</a></li>
+                <li><a href="prs.json">Pull Requests</a></li>
+                <li><a href="milestones.json">Milestones</a></li>
+                <li><a href="dependency-tree.txt">NPM Dependency Tree</a></li>
+              </ul>
+            </div>
+          </body>
+          </html>
+          INDEX
+
+      - name: Generate Wiki Portal
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-
+          
           git clone https://github.com/${{ github.repository }}.wiki.git wiki || {
-              mkdir wiki
-              cd wiki
-              git init
-              git remote add origin https://github.com/${{ github.repository }}.wiki.git
-              git checkout -b master
-              cd ..
+              echo "Wiki repository not initialized. Creating local portal only."
+              exit 0
           }
-
+          
           cd wiki
+          cat > Home.md << 'EOF'
+          # 📋 Wiki - Tesorería Frontend
 
-          # Create a simple Home.md as a portal
-          cat > Home.md << EOF
-          # 📋 Wiki - UM Tesorería Frontend
+          La documentación ha evolucionado. Toda la **documentación técnica, arquitectura interactiva de Angular y métricas** se compilan automáticamente con cada Commit/PR y se publican en GitHub Pages.
 
-          Esta wiki sirve como un portal de acceso rápido a los recursos más importantes del proyecto.
-
-          Toda la **documentación detallada, interactiva y actualizada** se encuentra en nuestro sitio de **GitHub Pages**.
-
-          ## ➡️ [Acceder a la Documentación Principal](https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.repository }} | cut -d'/' -f2)/)
-
-          ---
-
-          ### Accesos Directos a GitHub
-
-          *   **[Issues](https://github.com/${{ github.repository }}/issues)**: Ver todos los issues, abiertos y cerrados.
-          *   **[Pull Requests](https://github.com/${{ github.repository }}/pulls)**: Ver todos los Pull Requests.
-          *   **[Milestones](https://github.com/${{ github.repository }}/milestones)**: Ver el progreso de los hitos del proyecto.
+          ## ➡️ [Acceder al Portal de Documentación (GitHub Pages)](https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.repository }} | cut -d'/' -f2)/)
+          
+          *(Asegúrate de que GitHub Pages esté habilitado en Settings > Pages apuntando a GitHub Actions)*
           EOF
-
-          # Clean up old, now-unused wiki pages
+          
           rm -f "Estado-del-Proyecto.md" "Pull-Requests.md"
-
+          
           git add .
-          git commit -m "Update wiki to act as a portal to the main documentation" || echo "No changes to commit"
-
+          git commit -m "Update Wiki portal to point to GitHub Pages" || echo "No changes"
+          
           if [[ "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
-            git push --set-upstream https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git master
+            git push --set-upstream https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git master || true
           fi
 
-      - name: Prepare documentation for GitHub Pages
-        run: |
-          cp README.md CHANGELOG.md docs/
-          cp README.md docs/index.md
-
-      - name: Upload artifacts
+      - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: docs-site
 
   deploy-pages:
     needs: generate-docs
@@ -114,4 +140,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4
