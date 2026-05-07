@@ -1,4 +1,4 @@
-name: Documentation Pipeline
+name: Documentation & Architecture Pipeline
 
 on:
   push:
@@ -25,102 +25,86 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # LTS is safer than 22 for some native bindings like emnapi
+          node-version: '20'
 
       - name: Install Dependencies
-        # Using npm install instead of npm ci to bypass lockfile out-of-sync issues on CI, 
-        # though ideally the lockfile should be fixed in the repo.
         run: npm install
 
-      - name: Generate Dependency Tree
+      - name: Generate Nx Architecture Graph
         run: |
           mkdir -p docs-site
-          npm list --all > docs-site/dependency-tree.txt || true
+          npx nx graph --file=docs-site/graph.html
 
-      - name: Generate Angular Architecture Documentation (Compodoc)
-        # We use npx to run compodoc locally without polluting global space.
-        # This is a best practice for Angular workspaces.
+      - name: Compile Markdown and Mermaid to HTML
         run: |
-          npx @compodoc/compodoc -p tsconfig.base.json -d docs-site/architecture --name "Tesoreria Frontend Architecture" --theme readthedocs --hideGenerator
-
-      - name: Fetch GitHub Metrics
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/milestones" > docs-site/milestones.json
-          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/issues?state=all&per_page=100" > docs-site/issues.json
-          curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/pulls?state=all&per_page=100" > docs-site/prs.json
-
-      - name: Prepare Pages Portal
-        run: |
-          # Copy essential markdown files
           cp README.md CHANGELOG.md docs-site/ 2>/dev/null || true
           
-          # Create an index.html that redirects to the architecture docs, 
-          # or serves as a portal linking to the JSON data and Compodoc.
           cat > docs-site/index.html << 'INDEX'
           <!DOCTYPE html>
-          <html>
+          <html lang="es">
           <head>
-            <title>Tesoreria Frontend Documentation</title>
-            <style>
-              body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
-              h1 { color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
-              .card { border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-              a { color: #2563eb; text-decoration: none; font-weight: bold; }
-              a:hover { text-decoration: underline; }
-            </style>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tesoreria Frontend - Documentación Oficial</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script type="module">
+              import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+              mermaid.initialize({ startOnLoad: true, theme: 'default' });
+            </script>
           </head>
-          <body>
-            <h1>📚 Tesoreria Frontend Portal</h1>
-            <div class="card">
-              <h2><a href="architecture/index.html">🧩 Angular Architecture (Compodoc)</a></h2>
-              <p>Explore modules, components, services, and routing structures visually.</p>
-            </div>
-            <div class="card">
-              <h2>📊 Project Metrics (Raw JSON)</h2>
-              <ul>
-                <li><a href="issues.json">Issues</a></li>
-                <li><a href="prs.json">Pull Requests</a></li>
-                <li><a href="milestones.json">Milestones</a></li>
-                <li><a href="dependency-tree.txt">NPM Dependency Tree</a></li>
-              </ul>
+          <body class="bg-gray-50 text-gray-800 font-sans">
+            <div class="max-w-5xl mx-auto py-10 px-4">
+              <header class="mb-10 text-center border-b pb-8">
+                <h1 class="text-4xl font-extrabold text-blue-700">Tesoreria Frontend</h1>
+                <p class="text-gray-500 mt-2 text-lg">Documentación y Arquitectura del Monorepo Angular</p>
+              </header>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                  <h2 class="text-xl font-bold text-gray-800 mb-2">🌐 Grafo de Arquitectura (Nx)</h2>
+                  <p class="text-gray-600 mb-4">Explora visualmente cómo se conectan las 6 aplicaciones y las librerías compartidas.</p>
+                  <a href="graph.html" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Abrir Mapa de Módulos</a>
+                </div>
+              </div>
+
+              <div class="mt-10 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Arquitectura de Despliegue (Single-Origin)</h2>
+                <div class="mermaid flex justify-center">
+                  graph TD
+                    Client((Navegador Cliente))
+                    
+                    subgraph Docker Host [Servidor Docker Local]
+                        subgraph Frontend Containers [Contenedores Frontend Angular]
+                            Compras[compras :4201]
+                            Chequeras[chequeras :4203]
+                            Pagos[pagos :4204]
+                            Contratados[contratados :4205]
+                            Contable[contable :4206]
+                            Admin[administrador :4207]
+                        end
+                        
+                        subgraph Nginx Proxies [Nginx Reverse Proxy por Contenedor]
+                            NG1[Nginx Proxy]
+                            NG2[Nginx Proxy]
+                        end
+                        
+                        Gateway[Spring Cloud Gateway :8301]
+                    end
+                    
+                    Client -- "HTTPS (Auto-firmado)" --> Compras
+                    Client -- "HTTPS (Auto-firmado)" --> Pagos
+                    
+                    Compras --> NG1
+                    Pagos --> NG2
+                    
+                    NG1 -- "Ruta /api/*" --> Gateway
+                    NG2 -- "Ruta /api/*" --> Gateway
+                </div>
+              </div>
             </div>
           </body>
           </html>
           INDEX
-
-      - name: Generate Wiki Portal
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-          
-          git clone https://github.com/${{ github.repository }}.wiki.git wiki || {
-              echo "Wiki repository not initialized. Creating local portal only."
-              exit 0
-          }
-          
-          cd wiki
-          cat > Home.md << 'EOF'
-          # 📋 Wiki - Tesorería Frontend
-
-          La documentación ha evolucionado. Toda la **documentación técnica, arquitectura interactiva de Angular y métricas** se compilan automáticamente con cada Commit/PR y se publican en GitHub Pages.
-
-          ## ➡️ [Acceder al Portal de Documentación (GitHub Pages)](https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.repository }} | cut -d'/' -f2)/)
-          
-          *(Asegúrate de que GitHub Pages esté habilitado en Settings > Pages apuntando a GitHub Actions)*
-          EOF
-          
-          rm -f "Estado-del-Proyecto.md" "Pull-Requests.md"
-          
-          git add .
-          git commit -m "Update Wiki portal to point to GitHub Pages" || echo "No changes"
-          
-          if [[ "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
-            git push --set-upstream https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git master || true
-          fi
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
