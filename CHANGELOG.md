@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.1] - 2026-05-07
+
+### Fixed
+- fix(compras): Eliminado mapeo redundante de `cuenta` a `numeroCuenta` en GastosComponent, ya que el backend retorna `numeroCuenta` correctamente
+
 ## [0.5.0] - 2026-05-07
 
 ### Added

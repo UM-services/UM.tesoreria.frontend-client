@@ -7,8 +7,11 @@ graph LR
     subgraph "Frontend Client"
         subgraph "Apps"
             Compras[Compras App<br/>:4201]
-            Gestion[Gestion App<br/>:4202]
+            Pagos[Pagos App<br/>:4202]
             Chequeras[Chequeras App<br/>:4203]
+            Admin[Administrador App<br/>:4204]
+            Contable[Contable App<br/>:4205]
+            Contratados[Contratados App<br/>:4206]
         end
 
         subgraph "Libraries"
@@ -22,13 +25,25 @@ graph LR
     Compras --> UIAuth
     Compras --> UILayout
 
-    Gestion --> SharedAPI
-    Gestion --> UIAuth
-    Gestion --> UILayout
+    Pagos --> SharedAPI
+    Pagos --> UIAuth
+    Pagos --> UILayout
 
     Chequeras --> SharedAPI
     Chequeras --> UIAuth
     Chequeras --> UILayout
+
+    Admin --> SharedAPI
+    Admin --> UIAuth
+    Admin --> UILayout
+
+    Contable --> SharedAPI
+    Contable --> UIAuth
+    Contable --> UILayout
+
+    Contratados --> SharedAPI
+    Contratados --> UIAuth
+    Contratados --> UILayout
 
     SharedAPI -->|HTTP| BackendAPI[Backend API<br/>Tesorería]
 ```
