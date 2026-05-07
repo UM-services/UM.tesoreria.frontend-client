@@ -82,6 +82,18 @@ graph TD
     Gastos --> BuscadorCuenta[BuscadorCuenta Component]
 ```
 
+## Estructura de Módulos - Administrador
+
+```mermaid
+graph TD
+    AdminApp[Administrador App] --> AppRoutes[Rutas de la App]
+    AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
+    AppRoutes --> Dependencias[Dependencias Component]
+    AppRoutes --> Redirect[Redirección a /dependencias]
+
+    Dependencias --> BuscadorCuenta[BuscadorCuenta Component]
+```
+
 ## Modelos de Datos - Autenticación
 
 ```mermaid

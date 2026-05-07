@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0] - 2026-05-07
+
+### Added
+- feat(administrador): Nuevo módulo Dependencias con asignación de cuentas contables
+- feat(administrador): Buscador de cuentas contables reutilizable (BuscadorCuentaComponent)
+- feat(administrador): Ruta `/dependencias` con redirección desde raíz
+- feat(administrador): Actualización del menú de navegación de "Inicio" a "Dependencias"
+
+### Changed
+- refactor(administrador): Eliminado uso de BlankComponent como ruta raíz, reemplazado por redirect a `/dependencias`
+
 ## [0.5.1] - 2026-05-07
 
 ### Fixed

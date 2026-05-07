@@ -80,6 +80,10 @@ graph TB
         FP[Facturas Pendientes Component]
     end
 
+    subgraph "Administrador Modules"
+        DEP[Dependencias Component]
+    end
+
     subgraph Libs
         API[shared-api<br/>Auth Service<br/>API Models]
         AUTH[ui-auth<br/>Login Component]
@@ -106,6 +110,7 @@ graph TB
     A --> API
     A --> AUTH
     A --> LAYOUT
+    A --> DEP
 
     CT --> API
     CT --> AUTH
@@ -159,7 +164,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.5.1**
+Versión actual: **0.6.0**
 
 ## Licencia
 
