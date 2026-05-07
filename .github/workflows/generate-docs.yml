@@ -1,120 +1,84 @@
-name: Documentation & Architecture Pipeline
+name: Documentation Pipeline
 
 on:
   push:
     branches: [main, master]
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
   pages: write
   id-token: write
-  issues: read
-  pull-requests: read
 
 jobs:
   generate-docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install
+      - run: npm install
 
-      - name: Generate Nx Architecture Graph
+      - name: Generate Nx Graph
         run: |
           mkdir -p docs-site
           npx nx graph --file=docs-site/graph.html
 
-      - name: Compile Markdown and Mermaid to HTML
+      - name: Build Dashboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          cp README.md CHANGELOG.md docs-site/ 2>/dev/null || true
-          
-          cat > docs-site/index.html << 'INDEX'
-          <!DOCTYPE html>
-          <html lang="es">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Tesoreria Frontend - Documentación Oficial</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <script type="module">
-              import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-              mermaid.initialize({ startOnLoad: true, theme: 'default' });
-            </script>
-          </head>
-          <body class="bg-gray-50 text-gray-800 font-sans">
-            <div class="max-w-5xl mx-auto py-10 px-4">
-              <header class="mb-10 text-center border-b pb-8">
-                <h1 class="text-4xl font-extrabold text-blue-700">Tesoreria Frontend</h1>
-                <p class="text-gray-500 mt-2 text-lg">Documentación y Arquitectura del Monorepo Angular</p>
-              </header>
+          cat > build.js << 'JS'
+          const fs = require('fs');
+          const https = require('https');
+          const opts = { headers: { 'User-Agent': 'Node', 'Authorization': 'token ' + process.env.GITHUB_TOKEN } };
+          const repo = process.env.GITHUB_REPOSITORY;
+          function fetchCount(url) {
+            return new Promise((res) => {
+              https.get(url, opts, (response) => {
+                let data = '';
+                response.on('data', c => data += c);
+                response.on('end', () => {
+                  try { res(JSON.parse(data).length || 0); } catch(e) { res(0); }
+                });
+              });
+            });
+          }
+          async function build() {
+            const issues = await fetchCount('https://api.github.com/repos/' + repo + '/issues?state=open');
+            const prs = await fetchCount('https://api.github.com/repos/' + repo + '/pulls?state=open');
+            const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Tesoreria Frontend</title><script src="https://cdn.tailwindcss.com"></script><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; mermaid.initialize({startOnLoad:true});</script></head><body class="bg-gray-50 text-gray-800 font-sans"><div class="max-w-5xl mx-auto py-10 px-4"><header class="mb-10 text-center border-b pb-8"><h1 class="text-4xl font-extrabold text-blue-700">Tesoreria Frontend</h1></header><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100"><h2 class="text-xl font-bold mb-2">🌐 Grafo de Arquitectura (Nx)</h2><a href="graph.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg inline-block">Abrir Mapa Visual</a></div><div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100"><h2 class="text-xl font-bold mb-4">📊 Estado del Proyecto</h2><div class="flex gap-4"><div class="bg-red-50 p-3 rounded-lg"><span class="text-2xl font-black text-red-600">${issues}</span> Issues</div><div class="bg-green-50 p-3 rounded-lg"><span class="text-2xl font-black text-green-600">${prs}</span> PRs</div></div></div></div><div class="mt-10 bg-white p-8 rounded-xl shadow-sm border border-gray-100"><h2 class="text-2xl font-bold mb-6">Arquitectura Docker (Single-Origin)</h2><div class="mermaid flex justify-center">graph TD; Client((Navegador))-->Compras[compras :4201]; Client-->Pagos[pagos :4204]; Client-->Admin[administrador :4207]; Compras-->Gateway[Spring Cloud Gateway :8301]; Pagos-->Gateway; Admin-->Gateway;</div></div></div></body></html>`;
+            fs.writeFileSync('docs-site/index.html', html);
+          }
+          build();
+          JS
+          node build.js
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                  <h2 class="text-xl font-bold text-gray-800 mb-2">🌐 Grafo de Arquitectura (Nx)</h2>
-                  <p class="text-gray-600 mb-4">Explora visualmente cómo se conectan las 6 aplicaciones y las librerías compartidas.</p>
-                  <a href="graph.html" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Abrir Mapa de Módulos</a>
-                </div>
-              </div>
+      - name: Clean Wiki
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git wiki || exit 0
+          cd wiki
+          rm -f *.md
+          echo "# 📋 Portal Documental" > Home.md
+          echo "La documentacion oficial interactiva se encuentra exclusivamente en **GitHub Pages** para mantener una unica fuente de verdad." >> Home.md
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add .
+          git commit -m "Wipe wiki to establish single source of truth" || true
+          git push origin master || git push origin main || true
 
-              <div class="mt-10 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Arquitectura de Despliegue (Single-Origin)</h2>
-                <div class="mermaid flex justify-center">
-                  graph TD
-                    Client((Navegador Cliente))
-                    
-                    subgraph Docker Host [Servidor Docker Local]
-                        subgraph Frontend Containers [Contenedores Frontend Angular]
-                            Compras[compras :4201]
-                            Chequeras[chequeras :4203]
-                            Pagos[pagos :4204]
-                            Contratados[contratados :4205]
-                            Contable[contable :4206]
-                            Admin[administrador :4207]
-                        end
-                        
-                        subgraph Nginx Proxies [Nginx Reverse Proxy por Contenedor]
-                            NG1[Nginx Proxy]
-                            NG2[Nginx Proxy]
-                        end
-                        
-                        Gateway[Spring Cloud Gateway :8301]
-                    end
-                    
-                    Client -- "HTTPS (Auto-firmado)" --> Compras
-                    Client -- "HTTPS (Auto-firmado)" --> Pagos
-                    
-                    Compras --> NG1
-                    Pagos --> NG2
-                    
-                    NG1 -- "Ruta /api/*" --> Gateway
-                    NG2 -- "Ruta /api/*" --> Gateway
-                </div>
-              </div>
-            </div>
-          </body>
-          </html>
-          INDEX
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: docs-site
 
   deploy-pages:
     needs: generate-docs
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
     permissions:
       pages: write
       id-token: write
@@ -122,6 +86,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4
