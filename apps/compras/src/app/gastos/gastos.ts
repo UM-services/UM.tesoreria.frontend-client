@@ -168,11 +168,8 @@ export class GastosComponent implements OnInit {
       })
     ).subscribe(data => {
       this.zone.run(() => {
-        const mappedData = data.map(p => ({
-            ...p,
-            numeroCuenta: p.numeroCuenta !== undefined ? p.numeroCuenta : p.cuenta
-        }));
-        this.gastos = mappedData.filter(a => (a.tipo || '').toLowerCase() === 'gasto');
+        // La respuesta del backend ya trae 'numeroCuenta' y el objeto 'cuenta' hidratado correctamente.
+        this.gastos = data.filter(a => (a.tipo || '').toLowerCase() === 'gasto');
         this.filteredGastos = [...this.gastos];
         this.currentPage = 0;
         this.totalPages = 1;
