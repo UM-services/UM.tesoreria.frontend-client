@@ -1,3 +1,4 @@
+import { DependenciasComponent } from './dependencias/dependencias';
 import { Route } from '@angular/router';
 import { authGuard } from '@tesoreria/shared-api';
 import { LoginComponent } from '@tesoreria/ui-auth';
@@ -9,9 +10,14 @@ export const appRoutes: Route[] = [
     component: LoginComponent,
   },
   {
-    path: '',
-    component: BlankComponent,
+    path: 'dependencias',
+    component: DependenciasComponent,
     canActivate: [authGuard],
+  },
+  {
+    path: '',
+    redirectTo: 'dependencias',
+    pathMatch: 'full'
   },
   {
     path: '**',
