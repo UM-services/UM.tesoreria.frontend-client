@@ -17,7 +17,8 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 ### Librerías
 - `@tesoreria/shared-api` - Servicios API, autenticación y modelos compartidos
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Componentes de layout (navbar, sidebar)
+- `@tesoreria/ui-layout` - Componentes de layout (navbar, sidebar, buscador-cuenta)
+- `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 
 ## Requisitos
 
@@ -71,9 +72,7 @@ graph TB
     end
 
     subgraph "Compras Modules"
-        PROV[Proveedores Component]
         GAST[Gastos Component]
-        BUSC[BuscadorCuenta Component]
     end
 
     subgraph "Pagos Modules"
@@ -87,20 +86,22 @@ graph TB
     subgraph Libs
         API[shared-api<br/>Auth Service<br/>API Models]
         AUTH[ui-auth<br/>Login Component]
-        LAYOUT[ui-layout<br/>Navbar/sidebar]
+        LAYOUT[ui-layout<br/>Navbar/sidebar<br/>BuscadorCuenta]
+        FPROV[feature-proveedores<br/>Proveedores Component]
     end
 
     C --> API
     C --> AUTH
     C --> LAYOUT
-    C --> PROV
+    C --> FPROV
     C --> GAST
-    PROV --> BUSC
+    FPROV --> BUSC
     GAST --> BUSC
 
     P --> API
     P --> AUTH
     P --> LAYOUT
+    P --> FPROV
     P --> FP
 
     Q --> API
@@ -110,7 +111,9 @@ graph TB
     A --> API
     A --> AUTH
     A --> LAYOUT
+    A --> FPROV
     A --> DEP
+    DEP --> BUSC
 
     CT --> API
     CT --> AUTH
@@ -164,7 +167,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.6.0**
+Versión actual: **0.7.0**
 
 ## Licencia
 

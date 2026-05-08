@@ -2,7 +2,7 @@ import { Component, EventEmitter, Output, Input, inject, ChangeDetectorRef, NgZo
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+
 import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { of, Subscription } from 'rxjs';
 
@@ -28,7 +28,7 @@ export class BuscadorCuentaComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
-  private readonly baseUrl = `${environment.apiUrl.replace(/\/auth\/?$/, '')}/cuenta`;
+  private readonly baseUrl = '/api/tesoreria/core/cuenta';
 
   public searchQuery = new FormControl('');
   public cuentas: CuentaSearchResponse[] = [];

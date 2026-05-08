@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.7.0] - 2026-05-08
+
+### Added
+- feat(administrador): Añadido módulo Proveedores con ruta `/proveedores` y entrada en navegación
+- feat(pagos): Añadido módulo Proveedores con ruta `/proveedores` y entrada en navegación
+- feat(libs): Nueva librería `@tesoreria/feature-proveedores` para compartir ProveedoresComponent entre apps
+- feat(ui-layout): BuscadorCuentaComponent ahora exportado desde `@tesoreria/ui-layout` como componente compartido
+
+### Changed
+- refactor(compras): Migrado ProveedoresComponent a librería compartida `@tesoreria/feature-proveedores`
+- refactor(compras): Migrado BuscadorCuentaComponent a `@tesoreria/ui-layout`
+- refactor(administrador): Migrado BuscadorCuentaComponent a `@tesoreria/ui-layout`
+- refactor(api): Cambiada URL base de API a `/api/tesoreria/core` en ProveedoresComponent y BuscadorCuentaComponent (independencia de environment)
+- refactor(docs): Simplificado pipeline de documentación reemplazando Compodoc por Nx Graph y dashboard interactivo
+- refactor(docs): Eliminados triggers de PR en pipeline de documentación para optimizar ejecuciones
+
+### Removed
+- remove(compras): Eliminado `apps/compras/src/app/shared/buscador-cuenta/` (migrado a ui-layout)
+- remove(administrador): Eliminado `apps/administrador/src/app/shared/buscador-cuenta/` (migrado a ui-layout)
+
 ## [0.6.0] - 2026-05-07
 
 ### Added
