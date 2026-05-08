@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl, FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { BuscadorCuentaComponent, CuentaSearchResponse } from '../shared/buscador-cuenta/buscador-cuenta';
+import { BuscadorCuentaComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 

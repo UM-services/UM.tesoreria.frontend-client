@@ -2,8 +2,8 @@ import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../environments/environment';
-import { BuscadorCuentaComponent, CuentaSearchResponse } from '../shared/buscador-cuenta/buscador-cuenta';
+
+import { BuscadorCuentaComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -43,7 +43,7 @@ export class ProveedoresComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
   
-  private readonly apiUrlBase = environment.apiUrl.replace(/\/auth\/?$/, '');
+  private readonly apiUrlBase = '/api/tesoreria/core';
   private readonly baseUrl = `${this.apiUrlBase}/proveedor`;
   private readonly sheetUrl = `${this.apiUrlBase}/sheet`;
 

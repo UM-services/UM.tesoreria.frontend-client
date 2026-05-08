@@ -17,17 +17,20 @@ graph LR
         subgraph "Libraries"
             SharedAPI[@tesoreria/shared-api<br/>AuthService<br/>AuthGuard<br/>Models]
             UIAuth[@tesoreria/ui-auth<br/>LoginComponent]
-            UILayout[@tesoreria/ui-layout<br/>NavbarComponent<br/>SidebarComponent]
+            UILayout[@tesoreria/ui-layout<br/>NavbarComponent<br/>SidebarComponent<br/>BuscadorCuentaComponent]
+            FeatureProveedores[@tesoreria/feature-proveedores<br/>ProveedoresComponent]
         end
     end
 
     Compras --> SharedAPI
     Compras --> UIAuth
     Compras --> UILayout
+    Compras --> FeatureProveedores
 
     Pagos --> SharedAPI
     Pagos --> UIAuth
     Pagos --> UILayout
+    Pagos --> FeatureProveedores
 
     Chequeras --> SharedAPI
     Chequeras --> UIAuth
@@ -36,6 +39,7 @@ graph LR
     Admin --> SharedAPI
     Admin --> UIAuth
     Admin --> UILayout
+    Admin --> FeatureProveedores
 
     Contable --> SharedAPI
     Contable --> UIAuth
@@ -75,11 +79,11 @@ graph TD
     ComprasApp[Compras App] --> AppRoutes[Rutas de la App]
     AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
     AppRoutes --> Blank[Blank Component<br/>Contenedor protegido]
-    AppRoutes --> Proveedores[Proveedores Component]
+    AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
     AppRoutes --> Gastos[Gastos Component]
 
-    Proveedores --> BuscadorCuenta[BuscadorCuenta Component]
-    Gastos --> BuscadorCuenta[BuscadorCuenta Component]
+    Proveedores --> BuscadorCuenta[BuscadorCuenta Component<br/>@tesoreria/ui-layout]
+    Gastos --> BuscadorCuenta[BuscadorCuenta Component<br/>@tesoreria/ui-layout]
 ```
 
 ## Estructura de Módulos - Administrador
@@ -89,9 +93,25 @@ graph TD
     AdminApp[Administrador App] --> AppRoutes[Rutas de la App]
     AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
     AppRoutes --> Dependencias[Dependencias Component]
+    AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
     AppRoutes --> Redirect[Redirección a /dependencias]
 
-    Dependencias --> BuscadorCuenta[BuscadorCuenta Component]
+    Dependencias --> BuscadorCuenta[BuscadorCuenta Component<br/>@tesoreria/ui-layout]
+    Proveedores --> BuscadorCuenta
+```
+
+## Estructura de Módulos - Pagos
+
+```mermaid
+graph TD
+    PagosApp[Pagos App] --> AppRoutes[Rutas de la App]
+    AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
+    AppRoutes --> Blank[Blank Component<br/>Contenedor protegido]
+    AppRoutes --> Facturas[Facturas Pendientes Component]
+    AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
+
+    Facturas --> BuscadorCuenta[BuscadorCuenta Component<br/>@tesoreria/ui-layout]
+    Proveedores --> BuscadorCuenta
 ```
 
 ## Modelos de Datos - Autenticación
