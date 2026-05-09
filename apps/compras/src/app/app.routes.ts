@@ -1,4 +1,4 @@
-import { GastosComponent } from './gastos/gastos';
+import { GastosComponent } from '@tesoreria/feature-gastos';
 import { Route } from '@angular/router';
 import { authGuard } from '@tesoreria/shared-api';
 import { LoginComponent } from '@tesoreria/ui-auth';

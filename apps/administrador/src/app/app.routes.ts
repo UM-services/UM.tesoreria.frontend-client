@@ -1,3 +1,4 @@
+import { GastosComponent } from '@tesoreria/feature-gastos';
 import { ProveedoresComponent } from '@tesoreria/feature-proveedores';
 import { DependenciasComponent } from './dependencias/dependencias';
 import { Route } from '@angular/router';
@@ -18,6 +19,11 @@ export const appRoutes: Route[] = [
   {
     path: 'proveedores',
     component: ProveedoresComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'gastos',
+    component: GastosComponent,
     canActivate: [authGuard],
   },
   {

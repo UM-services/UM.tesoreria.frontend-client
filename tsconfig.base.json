@@ -18,6 +18,9 @@
       ],
       "@tesoreria/feature-proveedores": [
         "./libs/feature-proveedores/src/index.ts"
+      ],
+      "@tesoreria/feature-gastos": [
+        "./libs/feature-gastos/src/index.ts"
       ]
     }
   }

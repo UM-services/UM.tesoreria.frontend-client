@@ -19,6 +19,7 @@ graph LR
             UIAuth[@tesoreria/ui-auth<br/>LoginComponent]
             UILayout[@tesoreria/ui-layout<br/>NavbarComponent<br/>SidebarComponent<br/>BuscadorCuentaComponent]
             FeatureProveedores[@tesoreria/feature-proveedores<br/>ProveedoresComponent]
+            FeatureGastos[@tesoreria/feature-gastos<br/>GastosComponent]
         end
     end
 
@@ -26,11 +27,13 @@ graph LR
     Compras --> UIAuth
     Compras --> UILayout
     Compras --> FeatureProveedores
+    Compras --> FeatureGastos
 
     Pagos --> SharedAPI
     Pagos --> UIAuth
     Pagos --> UILayout
     Pagos --> FeatureProveedores
+    Pagos --> FeatureGastos
 
     Chequeras --> SharedAPI
     Chequeras --> UIAuth
@@ -40,6 +43,7 @@ graph LR
     Admin --> UIAuth
     Admin --> UILayout
     Admin --> FeatureProveedores
+    Admin --> FeatureGastos
 
     Contable --> SharedAPI
     Contable --> UIAuth
@@ -80,7 +84,7 @@ graph TD
     AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
     AppRoutes --> Blank[Blank Component<br/>Contenedor protegido]
     AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
-    AppRoutes --> Gastos[Gastos Component]
+    AppRoutes --> Gastos[Gastos Component<br/>@tesoreria/feature-gastos]
 
     Proveedores --> BuscadorCuenta[BuscadorCuenta Component<br/>@tesoreria/ui-layout]
     Gastos --> BuscadorCuenta[BuscadorCuenta Component<br/>@tesoreria/ui-layout]
@@ -94,10 +98,12 @@ graph TD
     AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
     AppRoutes --> Dependencias[Dependencias Component]
     AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
+    AppRoutes --> Gastos[Gastos Component<br/>@tesoreria/feature-gastos]
     AppRoutes --> Redirect[Redirección a /dependencias]
 
     Dependencias --> BuscadorCuenta[BuscadorCuenta Component<br/>@tesoreria/ui-layout]
     Proveedores --> BuscadorCuenta
+    Gastos --> BuscadorCuenta
 ```
 
 ## Estructura de Módulos - Pagos
@@ -109,9 +115,11 @@ graph TD
     AppRoutes --> Blank[Blank Component<br/>Contenedor protegido]
     AppRoutes --> Facturas[Facturas Pendientes Component]
     AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
+    AppRoutes --> Gastos[Gastos Component<br/>@tesoreria/feature-gastos]
 
     Facturas --> BuscadorCuenta[BuscadorCuenta Component<br/>@tesoreria/ui-layout]
     Proveedores --> BuscadorCuenta
+    Gastos --> BuscadorCuenta
 ```
 
 ## Modelos de Datos - Autenticación
