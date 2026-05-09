@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.0] - 2026-05-09
+
+### Added
+- feat(libs): Nueva librería `@tesoreria/feature-gastos` con GastosComponent compartido
+- feat(administrador): Añadido módulo Gastos con ruta `/gastos` y entrada en navegación
+- feat(pagos): Añadido módulo Gastos con ruta `/gastos` y entrada en navegación
+
+### Changed
+- refactor(compras): Migrado GastosComponent a librería compartida `@tesoreria/feature-gastos`
+- refactor(api): Cambiada URL base de API a `/api/tesoreria/core` en GastosComponent (independencia de environment)
+
 ## [0.7.0] - 2026-05-08
 
 ### Added

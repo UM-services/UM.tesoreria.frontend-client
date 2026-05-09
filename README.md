@@ -19,6 +19,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
 - `@tesoreria/ui-layout` - Componentes de layout (navbar, sidebar, buscador-cuenta)
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
+- `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
 
 ## Requisitos
 
@@ -71,10 +72,6 @@ graph TB
         CR[Contratados<br/>:4206]
     end
 
-    subgraph "Compras Modules"
-        GAST[Gastos Component]
-    end
-
     subgraph "Pagos Modules"
         FP[Facturas Pendientes Component]
     end
@@ -88,20 +85,22 @@ graph TB
         AUTH[ui-auth<br/>Login Component]
         LAYOUT[ui-layout<br/>Navbar/sidebar<br/>BuscadorCuenta]
         FPROV[feature-proveedores<br/>Proveedores Component]
+        FGAST[feature-gastos<br/>Gastos Component]
     end
 
     C --> API
     C --> AUTH
     C --> LAYOUT
     C --> FPROV
-    C --> GAST
+    C --> FGAST
     FPROV --> BUSC
-    GAST --> BUSC
+    FGAST --> BUSC
 
     P --> API
     P --> AUTH
     P --> LAYOUT
     P --> FPROV
+    P --> FGAST
     P --> FP
 
     Q --> API
@@ -112,6 +111,7 @@ graph TB
     A --> AUTH
     A --> LAYOUT
     A --> FPROV
+    A --> FGAST
     A --> DEP
     DEP --> BUSC
 
@@ -167,7 +167,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.7.0**
+Versión actual: **0.8.0**
 
 ## Licencia
 

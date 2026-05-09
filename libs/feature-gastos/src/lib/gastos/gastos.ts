@@ -2,7 +2,6 @@ import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl, FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../environments/environment';
 import { BuscadorCuentaComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -58,10 +57,10 @@ export class GastosComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
   
-  private readonly apiUrlBase = environment.apiUrl.replace(/\/auth\/?$/, '');
-  private readonly articuloUrl = `${this.apiUrlBase}/articulo`;
-  private readonly ubicacionUrl = `${this.apiUrlBase}/ubicacion`;
-  private readonly ubicacionArticuloUrl = `${this.apiUrlBase}/ubicacionArticulo`;
+        
+    private readonly articuloUrl = '/api/tesoreria/core/articulo';
+  private readonly ubicacionUrl = '/api/tesoreria/core/ubicacion';
+  private readonly ubicacionArticuloUrl = '/api/tesoreria/core/ubicacionArticulo';
 
   public gastos: Articulo[] = [];
   public filteredGastos: Articulo[] = [];
