@@ -2,25 +2,22 @@ import { Component, EventEmitter, Output, Input, inject, ChangeDetectorRef, NgZo
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-
 import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { of, Subscription } from 'rxjs';
 
 export interface CuentaSearchResponse {
   numeroCuenta: number;
   nombre: string;
-  integradora: number;
-  grado: number;
   cuentaContableId: number;
 }
 
 @Component({
-  selector: 'app-buscador-cuenta',
+  selector: 'ui-buscador-cuenta-contable',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './buscador-cuenta.html'
+  templateUrl: './buscador-cuenta-contable.html'
 })
-export class BuscadorCuentaComponent implements OnInit, OnDestroy {
+export class BuscadorCuentaContableComponent implements OnInit, OnDestroy {
   @Input() isOpen = false;
   @Output() cuentaSelected = new EventEmitter<CuentaSearchResponse>();
   @Output() closed = new EventEmitter<void>();
@@ -38,31 +35,17 @@ export class BuscadorCuentaComponent implements OnInit, OnDestroy {
   private searchSub: Subscription | null = null;
 
   ngOnInit() {
-    // Implementación de Búsqueda Reactiva (Como en VB6 KeyPress pero optimizado)
     this.searchSub = this.searchQuery.valueChanges.pipe(
-      debounceTime(300), // Espera 300ms a que el usuario deje de tipear
-      distinctUntilChanged(), // Solo busca si el texto realmente cambió
-      tap(() => {
-        this.isLoading = true;
-        this.errorMessage = '';
-        this.cdr.detectChanges();
-      }),
+      debounceTime(300),
+      distinctUntilChanged(),
+      tap(() => { this.isLoading = true; this.errorMessage = ''; this.cdr.detectChanges(); }),
       switchMap(query => {
         const term = query?.trim();
-        if (!term) {
-          return of([]); // Si está vacío, retorna array vacío inmediatamente
-        }
-        
-        // Divide el término de búsqueda por espacios para enviar múltiples condiciones (comportamiento Legacy)
+        if (!term) return of([]);
         const conditions = term.split(/\s+/);
-
-        // Dispara la búsqueda al backend
         return this.http.post<CuentaSearchResponse[]>(`${this.baseUrl}/search/true`, conditions).pipe(
           catchError(() => {
-            this.zone.run(() => {
-              this.errorMessage = 'Error al buscar cuentas.';
-              this.cdr.detectChanges();
-            });
+            this.zone.run(() => { this.errorMessage = 'Error al buscar cuentas.'; this.isLoading = false; this.cdr.detectChanges(); });
             return of([]);
           })
         );
@@ -76,11 +59,7 @@ export class BuscadorCuentaComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy() {
-    if (this.searchSub) {
-      this.searchSub.unsubscribe();
-    }
-  }
+  ngOnDestroy() { if (this.searchSub) this.searchSub.unsubscribe(); }
 
   seleccionar(cuenta: CuentaSearchResponse) {
     this.cuentaSelected.emit(cuenta);
@@ -89,7 +68,7 @@ export class BuscadorCuentaComponent implements OnInit, OnDestroy {
 
   cerrar() {
     this.isOpen = false;
-    this.searchQuery.reset('', { emitEvent: false }); // Reset sin disparar la búsqueda
+    this.searchQuery.reset('', { emitEvent: false });
     this.cuentas = [];
     this.errorMessage = '';
     this.closed.emit();

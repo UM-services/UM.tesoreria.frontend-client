@@ -17,9 +17,10 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 ### Librerías
 - `@tesoreria/shared-api` - Servicios API, autenticación y modelos compartidos
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Componentes de layout (navbar, sidebar, buscador-cuenta)
+- `@tesoreria/ui-layout` - Componentes de layout (navbar, sidebar, buscador-cuenta-contable, buscador-proveedor)
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
+- `@tesoreria/feature-orden-compra` - Módulo de órdenes de compra con dashboard, creación multi-paso y flujo de aprobación (integrado en compras)
 
 ## Requisitos
 
@@ -83,9 +84,10 @@ graph TB
     subgraph Libs
         API[shared-api<br/>Auth Service<br/>API Models]
         AUTH[ui-auth<br/>Login Component]
-        LAYOUT[ui-layout<br/>Navbar/sidebar<br/>BuscadorCuenta]
+        LAYOUT[ui-layout<br/>Navbar/sidebar<br/>BuscadorCuentaContable<br/>BuscadorProveedor]
         FPROV[feature-proveedores<br/>Proveedores Component]
         FGAST[feature-gastos<br/>Gastos Component]
+        ORDCOMPRA[feature-orden-compra<br/>OrdenCompra Module]
     end
 
     C --> API
@@ -93,8 +95,8 @@ graph TB
     C --> LAYOUT
     C --> FPROV
     C --> FGAST
-    FPROV --> BUSC
-    FGAST --> BUSC
+    C --> ORDCOMPRA
+    ORDCOMPRA --> LAYOUT
 
     P --> API
     P --> AUTH
@@ -113,7 +115,7 @@ graph TB
     A --> FPROV
     A --> FGAST
     A --> DEP
-    DEP --> BUSC
+    DEP --> LAYOUT
 
     CT --> API
     CT --> AUTH
@@ -167,7 +169,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.8.0**
+Versión actual: **0.9.0**
 
 ## Licencia
 

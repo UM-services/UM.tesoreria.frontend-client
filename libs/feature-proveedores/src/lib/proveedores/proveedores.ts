@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 
-import { BuscadorCuentaComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
+import { BuscadorProveedorComponent, ProveedorSearchResponse } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -34,7 +34,7 @@ export interface PaginatedResponse<T> {
 @Component({
   selector: 'app-proveedores',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BuscadorCuentaComponent],
+  imports: [CommonModule, ReactiveFormsModule, BuscadorProveedorComponent],
   templateUrl: './proveedores.html'
 })
 export class ProveedoresComponent implements OnInit {
@@ -159,9 +159,9 @@ export class ProveedoresComponent implements OnInit {
     });
   }
 
-  onCuentaSelected(cuenta: CuentaSearchResponse) {
+  onCuentaSelected(cuenta: ProveedorSearchResponse) {
     this.zone.run(() => {
-      this.proveedorForm.patchValue({ numeroCuenta: cuenta.numeroCuenta, nombreCuenta: cuenta.nombre });
+      this.proveedorForm.patchValue({ numeroCuenta: cuenta.numeroCuenta, nombreCuenta: cuenta.razonSocial });
       this.isBuscadorCuentaOpen = false;
       this.cdr.detectChanges();
     });

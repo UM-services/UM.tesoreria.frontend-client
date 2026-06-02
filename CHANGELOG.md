@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.9.0] - 2026-06-02
+
+### Added
+- feat(libs): Nueva librería `@tesoreria/feature-orden-compra` con módulo completo de Órdenes de Compra
+- feat(compras): Nuevo módulo Órdenes de Compra con rutas `/orden-compra`, `/orden-compra/nueva`, `/orden-compra/oc/:id`
+- feat(libs): Nuevo componente `BuscadorProveedorComponent` en `@tesoreria/ui-layout` para búsqueda de proveedores
+- feat(compras): Integración de buscador de proveedores en formulario de proveedores
+- feat(proveedores): Integración de `BuscadorProveedorComponent` en lugar de `BuscadorCuentaComponent`
+- feat(orden-compra): Dashboard de OC con listado, simulación de roles y filtros por estado
+- feat(orden-compra): Formulario multi-paso de creación de OC con carga de presupuestos, búsqueda de artículos, imputación contable y centros de costo
+- feat(orden-compra): Flujo de aprobación por umbrales de monto con simulación de roles (Director de Compras, Administración, Rector, etc.)
+- feat(orden-compra): Historial de tramitación tipo chat con adjuntos simulados (PDF)
+- feat(orden-compra): Estados de OC: Pendiente Aprobación, Aprobada, Enviada, Cumplida, Anulada, Factura Parcial
+
+### Changed
+- refactor(ui-layout): Renombrado `BuscadorCuentaComponent` → `BuscadorCuentaContableComponent` para mayor claridad
+- refactor(compras): Menú de navegación actualizado con entrada "Compras" para Órdenes de Compra
+- refactor(proveedores): Reemplazado Buscador de Cuenta Contable por Buscador de Proveedor en formulario de proveedores
+- refactor(docs): Pipeline de documentación mejorado con tabla de commits, PRs, métricas y copia de carpeta `docs/`
+- refactor(deps): Actualizado `tsconfig.base.json` con path mapping para `@tesoreria/feature-orden-compra`
+
 ## [0.8.0] - 2026-05-09
 
 ### Added

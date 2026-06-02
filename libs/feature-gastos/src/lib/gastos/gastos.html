@@ -285,15 +285,15 @@
   </div>
 </div>
 
-<app-buscador-cuenta
+<ui-buscador-cuenta-contable
   [isOpen]="isBuscadorCuentaOpen"
   (cuentaSelected)="onCuentaSelected($event)"
   (closed)="cerrarBuscadorCuenta()">
-</app-buscador-cuenta>
+</ui-buscador-cuenta-contable>
 
 <!-- Segundo buscador para imputaciones (para evitar conflictos de estado) -->
-<app-buscador-cuenta
+<ui-buscador-cuenta-contable
   [isOpen]="isBuscadorCuentaImputacionOpen"
   (cuentaSelected)="onCuentaImputacionSelected($event)"
   (closed)="isBuscadorCuentaImputacionOpen = false">
-</app-buscador-cuenta>
+</ui-buscador-cuenta-contable>

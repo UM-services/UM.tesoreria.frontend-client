@@ -2,7 +2,7 @@ import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl, FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BuscadorCuentaComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
+import { BuscadorProveedorComponent, BuscadorCuentaContableComponent, CuentaSearchResponse, ProveedorSearchResponse } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -48,7 +48,7 @@ export interface UbicacionArticulo {
 @Component({
   selector: 'app-gastos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, BuscadorCuentaComponent],
+  imports: [ReactiveFormsModule, FormsModule, BuscadorCuentaContableComponent, BuscadorProveedorComponent, CommonModule],
   templateUrl: './gastos.html'
 })
 export class GastosComponent implements OnInit {
