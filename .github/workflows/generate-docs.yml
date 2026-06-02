@@ -25,52 +25,271 @@ jobs:
           mkdir -p docs-site
           npx nx graph --file=docs-site/graph.html
 
-      - name: Build Dashboard
+      - name: Build Dashboard with Commit & PR History
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          cat > build.js << 'JS'
+          cat > build.js << 'JSEOF'
           const fs = require('fs');
           const https = require('https');
-          const opts = { headers: { 'User-Agent': 'Node', 'Authorization': 'token ' + process.env.GITHUB_TOKEN } };
+
+          const opts = {
+            headers: {
+              'User-Agent': 'Node',
+              'Authorization': 'token ' + process.env.GITHUB_TOKEN,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          };
           const repo = process.env.GITHUB_REPOSITORY;
-          function fetchCount(url) {
-            return new Promise((res) => {
-              https.get(url, opts, (response) => {
+
+          function apiGet(path) {
+            return new Promise((res, rej) => {
+              https.get('https://api.github.com/repos/' + repo + path, opts, (response) => {
                 let data = '';
                 response.on('data', c => data += c);
                 response.on('end', () => {
-                  try { res(JSON.parse(data).length || 0); } catch(e) { res(0); }
+                  try { res(JSON.parse(data)); } catch (e) { rej(e); }
                 });
-              });
+              }).on('error', rej);
             });
           }
+
+          function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+          function fmtDate(iso) { return new Date(iso).toLocaleDateString('es-AR', { year:'numeric', month:'2-digit', day:'2-digit' }); }
+
           async function build() {
-            const issues = await fetchCount('https://api.github.com/repos/' + repo + '/issues?state=open');
-            const prs = await fetchCount('https://api.github.com/repos/' + repo + '/pulls?state=open');
-            const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Tesoreria Frontend</title><script src="https://cdn.tailwindcss.com"></script><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; mermaid.initialize({startOnLoad:true});</script></head><body class="bg-gray-50 text-gray-800 font-sans"><div class="max-w-5xl mx-auto py-10 px-4"><header class="mb-10 text-center border-b pb-8"><h1 class="text-4xl font-extrabold text-blue-700">Tesoreria Frontend</h1></header><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100"><h2 class="text-xl font-bold mb-2">🌐 Grafo de Arquitectura (Nx)</h2><a href="graph.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg inline-block">Abrir Mapa Visual</a></div><div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100"><h2 class="text-xl font-bold mb-4">📊 Estado del Proyecto</h2><div class="flex gap-4"><div class="bg-red-50 p-3 rounded-lg"><span class="text-2xl font-black text-red-600">${issues}</span> Issues</div><div class="bg-green-50 p-3 rounded-lg"><span class="text-2xl font-black text-green-600">${prs}</span> PRs</div></div></div></div><div class="mt-10 bg-white p-8 rounded-xl shadow-sm border border-gray-100"><h2 class="text-2xl font-bold mb-6">Arquitectura Docker (Single-Origin)</h2><div class="mermaid flex justify-center">graph TD; Client((Navegador))-->Compras[compras :4201]; Client-->Pagos[pagos :4202]; Client-->Chequeras[chequeras :4203]; Client-->Admin[administrador :4204]; Client-->Contable[contable :4205]; Client-->Contratados[contratados :4206]; Compras-->Gateway[Spring Cloud Gateway :8301]; Pagos-->Gateway; Chequeras-->Gateway; Admin-->Gateway; Contable-->Gateway; Contratados-->Gateway;</div></div></div></body></html>`;
+            const [commits, pulls, issuesOpen] = await Promise.all([
+              apiGet('/commits?per_page=30').catch(() => []),
+              apiGet('/pulls?state=all&per_page=30').catch(() => []),
+              apiGet('/issues?state=open').catch(() => [])
+            ]);
+
+            const openIssues = Array.isArray(issuesOpen)
+              ? issuesOpen.filter(i => !i.pull_request).length
+              : 0;
+            const openPrs = pulls.filter(p => p.state === 'open').length;
+            const mergedPrs = pulls.filter(p => p.merged_at).length;
+
+            let commitsRows = '';
+            for (const c of commits) {
+              const msg = esc(c.commit.message.split('\n')[0]);
+              const shaShort = c.sha.substring(0, 7);
+              const date = fmtDate(c.commit.author.date);
+              const author = esc(c.commit.author.name);
+              commitsRows +=
+                '<tr class="hover:bg-gray-50 border-b border-gray-100 transition-colors">' +
+                '<td class="px-4 py-3 whitespace-nowrap"><a href="https://github.com/' + repo + '/commit/' + c.sha + '" class="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">' + shaShort + '</a></td>' +
+                '<td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">' + date + '</td>' +
+                '<td class="px-4 py-3 text-sm text-gray-800">' + msg + '</td>' +
+                '<td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">' + author + '</td>' +
+                '</tr>';
+            }
+
+            if (!commitsRows) {
+              commitsRows = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-400 italic">No se pudieron cargar los commits desde la API</td></tr>';
+            }
+
+            let prsRows = '';
+            for (const pr of pulls) {
+              let stateBadge = '';
+              if (pr.state === 'open') {
+                stateBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Abierto</span>';
+              } else if (pr.merged_at) {
+                stateBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Fusionado</span>';
+              } else {
+                stateBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Cerrado</span>';
+              }
+              const desc = esc((pr.body || '').substring(0, 200));
+              prsRows +=
+                '<tr class="hover:bg-gray-50 border-b border-gray-100 transition-colors">' +
+                '<td class="px-4 py-3 whitespace-nowrap"><a href="https://github.com/' + repo + '/pull/' + pr.number + '" class="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">#' + pr.number + '</a></td>' +
+                '<td class="px-4 py-3 text-sm font-medium text-gray-800">' + esc(pr.title) + '</td>' +
+                '<td class="px-4 py-3 text-xs text-gray-500 max-w-xs truncate" title="' + desc + '">' + (desc ? desc : '<span class="text-gray-300 italic">Sin descripcion</span>') + '</td>' +
+                '<td class="px-4 py-3">' + stateBadge + '</td>' +
+                '<td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">' + esc(pr.user.login) + '</td>' +
+                '<td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">' + fmtDate(pr.created_at) + '</td>' +
+                '</tr>';
+            }
+
+            if (!prsRows) {
+              prsRows = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400 italic">No se pudieron cargar los PRs desde la API</td></tr>';
+            }
+
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+            const version = pkg.version || 'N/A';
+            const buildDate = new Date().toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' });
+
+            const html =
+              '<!DOCTYPE html>' +
+              '<html lang="es">' +
+              '<head>' +
+              '<meta charset="UTF-8">' +
+              '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+              '<title>Documentacion - Tesoreria Frontend v' + version + '</title>' +
+              '<script src="https://cdn.tailwindcss.com"></script>' +
+              '<script type="module">import m from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"; m.initialize({startOnLoad:true,theme:"default"});</script>' +
+              '</head>' +
+              '<body class="bg-gray-50 text-gray-800 font-sans antialiased">' +
+
+              '<div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">' +
+
+              '  <header class="mb-10 pb-8 border-b border-gray-200">' +
+              '    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">' +
+              '      <div>' +
+              '        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Tesoreria Frontend</h1>' +
+              '        <p class="mt-1 text-sm text-gray-500">Monorepo Nx &middot; Angular 21 &middot; Tailwind CSS 4</p>' +
+              '      </div>' +
+              '      <div class="flex items-center gap-3">' +
+              '        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800 shadow-sm">v' + version + '</span>' +
+              '        <a href="https://github.com/' + repo + '" class="text-gray-400 hover:text-gray-600 transition-colors" target="_blank">' +
+              '          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>' +
+              '        </a>' +
+              '      </div>' +
+              '    </div>' +
+              '    <p class="mt-2 text-xs text-gray-400 text-center sm:text-left">Generado el ' + buildDate + '</p>' +
+              '  </header>' +
+
+              '  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">' +
+              '    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 text-center">' +
+              '      <div class="text-3xl font-black text-indigo-600">' + commits.length + '</div>' +
+              '      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-1">Commits</div>' +
+              '    </div>' +
+              '    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 text-center">' +
+              '      <div class="text-3xl font-black text-green-600">' + openPrs + '</div>' +
+              '      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-1">PRs Abiertos</div>' +
+              '    </div>' +
+              '    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 text-center">' +
+              '      <div class="text-3xl font-black text-purple-600">' + mergedPrs + '</div>' +
+              '      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-1">PRs Fusionados</div>' +
+              '    </div>' +
+              '    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 text-center">' +
+              '      <div class="text-3xl font-black text-red-500">' + openIssues + '</div>' +
+              '      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-1">Issues Abiertos</div>' +
+              '    </div>' +
+              '  </div>' +
+
+              '  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">' +
+              '    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">' +
+              '      <h2 class="text-lg font-bold text-gray-900 mb-3">Grafo de Arquitectura (Nx)</h2>' +
+              '      <p class="text-sm text-gray-500 mb-4">Visualizacion del grafo de dependencias entre apps y librerias del monorepo.</p>' +
+              '      <a href="graph.html" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 shadow-sm transition-colors" target="_blank">Abrir Mapa Visual</a>' +
+              '    </div>' +
+              '    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">' +
+              '      <h2 class="text-lg font-bold text-gray-900 mb-2">Enlaces Rapidos</h2>' +
+              '      <ul class="space-y-2 text-sm">' +
+              '        <li><a href="https://github.com/' + repo + '" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Repositorio en GitHub</a></li>' +
+              '        <li><a href="https://github.com/' + repo + '/actions" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Workflows de CI/CD</a></li>' +
+              '        <li><a href="https://github.com/' + repo + '/issues" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Issues (' + openIssues + ' abiertos)</a></li>' +
+              '        <li><a href="https://github.com/' + repo + '/pulls" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Pull Requests</a></li>' +
+              '        <li><a href="https://github.com/' + repo + '/releases" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Releases</a></li>' +
+              '      </ul>' +
+              '    </div>' +
+              '  </div>' +
+
+              '  <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-10">' +
+              '    <h2 class="text-2xl font-bold text-gray-900 mb-6">Arquitectura del Sistema</h2>' +
+              '    <div class="mermaid flex justify-center">graph TD; Client((Navegador))-->Compras[compras :4201]; Client-->Pagos[pagos :4202]; Client-->Chequeras[chequeras :4203]; Client-->Admin[administrador :4204]; Client-->Contable[contable :4205]; Client-->Contratados[contratados :4206]; Compras-->Gateway[Spring Cloud Gateway :8301]; Pagos-->Gateway; Chequeras-->Gateway; Admin-->Gateway; Contable-->Gateway; Contratados-->Gateway;</div>' +
+              '  </div>' +
+
+              '  <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-10 overflow-hidden">' +
+              '    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">' +
+              '      <h2 class="text-lg font-bold text-gray-900">Historial de Commits</h2>' +
+              '      <a href="https://github.com/' + repo + '/commits" class="text-xs text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Ver todos</a>' +
+              '    </div>' +
+              '    <div class="overflow-x-auto">' +
+              '      <table class="min-w-full divide-y divide-gray-200">' +
+              '        <thead class="bg-gray-50">' +
+              '          <tr>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SHA</th>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mensaje</th>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Autor</th>' +
+              '          </tr>' +
+              '        </thead>' +
+              '        <tbody class="bg-white divide-y divide-gray-100">' +
+              commitsRows +
+              '        </tbody>' +
+              '      </table>' +
+              '    </div>' +
+              '  </div>' +
+
+              '  <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-10 overflow-hidden">' +
+              '    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">' +
+              '      <h2 class="text-lg font-bold text-gray-900">Pull Requests</h2>' +
+              '      <a href="https://github.com/' + repo + '/pulls" class="text-xs text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Ver todos</a>' +
+              '    </div>' +
+              '    <div class="overflow-x-auto">' +
+              '      <table class="min-w-full divide-y divide-gray-200">' +
+              '        <thead class="bg-gray-50">' +
+              '          <tr>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Titulo</th>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Descripcion</th>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Autor</th>' +
+              '            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Creado</th>' +
+              '          </tr>' +
+              '        </thead>' +
+              '        <tbody class="bg-white divide-y divide-gray-100">' +
+              prsRows +
+              '        </tbody>' +
+              '      </table>' +
+              '    </div>' +
+              '  </div>' +
+
+              '  <footer class="text-center text-xs text-gray-400 border-t border-gray-200 pt-8 mt-4">' +
+              '    <p>Documentacion generada automaticamente por GitHub Actions &middot; <a href="https://github.com/' + repo + '" class="text-indigo-500 hover:text-indigo-700 hover:underline" target="_blank">' + repo + '</a></p>' +
+              '  </footer>' +
+
+              '</div>' +
+              '</body>' +
+              '</html>';
+
             fs.writeFileSync('docs-site/index.html', html);
+            console.log('Dashboard generated successfully with ' + commits.length + ' commits and ' + pulls.length + ' PRs');
           }
-          build();
-          JS
+          build().catch(err => {
+            console.error('Build failed:', err);
+            process.exit(1);
+          });
+          JSEOF
           node build.js
 
-      - name: Clean Wiki
+      - name: Update Wiki with Link to GitHub Pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git wiki || exit 0
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}/"
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git wiki 2>/dev/null || { echo "Wiki no disponible, se omite"; exit 0; }
           cd wiki
-          rm -f *.md
-          echo "# 📋 Portal Documental" > Home.md
-          echo "La documentacion oficial interactiva se encuentra exclusivamente en **GitHub Pages** para mantener una unica fuente de verdad." >> Home.md
+          cat > Home.md << WIKIEOF
+          # Portal Documental
+
+          Bienvenido al portal documental del proyecto **${GITHUB_REPOSITORY}**.
+
+          ## Documentacion Interactiva
+
+          La documentacion oficial completa, incluyendo el historial de commits, pull requests, diagramas de arquitectura y grafo de dependencias Nx, se encuentra disponible en nuestra documentacion interactiva:
+
+          [Abrir Documentacion en GitHub Pages →](${PAGES_URL})
+
+          ---
+          *Este wiki funciona como punto de entrada. Toda la documentacion detallada se genera automaticamente mediante GitHub Actions y se despliega en GitHub Pages.*
+          WIKIEOF
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          git add .
-          git commit -m "Wipe wiki to establish single source of truth" || true
-          git push origin master || git push origin main || true
+          git add Home.md
+          git commit -m "Update wiki: redirect to GitHub Pages documentation" || true
+          git push origin master 2>/dev/null || git push origin main 2>/dev/null || true
+          echo "Wiki actualizada con enlace a GitHub Pages: ${PAGES_URL}"
+
+      - name: Copy docs to site
+        run: cp -r docs docs-site/
 
       - uses: actions/upload-pages-artifact@v3
         with:

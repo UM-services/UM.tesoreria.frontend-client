@@ -21,6 +21,9 @@
       ],
       "@tesoreria/feature-gastos": [
         "./libs/feature-gastos/src/index.ts"
+      ],
+      "@tesoreria/feature-orden-compra": [
+        "./libs/feature-orden-compra/src/index.ts"
       ]
     }
   }

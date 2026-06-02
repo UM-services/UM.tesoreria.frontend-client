@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { BuscadorCuentaComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
+import { BuscadorCuentaContableComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -22,7 +22,7 @@ export interface Dependencia {
 @Component({
   selector: 'app-dependencias',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BuscadorCuentaComponent],
+  imports: [CommonModule, ReactiveFormsModule, BuscadorCuentaContableComponent],
   templateUrl: './dependencias.html'
 })
 export class DependenciasComponent implements OnInit {

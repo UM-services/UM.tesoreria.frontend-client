@@ -1,0 +1,216 @@
+<div class="max-w-6xl mx-auto p-6 space-y-6 text-gray-800">
+  
+  <!-- WIZARD PROGRESS (2 PASOS) -->
+  <div class="flex items-center justify-center space-x-4 mb-8">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors" [ngClass]="step() >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'">1</div>
+      <span class="text-xs font-bold uppercase tracking-wider transition-colors" [ngClass]="step() >= 1 ? 'text-blue-600' : 'text-gray-400'">Confección OC</span>
+    </div>
+    <div class="w-16 h-0.5" [ngClass]="step() >= 2 ? 'bg-blue-600' : 'bg-gray-200'"></div>
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors" [ngClass]="step() >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'">2</div>
+      <span class="text-xs font-bold uppercase tracking-wider transition-colors" [ngClass]="step() >= 2 ? 'text-blue-600' : 'text-gray-400'">Imputación</span>
+    </div>
+  </div>
+
+  <!-- STEP 1: CONFECCIÓN DE LA OC -->
+  <div *ngIf="step() === 1" class="space-y-6 animate-fade-in">
+    
+    <!-- SUB-SECCIÓN: PRESUPUESTOS (OPCIONAL) -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+       <div class="flex justify-between items-center mb-4">
+         <div>
+           <h3 class="text-sm font-black text-gray-800 uppercase tracking-widest">1. Presupuestos (Opcional)</h3>
+           <p class="text-xs text-gray-500">Adjunte cotizaciones y use la IA para auto-completar los artículos.</p>
+         </div>
+         <div class="flex gap-2">
+           <input type="file" #fileInput (change)="onFileSelected($event)" accept="application/pdf" class="hidden">
+           <button (click)="fileInput.click()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">+ ADJUNTAR PDF</button>
+           <button *ngIf="presupuestos().length > 0" (click)="aplicarIA()" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-black shadow hover:scale-105 transition-transform flex items-center gap-1">✨ SUGERIR IA</button>
+         </div>
+       </div>
+
+       <div *ngIf="presupuestos().length > 0" class="flex gap-4 overflow-x-auto pb-2">
+         <div *ngFor="let p of presupuestos()" (click)="seleccionarPresupuesto(p.id)" class="shrink-0 w-64 p-3 border-2 rounded-xl cursor-pointer transition-all relative group" [ngClass]="p.isSeleccionado ? 'border-blue-600 bg-blue-50' : 'border-gray-100 hover:border-gray-300'">
+           <div *ngIf="p.isSeleccionado" class="absolute -top-2.5 right-2 bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Seleccionado</div>
+           <div class="flex items-center gap-3">
+             <div class="p-2 bg-red-100 text-red-600 rounded-lg text-xs font-bold">PDF</div>
+             <div class="flex-1 min-w-0"><p class="text-xs font-bold text-gray-800 truncate">{{ p.adjuntoNombre }}</p></div>
+           </div>
+         </div>
+       </div>
+    </div>
+
+    <!-- SUB-SECCIÓN: DATOS DE LA ORDEN -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+      <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+        <div>
+          <h3 class="text-sm font-black text-gray-800 uppercase tracking-widest">2. Datos de la Orden de Compra</h3>
+          <p class="text-[10px] text-blue-600 font-bold mt-1 uppercase tracking-wider">Todos los importes incluyen IVA</p>
+        </div>
+      </div>
+      
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 border-b border-gray-100">
+         <div class="relative">
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Proveedor (*)</label>
+            <div *ngIf="proveedorId()" class="w-full pl-4 pr-10 py-3 border border-blue-600 bg-blue-50 rounded-xl flex items-center justify-between shadow-sm"><span class="font-bold text-blue-900 text-sm">{{ proveedorNombre() }}</span><button (click)="onProveedorSelected(null)" class="text-blue-500 font-bold px-2 rounded hover:bg-white transition-colors">X</button></div>
+            <div *ngIf="!proveedorId()"><ui-buscador-proveedor (proveedorSelected)="onProveedorSelected($event)"></ui-buscador-proveedor></div>
+         </div>
+         
+         <div class="flex flex-col justify-center gap-3 pt-2">
+           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" [(ngModel)]="controlCantidad" class="rounded text-blue-600 w-5 h-5 border-gray-300 focus:ring-blue-500"><span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Controlar Cantidad en Facturación</span></label>
+           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" [(ngModel)]="controlImporte" class="rounded text-blue-600 w-5 h-5 border-gray-300 focus:ring-blue-500"><span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Controlar Importe Max. en Facturación</span></label>
+         </div>
+      </div>
+
+      <!-- ARTICULOS TABLE -->
+      <div class="p-6 border-b border-gray-100 overflow-x-auto">
+        <div class="flex justify-between mb-4"><h4 class="text-xs font-black text-gray-800 uppercase tracking-widest">3. Detalle Solicitado</h4><button (click)="addArticulo()" class="text-[10px] font-black bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors">+ AGREGAR LÍNEA</button></div>
+        <table class="min-w-full divide-y divide-gray-200">
+           <thead>
+             <tr class="text-[10px] font-black text-gray-400 uppercase text-left tracking-widest bg-gray-50">
+               <th class="py-3 px-2 w-8 rounded-tl-lg"></th>
+               <th class="py-3 px-2">Detalle</th>
+               <th class="py-3 px-2 text-center w-20 border-l border-gray-200">Cantidad</th>
+               <th class="py-3 px-2 text-center w-24 border-l border-gray-200">Unid. Medida</th>
+               <th class="py-3 px-2 text-center w-16 border-l border-gray-200" title="Inventariable">Inv.</th>
+               <th class="py-3 px-2 text-right w-32 border-l border-gray-200">Precio unitario</th>
+               <th class="py-3 px-2 text-right w-36 border-l border-gray-200">Precio Total</th>
+               <th class="py-3 px-2 w-8 rounded-tr-lg"></th>
+             </tr>
+           </thead>
+           <tbody class="divide-y divide-gray-100">
+             <tr *ngFor="let a of articulos(); let i = index" class="border-b border-gray-50 group hover:bg-gray-50/50 transition-colors">
+               <td class="py-2 px-2 text-center"><div *ngIf="a.articuloId" class="w-2 h-2 bg-green-500 rounded-full mx-auto" title="Catálogo Oficial"></div></td>
+               <td class="py-2 px-2 relative">
+                 <input type="text" [ngModel]="articuloInput()[i]" (ngModelChange)="onArticuloSearch(i, $event)" class="w-full bg-white border border-gray-200 text-sm font-medium focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-md py-1.5 px-2" placeholder="Describir insumo o buscar...">
+                 <div *ngIf="showDropdownArticulo()[i]" class="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-48 overflow-y-auto">
+                    <ul class="p-1"><li *ngIf="isSearchingArticulo()[i]" class="px-3 py-2 text-xs italic text-gray-500">Buscando...</li><li *ngFor="let r of resultadosArticulo()[i]" (click)="seleccionarArticulo(i, r)" class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-xs rounded">{{ r.nombre }}</li></ul>
+                 </div>
+               </td>
+               <td class="py-2 px-2 border-l border-gray-100"><input type="number" [(ngModel)]="a.cantidad" (ngModelChange)="updateSubtotal(i)" min="1" class="w-full text-center bg-white border border-gray-200 rounded-md text-sm font-mono focus:ring-1 focus:ring-blue-500 py-1.5 px-1"></td>
+               <td class="py-2 px-2 border-l border-gray-100"><input type="text" [(ngModel)]="a.unidadMedida" class="w-full text-center bg-white border border-gray-200 rounded-md text-xs font-bold focus:ring-1 focus:ring-blue-500 py-1.5 px-1" placeholder="Ej. Un."></td>
+               <td class="py-2 px-2 border-l border-gray-100 text-center"><input type="checkbox" [(ngModel)]="a.inventariable" class="rounded text-blue-600 w-4 h-4 border-gray-300 focus:ring-blue-500"></td>
+               <td class="py-2 px-2 border-l border-gray-100 relative">
+                 <span class="absolute left-3 top-3.5 text-gray-400 text-xs">$</span>
+                 <input type="number" [(ngModel)]="a.precioUnitario" (ngModelChange)="updateSubtotal(i)" min="0" class="w-full text-right bg-white border border-gray-200 rounded-md text-sm font-mono focus:ring-1 focus:ring-blue-500 py-1.5 pl-6 pr-2">
+               </td>
+               <td class="py-2 px-2 border-l border-gray-100 text-right font-bold text-gray-800 text-sm font-mono bg-gray-50/50">
+                 {{ a.subtotal | currency:'USD' }}
+               </td>
+               <td class="py-2 px-2 text-center"><button (click)="removeArticulo(i)" class="text-gray-300 hover:text-red-500 font-bold px-1 rounded transition-colors" title="Eliminar fila">X</button></td>
+             </tr>
+           </tbody>
+        </table>
+
+        <!-- TOTALS AREA -->
+        <div class="mt-6 flex justify-end">
+          <div class="w-80 space-y-2">
+            
+            <div class="flex justify-between items-center px-4 py-2 bg-gray-50 rounded-lg">
+               <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Subtotal</span>
+               <span class="text-sm font-bold font-mono text-gray-700">{{ subtotalArticulos() | currency:'USD' }}</span>
+            </div>
+            
+            <div class="flex justify-between items-center px-4 py-2 bg-red-50 rounded-lg border border-red-100">
+               <span class="text-xs font-bold text-red-500 uppercase tracking-widest">Descuento</span>
+               <div class="relative w-32">
+                 <span class="absolute left-2 top-1 text-red-400 text-sm">$</span>
+                 <input type="number" [(ngModel)]="descuentoGlobal" class="w-full bg-white border border-red-200 rounded text-right text-sm font-mono text-red-600 py-1 pl-6 pr-2 focus:ring-1 focus:ring-red-400">
+               </div>
+            </div>
+
+            <div class="flex justify-between items-center px-4 py-3 bg-gray-800 text-white rounded-xl shadow-md">
+               <span class="text-xs font-black uppercase tracking-widest">Monto Total</span>
+               <span class="text-lg font-black font-mono">{{ totalMonto() | currency:'USD' }}</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER (CONDICIONES, REFERENCIAS Y FACTURA) -->
+      <div class="p-6 bg-gray-50/50">
+        <h4 class="text-xs font-black text-gray-800 uppercase tracking-widest mb-4">4. Condiciones Comerciales y Referencias</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Ref. Presupuesto Nº</label>
+            <input type="text" [(ngModel)]="refPresupuesto" class="w-full bg-white border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-blue-500" placeholder="Ej. 0346">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Nº de Factura de la presente compra</label>
+            <input type="text" [(ngModel)]="nroFacturaAsociada" class="w-full bg-white border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-blue-500" placeholder="(Opcional) Ej. FC 01-0191">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Plazo de Entrega</label>
+            <input type="text" [(ngModel)]="plazoEntrega" class="w-full bg-white border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-blue-500" placeholder="Ej. 10 días hábiles">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Condiciones de pago</label>
+            <select [(ngModel)]="condicionPago" class="w-full bg-white border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-blue-500">
+               <option value="TRANSFERENCIA">Transferencia</option>
+               <option value="CHEQUE">Cheque</option>
+               <option value="EFECTIVO">Efectivo</option>
+               <option value="TARJETA CORPORATIVA">Tarjeta Corporativa</option>
+               <option value="CUENTA CORRIENTE">Cuenta Corriente (Plazo)</option>
+            </select>
+          </div>
+
+        </div>
+
+        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Observaciones</label>
+        <textarea [(ngModel)]="observaciones" rows="2" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all sm:text-sm shadow-sm bg-white" placeholder="Opcional. Motivo de la compra, lugar de entrega exacto..."></textarea>
+      </div>
+
+    </div>
+
+    <!-- ACCIONES STEP 1 -->
+    <div class="flex justify-between">
+       <button routerLink="/orden-compra" class="px-8 py-3 text-gray-500 font-bold hover:text-gray-800 transition-colors">Cancelar</button>
+       <button (click)="step.set(2)" [disabled]="!isValidStep1()" class="bg-blue-600 text-white px-10 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-md disabled:bg-gray-300 transition-all">Siguiente: Imputación Contable</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: IMPUTACIÓN (MANTENIDO IGUAL) -->
+  <div *ngIf="step() === 2" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 space-y-8 animate-fade-in">
+    <div><h2 class="text-2xl font-black text-gray-800 tracking-tight">Imputación Contable</h2><p class="text-sm text-gray-500">Defina el Centro de Costo y las Cuentas de Gastos asociadas a cada artículo.</p></div>
+    
+    <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+       <label class="block text-[10px] font-black text-indigo-900 uppercase tracking-widest mb-2">Centro de Costo</label>
+       <select [(ngModel)]="centroCostoId" class="w-full md:w-1/2 p-3 border border-indigo-200 rounded-xl bg-white text-sm font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+         <option [ngValue]="null">Seleccione Centro de Costo...</option>
+         <option *ngFor="let cc of centrosCosto()" [value]="cc.id">{{ cc.nombre }}</option>
+       </select>
+    </div>
+
+    <div class="space-y-4">
+       <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Distribución por Artículo</h4>
+       <div *ngFor="let art of articulos(); let i = index" class="flex flex-col md:flex-row items-center gap-6 p-4 border border-gray-100 rounded-2xl bg-gray-50">
+          <div class="flex-1">
+             <p class="text-sm font-black text-gray-800">{{ art.descripcion }}</p>
+             <p class="text-xs text-gray-500 font-medium mt-1">{{ art.cantidad }} {{ art.unidadMedida }} • Total: {{ art.subtotal | currency:'USD' }}</p>
+          </div>
+          <div class="w-full md:w-[400px]">
+             <div *ngIf="art.cuentaContableId" class="p-3 border border-green-300 bg-green-50 rounded-xl flex items-center justify-between text-xs font-bold text-green-800 shadow-sm">
+               <span>{{ art.cuentaContableNombre }}</span>
+               <button (click)="art.cuentaContableId = undefined" class="bg-white text-red-500 font-black px-2 py-0.5 rounded shadow-sm hover:bg-red-50 transition-colors">X</button>
+             </div>
+             <button *ngIf="!art.cuentaContableId" (click)="activeBuscadorCuenta = i" class="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-xs font-bold hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-colors">
+               + Asignar Cuenta Contable
+             </button>
+             <ui-buscador-cuenta-contable [isOpen]="activeBuscadorCuenta === i" (cuentaSelected)="onCuentaSelected(i, $event); activeBuscadorCuenta = -1" (closed)="activeBuscadorCuenta = -1"></ui-buscador-cuenta-contable>
+          </div>
+       </div>
+    </div>
+
+    <div class="flex justify-between pt-6 border-t border-gray-100">
+       <button (click)="step.set(1)" class="px-8 py-3 text-gray-500 font-bold hover:text-gray-800 transition-colors">Atrás: Modificar Artículos</button>
+       <button (click)="guardar()" [disabled]="isSubmitting()" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-lg hover:bg-blue-700 shadow-xl shadow-blue-200 flex items-center gap-3 transition-all disabled:bg-gray-400 disabled:shadow-none">
+          <div *ngIf="isSubmitting()" class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+          Finalizar y Emitir OC
+       </button>
+    </div>
+  </div>
+
+</div>

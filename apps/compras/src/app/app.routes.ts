@@ -16,6 +16,11 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
   },
   {
+    path: 'orden-compra',
+    loadChildren: () => import('@tesoreria/feature-orden-compra').then(m => m.ordenCompraRoutes),
+    canActivate: [authGuard],
+  },
+  {
     path: 'gastos',
     component: GastosComponent,
     canActivate: [authGuard],
