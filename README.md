@@ -169,7 +169,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.9.0**
+Versión actual: **0.9.1**
 
 ## Licencia
 
