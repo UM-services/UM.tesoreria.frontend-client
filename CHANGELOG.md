@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1] - 2026-07-10
+
+### Added
+- chore(ci): Nuevo workflow `docker-publish.yml` para build y push automático de imágenes Docker a Docker Hub
+- chore(ci): Soporte de matrix strategy para construir las 6 aplicaciones en paralelo (administrador, chequeras, compras, contable, contratados, pagos)
+- chore(ci): Integración de cache GHA para optimizar tiempos de build de Docker
+
 ## [0.9.0] - 2026-06-02
 
 ### Added
