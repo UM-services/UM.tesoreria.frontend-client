@@ -14,7 +14,7 @@
         "./libs/shared-api/src/index.ts"
       ],
       "@tesoreria/ui-auth": [
-        "./libs/ui-auth/src/index.ts"
+        "./libs/ui-auth/ui-auth/src/index.ts"
       ],
       "@tesoreria/feature-proveedores": [
         "./libs/feature-proveedores/src/index.ts"
