@@ -190,7 +190,7 @@ jobs:
 
               '  <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-10">' +
               '    <h2 class="text-2xl font-bold text-gray-900 mb-6">Arquitectura del Sistema</h2>' +
-              '    <div class="mermaid flex justify-center">graph TD; Client((Navegador))-->Compras[compras :4201]; Client-->Pagos[pagos :4202]; Client-->Chequeras[chequeras :4203]; Client-->Admin[administrador :4204]; Client-->Contable[contable :4205]; Client-->Contratados[contratados :4206]; Compras-->Gateway[Spring Cloud Gateway :8301]; Pagos-->Gateway; Chequeras-->Gateway; Admin-->Gateway; Contable-->Gateway; Contratados-->Gateway;</div>' +
+               '    <div class="mermaid flex justify-center">flowchart TD; Client((Navegador))-->Compras["compras :4201"]; Client-->Pagos["pagos :4202"]; Client-->Chequeras["chequeras :4203"]; Client-->Admin["administrador :4204"]; Client-->Contable["contable :4205"]; Client-->Contratados["contratados :4206"]; Client-->Guarani["guarani :4207"]; Compras-->Gateway["Spring Cloud Gateway :8301"]; Pagos-->Gateway; Chequeras-->Gateway; Admin-->Gateway; Contable-->Gateway; Contratados-->Gateway; Guarani-->Gateway;</div>' +
               '  </div>' +
 
               '  <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-10 overflow-hidden">' +

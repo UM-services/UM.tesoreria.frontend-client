@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0] - 2026-08-02
+
+### Added
+- feat(guarani): Nueva aplicación Guaraní en el puerto `4207`.
+- feat(guarani): Consulta de pendientes preuniversitarios por facultad, propuesta, ubicación y fecha.
+- feat(guarani): Gestión de asociaciones entre sedes Guaraní y sedes Tesium.
+- feat(guarani): Gestión de beneficios asociados a requisitos documentales.
+- feat(guarani): Dockerfile, proxy Nginx y configuración de entorno para despliegue independiente.
+
+### Changed
+- refactor(ui-auth): Actualizado el barrel de `@tesoreria/ui-auth` para exportar el componente de login actual.
+- refactor(workspace): Añadido `guarani` a `serve:all`, al pipeline de documentación y a la matriz de imágenes Docker.
+- docs: Actualizados README y diagramas de arquitectura para incluir la aplicación Guaraní.
+
 ## [0.9.1] - 2026-07-10
 
 ### Added
