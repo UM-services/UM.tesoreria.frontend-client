@@ -6,21 +6,22 @@
 graph LR
     subgraph "Frontend Client"
         subgraph "Apps"
-            Compras[Compras App<br/>:4201]
-            Pagos[Pagos App<br/>:4202]
-            Chequeras[Chequeras App<br/>:4203]
-            Admin[Administrador App<br/>:4204]
-            Contable[Contable App<br/>:4205]
-            Contratados[Contratados App<br/>:4206]
+            Compras["Compras App<br/>:4201"]
+            Pagos["Pagos App<br/>:4202"]
+            Chequeras["Chequeras App<br/>:4203"]
+            Admin["Administrador App<br/>:4204"]
+            Contable["Contable App<br/>:4205"]
+            Contratados["Contratados App<br/>:4206"]
+            Guarani["Guaraní App<br/>:4207"]
         end
 
         subgraph "Libraries"
-            SharedAPI[@tesoreria/shared-api<br/>AuthService<br/>AuthGuard<br/>Models]
-            UIAuth[@tesoreria/ui-auth<br/>LoginComponent]
-            UILayout[@tesoreria/ui-layout<br/>NavbarComponent<br/>SidebarComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent]
-            FeatureProveedores[@tesoreria/feature-proveedores<br/>ProveedoresComponent]
-            FeatureGastos[@tesoreria/feature-gastos<br/>GastosComponent]
-            FeatureOrdenCompra[@tesoreria/feature-orden-compra<br/>OcDashboardComponent<br/>OcCreateComponent<br/>OcDetailComponent]
+            SharedAPI["@tesoreria/shared-api<br/>AuthService<br/>AuthGuard<br/>Models"]
+            UIAuth["@tesoreria/ui-auth<br/>LoginComponent"]
+            UILayout["@tesoreria/ui-layout<br/>NavbarComponent<br/>SidebarComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent"]
+            FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
+            FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
+            FeatureOrdenCompra["@tesoreria/feature-orden-compra<br/>OcDashboardComponent<br/>OcCreateComponent<br/>OcDetailComponent"]
         end
     end
 
@@ -55,7 +56,11 @@ graph LR
     Contratados --> UIAuth
     Contratados --> UILayout
 
-    SharedAPI -->|HTTP| BackendAPI[Backend API<br/>Tesorería]
+    Guarani --> SharedAPI
+    Guarani --> UIAuth
+    Guarani --> UILayout
+
+    SharedAPI -->|HTTP| BackendAPI["Backend API<br/>Tesorería"]
 ```
 
 ## Flujo de Autenticación
@@ -82,19 +87,19 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    ComprasApp[Compras App] --> AppRoutes[Rutas de la App]
-    AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
-    AppRoutes --> Blank[Blank Component<br/>Contenedor protegido]
-    AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
-    AppRoutes --> Gastos[Gastos Component<br/>@tesoreria/feature-gastos]
-    AppRoutes --> OrdenCompra[OrdenCompra Module<br/>@tesoreria/feature-orden-compra]
+    ComprasApp["Compras App"] --> AppRoutes["Rutas de la App"]
+    AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
+    AppRoutes --> Blank["Blank Component<br/>Contenedor protegido"]
+    AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
+    AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
+    AppRoutes --> OrdenCompra["OrdenCompra Module<br/>@tesoreria/feature-orden-compra"]
 
-    OrdenCompra --> OCDashboard[OcDashboardComponent<br/>Listado y simulación de roles]
-    OrdenCompra --> OCCreate[OcCreateComponent<br/>Formulario multi-paso]
-    OrdenCompra --> OCDetail[OcDetailComponent<br/>Detalle y aprobación]
+    OrdenCompra --> OCDashboard["OcDashboardComponent<br/>Listado y simulación de roles"]
+    OrdenCompra --> OCCreate["OcCreateComponent<br/>Formulario multi-paso"]
+    OrdenCompra --> OCDetail["OcDetailComponent<br/>Detalle y aprobación"]
 
-    Proveedores --> BuscadorProveedor[BuscadorProveedor Component<br/>@tesoreria/ui-layout]
-    Gastos --> BuscadorCuentaContable[BuscadorCuentaContable Component<br/>@tesoreria/ui-layout]
+    Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
+    Gastos --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     OCCreate --> BuscadorProveedor
     OCCreate --> BuscadorCuentaContable
 ```
@@ -103,15 +108,15 @@ graph TD
 
 ```mermaid
 graph TD
-    AdminApp[Administrador App] --> AppRoutes[Rutas de la App]
-    AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
-    AppRoutes --> Dependencias[Dependencias Component]
-    AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
-    AppRoutes --> Gastos[Gastos Component<br/>@tesoreria/feature-gastos]
-    AppRoutes --> Redirect[Redirección a /dependencias]
+    AdminApp["Administrador App"] --> AppRoutes["Rutas de la App"]
+    AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
+    AppRoutes --> Dependencias["Dependencias Component"]
+    AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
+    AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
+    AppRoutes --> Redirect["Redirección a /dependencias"]
 
-    Dependencias --> BuscadorCuentaContable[BuscadorCuentaContable Component<br/>@tesoreria/ui-layout]
-    Proveedores --> BuscadorProveedor[BuscadorProveedor Component<br/>@tesoreria/ui-layout]
+    Dependencias --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
+    Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable
 ```
 
@@ -119,15 +124,15 @@ graph TD
 
 ```mermaid
 graph TD
-    PagosApp[Pagos App] --> AppRoutes[Rutas de la App]
-    AppRoutes --> Login[Login Component<br/>@tesoreria/ui-auth]
-    AppRoutes --> Blank[Blank Component<br/>Contenedor protegido]
-    AppRoutes --> Facturas[Facturas Pendientes Component]
-    AppRoutes --> Proveedores[Proveedores Component<br/>@tesoreria/feature-proveedores]
-    AppRoutes --> Gastos[Gastos Component<br/>@tesoreria/feature-gastos]
+    PagosApp["Pagos App"] --> AppRoutes["Rutas de la App"]
+    AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
+    AppRoutes --> Blank["Blank Component<br/>Contenedor protegido"]
+    AppRoutes --> Facturas["Facturas Pendientes Component"]
+    AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
+    AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
 
-    Facturas --> BuscadorCuentaContable[BuscadorCuentaContable Component<br/>@tesoreria/ui-layout]
-    Proveedores --> BuscadorProveedor[BuscadorProveedor Component<br/>@tesoreria/ui-layout]
+    Facturas --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
+    Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable
 ```
 
@@ -135,16 +140,16 @@ graph TD
 
 ```mermaid
 graph TD
-    OCMOD[feature-orden-compra] --> Routes[Rutas]
-    Routes --> Dashboard[OcDashboardComponent<br/>/orden-compra]
-    Routes --> Create[OcCreateComponent<br/>/orden-compra/nueva]
-    Routes --> Detail[OcDetailComponent<br/>/orden-compra/oc/:id]
+    OCMOD["feature-orden-compra"] --> Routes["Rutas"]
+    Routes --> Dashboard["OcDashboardComponent<br/>/orden-compra"]
+    Routes --> Create["OcCreateComponent<br/>/orden-compra/nueva"]
+    Routes --> Detail["OcDetailComponent<br/>/orden-compra/oc/:id"]
 
-    Dashboard --> Service[OrdenCompraService]
+    Dashboard --> Service["OrdenCompraService"]
     Create --> Service
     Detail --> Service
 
-    Service --> Models[Modelos: OrdenCompra<br/>ArticuloOC, Comentario<br/>RolSimulado, OrdenCompraEstado]
+    Service --> Models["Modelos: OrdenCompra<br/>ArticuloOC, Comentario<br/>RolSimulado, OrdenCompraEstado"]
 
     subgraph "Flujo de Estados"
         PEND[PENDIENTE_APROBACION] --> APRO[APROBADA]
@@ -156,12 +161,26 @@ graph TD
     end
 
     subgraph "Simulación de Roles"
-        DIRC[Director de Compras<br/>Crear OC]
-        DIRA[Director de Administración<br/>Aprobar ≤ $50k]
-        SEC[Secretario Administrativo<br/>Aprobar $50k-$200k]
-        DIRG[Director de Gestión<br/>Aprobar $50k-$200k]
-        REC[Rector<br/>Aprobar > $200k]
+        DIRC["Director de Compras<br/>Crear OC"]
+        DIRA["Director de Administración<br/>Aprobar ≤ $50k"]
+        SEC["Secretario Administrativo<br/>Aprobar $50k-$200k"]
+        DIRG["Director de Gestión<br/>Aprobar $50k-$200k"]
+        REC["Rector<br/>Aprobar > $200k"]
     end
+```
+
+## Estructura de Módulos - Guaraní
+
+```mermaid
+flowchart TD
+    GuaraniApp["Guaraní App"] --> AppRoutes["Rutas protegidas"]
+    AppRoutes --> Pendientes["Pendientes Pre Guaraní"]
+    AppRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
+    AppRoutes --> Beneficios["Beneficios de requisitos"]
+
+    Pendientes --> GuaraniAPI["API Guaraní"]
+    Ubicaciones --> CoreAPI["API Core"]
+    Beneficios --> CoreAPI
 ```
 
 ## Modelos de Datos - Autenticación

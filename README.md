@@ -13,6 +13,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - **administrador** - Gestión administrativa (puerto 4204)
 - **contable** - Módulo contable (puerto 4205)
 - **contratados** - Gestión de contratados (puerto 4206)
+- **guarani** - Gestión de pendientes, ubicaciones y beneficios de Guaraní (puerto 4207)
 
 ### Librerías
 - `@tesoreria/shared-api` - Servicios API, autenticación y modelos compartidos
@@ -48,6 +49,7 @@ nx serve chequeras
 nx serve administrador
 nx serve contable
 nx serve contratados
+nx serve guarani
 ```
 
 ### Construir
@@ -71,6 +73,7 @@ graph TB
         A[Administrador<br/>:4204]
         CT[Contable<br/>:4205]
         CR[Contratados<br/>:4206]
+        G[Guaraní<br/>:4207]
     end
 
     subgraph "Pagos Modules"
@@ -125,6 +128,10 @@ graph TB
     CR --> AUTH
     CR --> LAYOUT
 
+    G --> API
+    G --> AUTH
+    G --> LAYOUT
+
     API --> |AuthGuard| AUTH
 ```
 
@@ -164,12 +171,13 @@ Aplicaciones disponibles:
 - `apps/administrador/Dockerfile` - Gestión administrativa
 - `apps/contable/Dockerfile` - Módulo contable
 - `apps/contratados/Dockerfile` - Gestión de contratados
+- `apps/guarani/Dockerfile` - Gestión de Guaraní
 
 ## Versionado
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.9.1**
+Versión actual: **0.10.0**
 
 ## Licencia
 
