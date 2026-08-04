@@ -13,7 +13,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - **administrador** - Gestión administrativa (puerto 4204)
 - **contable** - Módulo contable (puerto 4205)
 - **contratados** - Gestión de contratados (puerto 4206)
-- **guarani** - Gestión de pendientes, ubicaciones y beneficios de Guaraní (puerto 4207)
+- **guarani** - Gestión de pendientes, ubicaciones, beneficios y datos personales de Guaraní (puerto 4207)
 
 ### Librerías
 - `@tesoreria/shared-api` - Servicios API, autenticación y modelos compartidos
@@ -22,6 +22,8 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-orden-compra` - Módulo de órdenes de compra con dashboard, creación multi-paso y flujo de aprobación (integrado en compras)
+
+La aplicación `guarani` también permite asociar tipos de chequera a propuestas y consultar datos personales de alumnos por documento.
 
 ## Requisitos
 
@@ -77,11 +79,18 @@ graph TB
     end
 
     subgraph "Pagos Modules"
-        FP[Facturas Pendientes Component]
+        FP["Facturas Pendientes Component"]
     end
 
     subgraph "Administrador Modules"
-        DEP[Dependencias Component]
+        DEP["Dependencias Component"]
+    end
+
+    subgraph "Guaraní Modules"
+        GP["Pendientes Pre Guaraní"]
+        GU["Sedes Guaraní y Sedes Tesium"]
+        GB["Beneficios de requisitos"]
+        GD["Datos Personales"]
     end
 
     subgraph Libs
@@ -131,6 +140,14 @@ graph TB
     G --> API
     G --> AUTH
     G --> LAYOUT
+    G --> GP
+    G --> GU
+    G --> GB
+    G --> GD
+    GP --> API
+    GU --> API
+    GB --> API
+    GD --> API
 
     API --> |AuthGuard| AUTH
 ```
@@ -177,7 +194,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.10.0**
+Versión actual: **0.11.0**
 
 ## Licencia
 

@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { DatosPersonalesModalComponent } from '../datos-personales/datos-personales-modal.component';
 
 export interface Facultad {
   facultadId: number;
@@ -28,6 +29,14 @@ export interface PropuestaResponsableAcademica {
   responsableAcademica: number;
   propuestaRel: PropuestaRel;
   informaAraucanoCodigoUa?: string;
+}
+
+export interface PropuestaOferta {
+  propuesta?: number;
+  propuestaRel?: {
+    propuesta?: number;
+    nombre?: string;
+  };
 }
 
 export interface Ubicacion {
@@ -67,10 +76,63 @@ export interface PropuestaAspira {
   fechaInscripcion: string;
 }
 
+export interface Lectivo {
+  lectivoId: number;
+  nombre?: string;
+  descripcion?: string;
+  anio?: number;
+  [key: string]: unknown;
+}
+
+export interface TipoChequera {
+  tipoChequeraId: number;
+  nombre: string;
+  search?: string;
+  prefijo?: string;
+  geograficaId?: number;
+  claseChequeraId?: number;
+  imprimir?: number;
+  contado?: number;
+  multiple?: number;
+  emailCopia?: string | null;
+  geografica?: {
+    geograficaId: number;
+    nombre: string;
+    sinChequera?: number;
+  };
+  claseChequera?: {
+    claseChequeraId: number;
+    nombre: string;
+    preuniversitario?: number;
+    grado?: number;
+    posgrado?: number;
+    curso?: number;
+    secundario?: number;
+    titulo?: number;
+    tramite?: number;
+  };
+}
+
+export interface GuaraniPropuestaTipoChequera {
+  guaraniPropuestaTipoChequeraId: number;
+  propuestaGuarani: number;
+  lectivoId: number;
+  tipoChequeraId: number;
+  tipoChequeraRel?: {
+    nombre?: string;
+    search?: string;
+  };
+  tipoChequera?: TipoChequera;
+  lectivoRel?: {
+    nombre?: string;
+    descripcion?: string;
+  };
+}
+
 @Component({
   selector: 'app-pendientes-pre-guarani',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DatosPersonalesModalComponent],
   template: `
     <div class="space-y-6">
       <!-- Header Card -->
@@ -136,8 +198,8 @@ export interface PropuestaAspira {
           </div>
 
           <!-- Second Dropdown: Propuestas -->
-          @if (selectedFacultadId) {
-          <div class="space-y-2">
+          @if (selectedFacultadId && selectedUbicacionId) {
+          <div class="space-y-2 md:order-3">
             <label for="propuestaSelect" class="block text-sm font-semibold text-gray-700">
               Propuestas Preuniversitario
             </label>
@@ -161,10 +223,11 @@ export interface PropuestaAspira {
             }
 
             <!-- Dropdown Select Propuestas -->
-            @if (!isLoadingPropuestas && !errorPropuestas) {
+            @if (!isLoadingPropuestas && !errorPropuestas && propuestas.length > 0) {
               <select
                 id="propuestaSelect"
                 [(ngModel)]="selectedPropuestaId"
+                (change)="onPropuestaChange()"
                 class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all duration-200 shadow-sm font-medium"
               >
                 <option [ngValue]="null" disabled selected>-- Seleccione una propuesta --</option>
@@ -175,11 +238,16 @@ export interface PropuestaAspira {
                 }
               </select>
             }
+            @if (!isLoadingPropuestas && !errorPropuestas && propuestas.length === 0) {
+              <p class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
+                No hay propuestas disponibles para la facultad y ubicación seleccionadas.
+              </p>
+            }
           </div>
           }
 
           <!-- Third Dropdown: Ubicaciones -->
-          <div class="space-y-2">
+          <div class="space-y-2 md:order-2">
             <label for="ubicacionSelect" class="block text-sm font-semibold text-gray-700">
               Ubicación
             </label>
@@ -207,6 +275,7 @@ export interface PropuestaAspira {
               <select
                 id="ubicacionSelect"
                 [(ngModel)]="selectedUbicacionId"
+                (change)="onUbicacionChange()"
                 class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all duration-200 shadow-sm font-medium"
               >
                 <option [ngValue]="null" disabled selected>-- Seleccione una ubicación --</option>
@@ -220,7 +289,7 @@ export interface PropuestaAspira {
           </div>
 
           <!-- Date Filter -->
-          <div class="space-y-2">
+          <div class="space-y-2 md:order-4">
             <label for="fechaInscripcionDesde" class="block text-sm font-semibold text-gray-700">
               Fecha de inscripción desde
             </label>
@@ -233,7 +302,7 @@ export interface PropuestaAspira {
           </div>
 
           <!-- Review Action -->
-          <div class="md:col-span-2 flex justify-end">
+          <div class="md:col-span-2 md:order-5 flex justify-end">
             <button
               type="button"
               (click)="revisar()"
@@ -252,6 +321,123 @@ export interface PropuestaAspira {
             </button>
           </div>
 
+        </div>
+      </div>
+
+      <!-- Guaraní proposal association card -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="mb-6">
+          <h2 class="text-lg font-semibold text-gray-900">Asociar tipo de chequera</h2>
+          <p class="text-sm text-gray-500">Configure la chequera para la propuesta seleccionada</p>
+        </div>
+
+        @if (errorAsociacion) {
+          <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {{ errorAsociacion }}
+          </div>
+        }
+
+        @if (successAsociacion) {
+          <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+            {{ successAsociacion }}
+          </div>
+        }
+
+        @if (isLoadingAsociacion) {
+          <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
+            Consultando asociación registrada...
+          </div>
+        } @else if (asociacionRegistrada) {
+          <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-gray-700">
+            <p class="font-semibold text-gray-900">Asociación registrada</p>
+            <p class="mt-1">
+              Tipo de chequera:
+              <span class="font-medium">{{ nombreTipoChequera(asociacionRegistrada) }}</span>
+            </p>
+            <button
+              type="button"
+              (click)="eliminarAsociacion()"
+              [disabled]="isDeletingAsociacion"
+              class="mt-3 font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
+            >
+              {{ isDeletingAsociacion ? 'Eliminando...' : 'Eliminar asociación' }}
+            </button>
+          </div>
+        } @else if (selectedPropuestaId && selectedLectivoId && consultaAsociacionRealizada) {
+          <div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
+            No hay una asociación registrada para la propuesta y ciclo lectivo seleccionados.
+          </div>
+        }
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div class="space-y-2">
+            <label for="lectivoSelect" class="block text-sm font-semibold text-gray-700">
+              Ciclo lectivo
+            </label>
+            <select
+              id="lectivoSelect"
+              [(ngModel)]="selectedLectivoId"
+              (change)="onLectivoChange()"
+              [disabled]="isLoadingLectivos || isSavingAsociacion"
+              class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all duration-200 shadow-sm"
+            >
+              <option [ngValue]="null" disabled>-- Seleccione un ciclo lectivo --</option>
+              @for (lectivo of lectivos; track lectivo.lectivoId) {
+                <option [ngValue]="lectivo.lectivoId">{{ nombreLectivo(lectivo) }}</option>
+              }
+            </select>
+            @if (isLoadingLectivos) {
+              <p class="text-sm text-gray-500">Cargando ciclos lectivos...</p>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label for="tipoChequeraSearch" class="block text-sm font-semibold text-gray-700">
+              Tipo de chequera
+            </label>
+            <input
+              id="tipoChequeraSearch"
+              type="search"
+              [(ngModel)]="tipoChequeraSearch"
+              (input)="buscarTiposChequera()"
+              [disabled]="isSavingAsociacion"
+              placeholder="Buscar por nombre o código..."
+              class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all duration-200 shadow-sm"
+            />
+            @if (isLoadingTiposChequera) {
+              <p class="text-sm text-gray-500">Buscando tipos de chequera...</p>
+            }
+            @if (!isLoadingTiposChequera && tiposChequera.length > 0) {
+              <div class="max-h-56 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                @for (tipo of tiposChequera; track tipo.tipoChequeraId) {
+                  <button
+                    type="button"
+                    (click)="seleccionarTipoChequera(tipo)"
+                    class="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+                    [class.bg-blue-50]="selectedTipoChequeraId === tipo.tipoChequeraId"
+                  >
+                    {{ tipo.nombre }}
+                  </button>
+                }
+              </div>
+            }
+            @if (selectedTipoChequeraId) {
+              <p class="text-sm text-blue-700">
+                Seleccionado: {{ selectedTipoChequeraNombre }}
+              </p>
+            }
+          </div>
+
+          <div class="md:col-span-2 flex justify-end">
+            <button
+              type="button"
+              (click)="guardarAsociacion()"
+              [disabled]="!selectedPropuestaId || !selectedLectivoId || !selectedTipoChequeraId || isSavingAsociacion"
+              class="inline-flex items-center justify-center px-5 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isSavingAsociacion ? 'Guardando...' : 'Asociar tipo de chequera' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -277,8 +463,9 @@ export interface PropuestaAspira {
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Apellido</th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre</th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Documento</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha de inscripción</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mail</th>
+                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha de inscripción</th>
+                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mail</th>
+                   <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
@@ -287,15 +474,30 @@ export interface PropuestaAspira {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.apellido }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.nombres }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.personaRel.documentoPrincipalRel?.nroDocumento || '-' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.fechaInscripcion | date: 'dd/MM/yyyy' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ obtenerEmail(resultado) || '-' }}</td>
+                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.fechaInscripcion | date: 'dd/MM/yyyy' }}</td>
+                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ obtenerEmail(resultado) || '-' }}</td>
+                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                       <button
+                         type="button"
+                         (click)="abrirDatosPersonales(resultado)"
+                         [disabled]="!resultado.personaRel.documentoPrincipalRel?.nroDocumento"
+                         class="font-medium text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+                       >
+                         Datos Personales
+                       </button>
+                     </td>
                   </tr>
                 }
               </tbody>
             </table>
-          </div>
-        </div>
+         </div>
+       </div>
       }
+
+      <app-datos-personales-modal
+        [documento]="documentoDatosPersonales"
+        (closed)="cerrarDatosPersonales()"
+      />
     </div>
   `
 })
@@ -308,6 +510,12 @@ export class PendientesPreGuaraniComponent implements OnInit {
   private readonly guaraniBaseUrl = environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaResponsableAcademica/responsableAcademica/preuniversitario';
   private readonly ubicacionesUrl = environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/ubicacion/tipo/3';
   private readonly propuestasAspiraUrl = environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaAspira';
+  private readonly propuestasOfertaUrl = environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaOferta';
+  private readonly propuestaTipoPreuniversitario = 204;
+  private readonly coreBaseUrl = environment.apiUrl.replace(/\/auth\/?$/, '');
+  private readonly lectivosUrl = `${this.coreBaseUrl}/lectivo/reverse`;
+  private readonly tiposChequeraSearchUrl = `${this.coreBaseUrl}/tipoChequera/search/1`;
+  private readonly asociacionesUrl = `${this.coreBaseUrl}/guaraniPropuestaTipoChequera`;
 
   public facultades: Facultad[] = [];
   public selectedFacultadId: number | null = null;
@@ -324,15 +532,227 @@ export class PendientesPreGuaraniComponent implements OnInit {
   public isLoadingUbicaciones = false;
   public errorUbicaciones = '';
 
+  public lectivos: Lectivo[] = [];
+  public selectedLectivoId: number | null = null;
+  public isLoadingLectivos = false;
+  public tipoChequeraSearch = '';
+  public tiposChequera: TipoChequera[] = [];
+  public selectedTipoChequeraId: number | null = null;
+  public selectedTipoChequeraNombre = '';
+  public isLoadingTiposChequera = false;
+  public isSavingAsociacion = false;
+  public errorAsociacion = '';
+  public successAsociacion = '';
+  public asociacionRegistrada: GuaraniPropuestaTipoChequera | null = null;
+  public isLoadingAsociacion = false;
+  public isDeletingAsociacion = false;
+  public consultaAsociacionRealizada = false;
+
   public fechaInscripcionDesde = '';
   public resultados: PropuestaAspira[] = [];
   public isLoadingResultados = false;
   public errorResultados = '';
   public consultaRealizada = false;
+  public documentoDatosPersonales: string | null = null;
+  private propuestasRequestId = 0;
 
   ngOnInit() {
     this.cargarFacultades();
     this.cargarUbicaciones();
+    this.cargarLectivos();
+  }
+
+  cargarLectivos() {
+    this.isLoadingLectivos = true;
+    this.http.get<Lectivo[]>(this.lectivosUrl).pipe(
+      catchError(err => {
+        console.error('Error al cargar ciclos lectivos:', err);
+        this.zone.run(() => {
+          this.errorAsociacion = 'No se pudieron cargar los ciclos lectivos.';
+          this.isLoadingLectivos = false;
+          this.cdr.detectChanges();
+        });
+        return of([] as Lectivo[]);
+      })
+    ).subscribe(data => {
+      this.zone.run(() => {
+        this.lectivos = data || [];
+        this.isLoadingLectivos = false;
+        this.cdr.detectChanges();
+      });
+    });
+  }
+
+  buscarTiposChequera() {
+    const search = this.tipoChequeraSearch.trim();
+    this.selectedTipoChequeraId = null;
+    this.selectedTipoChequeraNombre = '';
+    this.tiposChequera = [];
+
+    if (!search) {
+      return;
+    }
+
+    this.isLoadingTiposChequera = true;
+    this.http.post<TipoChequera[]>(this.tiposChequeraSearchUrl, search.split(/\s+/)).pipe(
+      catchError(err => {
+        console.error('Error al buscar tipos de chequera:', err);
+        this.zone.run(() => {
+          this.errorAsociacion = 'No se pudieron buscar los tipos de chequera.';
+          this.isLoadingTiposChequera = false;
+          this.cdr.detectChanges();
+        });
+        return of([] as TipoChequera[]);
+      })
+    ).subscribe(data => {
+      this.zone.run(() => {
+        this.tiposChequera = data || [];
+        this.isLoadingTiposChequera = false;
+        this.cdr.detectChanges();
+      });
+    });
+  }
+
+  seleccionarTipoChequera(tipo: TipoChequera) {
+    this.selectedTipoChequeraId = tipo.tipoChequeraId;
+    this.selectedTipoChequeraNombre = tipo.nombre;
+    this.tipoChequeraSearch = tipo.nombre;
+    this.tiposChequera = [];
+  }
+
+  onLectivoChange() {
+    this.errorAsociacion = '';
+    this.successAsociacion = '';
+    this.cargarAsociacionRegistrada();
+  }
+
+  onPropuestaChange() {
+    this.errorAsociacion = '';
+    this.successAsociacion = '';
+    this.selectedTipoChequeraId = null;
+    this.selectedTipoChequeraNombre = '';
+    this.asociacionRegistrada = null;
+    this.consultaAsociacionRealizada = false;
+    this.cargarAsociacionRegistrada();
+  }
+
+  cargarAsociacionRegistrada() {
+    this.asociacionRegistrada = null;
+    this.consultaAsociacionRealizada = false;
+    if (!this.selectedPropuestaId || !this.selectedLectivoId) {
+      return;
+    }
+
+    this.isLoadingAsociacion = true;
+    const url = `${this.asociacionesUrl}/propuesta/${this.selectedPropuestaId}/lectivo/${this.selectedLectivoId}`;
+    this.http.get<GuaraniPropuestaTipoChequera>(url).pipe(
+      catchError(err => {
+        if (err.status !== 404) {
+          console.error('Error al consultar asociación:', err);
+          this.zone.run(() => {
+            this.errorAsociacion = 'No se pudo consultar la asociación registrada.';
+          });
+        }
+        return of(null);
+      })
+    ).subscribe(data => {
+      this.zone.run(() => {
+        this.asociacionRegistrada = data;
+        this.isLoadingAsociacion = false;
+        this.consultaAsociacionRealizada = true;
+        this.cdr.detectChanges();
+      });
+    });
+  }
+
+  guardarAsociacion() {
+    if (!this.selectedPropuestaId || !this.selectedLectivoId || !this.selectedTipoChequeraId) {
+      return;
+    }
+
+    this.isSavingAsociacion = true;
+    this.errorAsociacion = '';
+    this.successAsociacion = '';
+    const selectedTipoChequeraId = this.selectedTipoChequeraId;
+    const selectedTipoChequeraNombre = this.selectedTipoChequeraNombre;
+    const payload = {
+      propuestaGuarani: this.selectedPropuestaId,
+      lectivoId: this.selectedLectivoId,
+      tipoChequeraId: selectedTipoChequeraId,
+    };
+
+    this.http.post<GuaraniPropuestaTipoChequera>(this.asociacionesUrl, payload).pipe(
+      catchError(err => {
+        console.error('Error al guardar asociación:', err);
+        this.zone.run(() => {
+          this.errorAsociacion = 'No se pudo guardar la asociación.';
+          this.isSavingAsociacion = false;
+          this.cdr.detectChanges();
+        });
+        return of(null);
+      })
+    ).subscribe(result => {
+      if (result) {
+        this.zone.run(() => {
+          this.isSavingAsociacion = false;
+          this.asociacionRegistrada = {
+            ...result,
+            tipoChequera: result.tipoChequera || {
+              tipoChequeraId: selectedTipoChequeraId,
+              nombre: selectedTipoChequeraNombre,
+            },
+          };
+          this.consultaAsociacionRealizada = true;
+          this.successAsociacion = 'La asociación se guardó correctamente.';
+          this.cdr.detectChanges();
+          this.cargarAsociacionRegistrada();
+        });
+      }
+    });
+  }
+
+  eliminarAsociacion() {
+    const asociacion = this.asociacionRegistrada;
+    if (!asociacion || this.isDeletingAsociacion) {
+      return;
+    }
+
+    this.isDeletingAsociacion = true;
+    this.errorAsociacion = '';
+    this.successAsociacion = '';
+    this.http.delete<void>(`${this.asociacionesUrl}/${asociacion.guaraniPropuestaTipoChequeraId}`).subscribe({
+      next: () => {
+        this.zone.run(() => {
+          this.isDeletingAsociacion = false;
+          this.asociacionRegistrada = null;
+          this.consultaAsociacionRealizada = true;
+          this.successAsociacion = 'La asociación se eliminó correctamente.';
+          this.cdr.detectChanges();
+        });
+      },
+      error: err => {
+        console.error('Error al eliminar asociación:', err);
+        this.zone.run(() => {
+          this.isDeletingAsociacion = false;
+          this.errorAsociacion = 'No se pudo eliminar la asociación.';
+          this.cdr.detectChanges();
+        });
+      },
+    });
+  }
+
+  nombreLectivo(lectivo: Lectivo): string {
+    return lectivo.nombre || lectivo.descripcion || String(lectivo.anio || lectivo.lectivoId);
+  }
+
+  nombreTipoChequera(asociacion: GuaraniPropuestaTipoChequera): string {
+    return asociacion.tipoChequeraRel?.nombre
+      || asociacion.tipoChequera?.nombre
+      || (this.selectedTipoChequeraId === asociacion.tipoChequeraId
+        ? this.selectedTipoChequeraNombre
+        : '')
+      || this.tiposChequera.find(tipo => tipo.tipoChequeraId === asociacion.tipoChequeraId)?.nombre
+      || `Tipo de chequera ${asociacion.tipoChequeraId}`;
   }
 
   cargarUbicaciones() {
@@ -412,6 +832,15 @@ export class PendientesPreGuaraniComponent implements OnInit {
       || null;
   }
 
+  abrirDatosPersonales(resultado: PropuestaAspira) {
+    const documento = resultado.personaRel.documentoPrincipalRel?.nroDocumento;
+    this.documentoDatosPersonales = documento || null;
+  }
+
+  cerrarDatosPersonales() {
+    this.documentoDatosPersonales = null;
+  }
+
   cargarFacultades() {
     this.isLoadingFacultades = true;
     this.errorFacultades = '';
@@ -440,34 +869,79 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.propuestas = [];
     this.selectedPropuestaId = null;
     this.errorPropuestas = '';
+    this.selectedTipoChequeraId = null;
+    this.selectedTipoChequeraNombre = '';
+    this.successAsociacion = '';
+    this.limpiarResultados();
+    this.cargarPropuestasDisponibles();
+  }
 
+  onUbicacionChange() {
+    this.propuestas = [];
+    this.selectedPropuestaId = null;
+    this.errorPropuestas = '';
+    this.selectedTipoChequeraId = null;
+    this.selectedTipoChequeraNombre = '';
+    this.successAsociacion = '';
+    this.limpiarResultados();
+    this.cargarPropuestasDisponibles();
+  }
+
+  private cargarPropuestasDisponibles() {
+    const requestId = ++this.propuestasRequestId;
     const facultad = this.facultades.find(f => f.facultadId === this.selectedFacultadId);
-    if (!facultad || facultad.guaraniResponsableAcademica === undefined || facultad.guaraniResponsableAcademica === null) {
+    if (!facultad?.guaraniResponsableAcademica || !this.selectedUbicacionId) {
+      this.isLoadingPropuestas = false;
       return;
     }
 
-    const responsableAcademica = facultad.guaraniResponsableAcademica;
     this.isLoadingPropuestas = true;
+    this.errorPropuestas = '';
     this.cdr.detectChanges();
 
-    const url = `${this.guaraniBaseUrl}/${responsableAcademica}`;
+    const propuestasFacultadUrl = `${this.guaraniBaseUrl}/${facultad.guaraniResponsableAcademica}`;
+    const propuestasOfertaUrl = `${this.propuestasOfertaUrl}/ubicacion/${this.selectedUbicacionId}/propuestaTipo/${this.propuestaTipoPreuniversitario}`;
 
-    this.http.get<PropuestaResponsableAcademica[]>(url).pipe(
+    forkJoin({
+      propuestasFacultad: this.http.get<PropuestaResponsableAcademica[]>(propuestasFacultadUrl),
+      propuestasOferta: this.http.get<PropuestaOferta[]>(propuestasOfertaUrl),
+    }).pipe(
       catchError(err => {
-        console.error('Error al cargar propuestas:', err);
+        console.error('Error al cargar propuestas por facultad y ubicación:', err);
         this.zone.run(() => {
-          this.errorPropuestas = 'No se pudieron cargar las propuestas preuniversitarias.';
+          if (requestId !== this.propuestasRequestId) {
+            return;
+          }
+          this.errorPropuestas = 'No se pudieron cargar las propuestas disponibles.';
           this.isLoadingPropuestas = false;
           this.cdr.detectChanges();
         });
-        return of([]);
+        return of(null);
       })
     ).subscribe(data => {
+      if (!data || requestId !== this.propuestasRequestId) {
+        return;
+      }
+
       this.zone.run(() => {
-        this.propuestas = data || [];
+        const propuestasOfertaIds = new Set(
+          (data.propuestasOferta || [])
+            .map(oferta => oferta.propuesta || oferta.propuestaRel?.propuesta)
+            .filter((propuesta): propuesta is number => propuesta !== undefined)
+        );
+
+        this.propuestas = (data.propuestasFacultad || []).filter(propuesta =>
+          propuestasOfertaIds.has(propuesta.propuesta)
+        );
         this.isLoadingPropuestas = false;
         this.cdr.detectChanges();
       });
     });
+  }
+
+  private limpiarResultados() {
+    this.resultados = [];
+    this.errorResultados = '';
+    this.consultaRealizada = false;
   }
 }

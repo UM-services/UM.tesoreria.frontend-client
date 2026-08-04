@@ -177,10 +177,13 @@ flowchart TD
     AppRoutes --> Pendientes["Pendientes Pre Guaraní"]
     AppRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
     AppRoutes --> Beneficios["Beneficios de requisitos"]
+    AppRoutes --> Datos["Datos Personales<br/>/datos-personales"]
 
     Pendientes --> GuaraniAPI["API Guaraní"]
+    Pendientes --> CoreAPI
     Ubicaciones --> CoreAPI["API Core"]
     Beneficios --> CoreAPI
+    Datos --> GuaraniAPI
 ```
 
 ## Modelos de Datos - Autenticación
@@ -197,6 +200,11 @@ classDiagram
         +userId: number
         +nombre: string
         +sede: string
+    }
+
+    class AuthService {
+        +login(login, password)
+        +logout()
     }
 
     LoginRequest --> AuthService: envía credenciales
