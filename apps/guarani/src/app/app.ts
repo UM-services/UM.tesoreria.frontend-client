@@ -48,5 +48,6 @@ export class AppComponent {
     { label: 'Pendientes Pre Guaraní', path: '/pendientes-pre-guarani', iconSvg: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
     { label: 'Sedes Guaraní y Sedes Tesium', path: '/guarani-ubicaciones', iconSvg: 'M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0' },
     { label: 'Beneficios de requisitos', path: '/guarani-beneficios', iconSvg: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 3c-2.236 0-4.33.61-6.118 1.984A11.955 11.955 0 005 12c0 4.478 2.91 8.275 6.937 9.622a2 2 0 001.126 0C17.09 20.275 20 16.478 20 12c0-2.958-1.07-5.667-2.812-7.762' },
+    { label: 'Datos Personales', path: '/datos-personales', iconSvg: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
   ];
 }

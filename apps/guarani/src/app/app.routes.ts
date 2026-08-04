@@ -4,6 +4,7 @@ import { LoginComponent } from '@tesoreria/ui-auth';
 import { PendientesPreGuaraniComponent } from './pendientes-pre-guarani/pendientes-pre-guarani';
 import { GuaraniUbicacionesComponent } from './guarani-ubicaciones/guarani-ubicaciones';
 import { GuaraniBeneficiosComponent } from './guarani-beneficios/guarani-beneficios';
+import { DatosPersonalesComponent } from './datos-personales/datos-personales.component';
 
 export const appRoutes: Route[] = [
   {
@@ -28,6 +29,11 @@ export const appRoutes: Route[] = [
   {
     path: 'guarani-beneficios',
     component: GuaraniBeneficiosComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'datos-personales',
+    component: DatosPersonalesComponent,
     canActivate: [authGuard],
   },
   {

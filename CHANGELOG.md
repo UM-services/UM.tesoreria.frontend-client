@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0] - 2026-08-04
+
+### Added
+- feat(guarani): Nueva ruta protegida `/datos-personales` para consultar datos de alumnos por documento.
+- feat(guarani): Modal de datos personales con información personal, contactos y requisitos presentados.
+- feat(guarani): Acción para abrir los datos personales de cada alumno desde los resultados de pendientes.
+- feat(guarani): Asociación, consulta y eliminación de tipos de chequera por propuesta y ciclo lectivo.
+
+### Changed
+- feat(guarani): Las propuestas se filtran por facultad y ubicación antes de habilitar la consulta de pendientes.
+- docs: Actualizados README, arquitectura Mermaid y enlace del portal generado para reflejar los módulos actuales de Guaraní.
+
 ## [0.10.0] - 2026-08-02
 
 ### Added

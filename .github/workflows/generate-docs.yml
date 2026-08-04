@@ -184,6 +184,7 @@ jobs:
               '        <li><a href="https://github.com/' + repo + '/issues" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Issues (' + openIssues + ' abiertos)</a></li>' +
               '        <li><a href="https://github.com/' + repo + '/pulls" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Pull Requests</a></li>' +
               '        <li><a href="https://github.com/' + repo + '/releases" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Releases</a></li>' +
+              '        <li><a href="architecture.md" class="text-indigo-600 hover:text-indigo-800 hover:underline">Arquitectura detallada y diagramas</a></li>' +
               '      </ul>' +
               '    </div>' +
               '  </div>' +
