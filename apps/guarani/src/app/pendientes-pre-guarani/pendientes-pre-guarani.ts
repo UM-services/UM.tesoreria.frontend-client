@@ -76,12 +76,14 @@ export interface PropuestaAspira {
   };
   fechaInscripcion: string;
   numeroChequera?: string | null;
+  becaPorcentaje?: number | null;
 }
 
 export interface ChequeraSeriePreuniversitario {
   facultadId: number;
   tipoChequeraId: number;
   chequeraSerieId: number;
+  becaPorcentaje?: number | null;
 }
 
 export interface Lectivo {
@@ -470,10 +472,11 @@ export interface GuaraniPropuestaTipoChequera {
                 <tr>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Apellido</th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Documento</th>
-                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha de inscripción</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Número de chequera</th>
-                   <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
+                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Documento</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha de inscripción</th>
+                     <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Número de chequera</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Beneficio</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
@@ -482,17 +485,24 @@ export interface GuaraniPropuestaTipoChequera {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.apellido }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.nombres }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.personaRel.documentoPrincipalRel?.nroDocumento || '-' }}</td>
-                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.fechaInscripcion | date: 'dd/MM/yyyy' }}</td>
-                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.numeroChequera || '-' }}</td>
-                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                       <button
-                         type="button"
-                         (click)="abrirDatosPersonales(resultado)"
-                         [disabled]="!resultado.personaRel.documentoPrincipalRel?.nroDocumento"
-                         class="font-medium text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
-                       >
-                         Datos Personales
-                       </button>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.fechaInscripcion | date: 'dd/MM/yyyy' }}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.numeroChequera || '-' }}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {{ resultado.becaPorcentaje !== null && resultado.becaPorcentaje !== undefined ? (resultado.becaPorcentaje * 100 | number: '1.0-2') + '%' : '-' }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <button
+                          type="button"
+                          (click)="abrirDatosPersonales(resultado)"
+                          [disabled]="!resultado.personaRel.documentoPrincipalRel?.nroDocumento"
+                          class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 font-medium text-blue-700 transition-colors hover:bg-blue-100 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                          aria-label="Consultar datos personales"
+                        >
+                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19a3 3 0 00-6 0m3-4a4 4 0 100-8 4 4 0 000 8zm8 1a8 8 0 10-16 0 8 8 0 0016 0z" />
+                          </svg>
+                          <span>Datos personales</span>
+                        </button>
                      </td>
                   </tr>
                 }
@@ -896,10 +906,11 @@ export class PendientesPreGuaraniComponent implements OnInit {
       this.zone.run(() => {
         resultados.forEach((resultado, index) => {
           const chequera = chequeras[index];
-          resultado.numeroChequera = chequera
-            ? `${chequera.facultadId}/${chequera.tipoChequeraId}/${chequera.chequeraSerieId}`
-            : null;
-        });
+           resultado.numeroChequera = chequera
+             ? `${chequera.facultadId}/${chequera.tipoChequeraId}/${chequera.chequeraSerieId}`
+             : null;
+           resultado.becaPorcentaje = chequera?.becaPorcentaje ?? null;
+         });
         this.isLoadingResultados = false;
         this.consultaRealizada = true;
         this.cdr.detectChanges();
