@@ -1,6 +1,5 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@tesoreria/shared-api';
-import { LoginComponent } from '@tesoreria/ui-auth';
 import { PendientesPreGuaraniComponent } from './pendientes-pre-guarani/pendientes-pre-guarani';
 import { GuaraniUbicacionesComponent } from './guarani-ubicaciones/guarani-ubicaciones';
 import { GuaraniBeneficiosComponent } from './guarani-beneficios/guarani-beneficios';
@@ -9,7 +8,7 @@ import { DatosPersonalesComponent } from './datos-personales/datos-personales.co
 export const appRoutes: Route[] = [
   {
     path: 'login',
-    component: LoginComponent,
+    loadComponent: () => import('@tesoreria/ui-auth').then(m => m.LoginComponent),
   },
   {
     path: '',

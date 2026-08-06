@@ -1,15 +1,11 @@
-import { GastosComponent } from '@tesoreria/feature-gastos';
-import { ProveedoresComponent } from '@tesoreria/feature-proveedores';
-import { DependenciasComponent } from './dependencias/dependencias';
 import { Route } from '@angular/router';
 import { authGuard } from '@tesoreria/shared-api';
-import { LoginComponent } from '@tesoreria/ui-auth';
-import { BlankComponent } from './blank.component';
+import { DependenciasComponent } from './dependencias/dependencias';
 
 export const appRoutes: Route[] = [
   {
     path: 'login',
-    component: LoginComponent,
+    loadComponent: () => import('@tesoreria/ui-auth').then(m => m.LoginComponent),
   },
   {
     path: 'dependencias',
@@ -18,12 +14,12 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'proveedores',
-    component: ProveedoresComponent,
+    loadComponent: () => import('@tesoreria/feature-proveedores').then(m => m.ProveedoresComponent),
     canActivate: [authGuard],
   },
   {
     path: 'gastos',
-    component: GastosComponent,
+    loadComponent: () => import('@tesoreria/feature-gastos').then(m => m.GastosComponent),
     canActivate: [authGuard],
   },
   {
