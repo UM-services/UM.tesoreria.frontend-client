@@ -74,7 +74,7 @@ nx test
 
 ```mermaid
     flowchart TB
-    subgraph Apps
+    subgraph Apps["Aplicaciones"]
         C["Compras<br/>:4201"]
         P["Pagos<br/>:4202"]
         Q["Chequeras<br/>:4203"]
@@ -84,28 +84,22 @@ nx test
         G["Guaraní<br/>:4207"]
     end
 
-    subgraph "Pagos Modules"
-        FP["Facturas Pendientes Component"]
+    subgraph Modules["Módulos de aplicación"]
+        FP["Pagos: facturas pendientes"]
+        DEP["Administrador: dependencias"]
+        GP["Guaraní: pendientes y chequeras"]
+        GU["Guaraní: ubicaciones"]
+        GB["Guaraní: beneficios"]
+        GD["Guaraní: datos personales y captura"]
     end
 
-    subgraph "Administrador Modules"
-        DEP["Dependencias Component"]
-    end
-
-    subgraph "Guaraní Modules"
-        GP["Pendientes Pre Guaraní y números de chequera"]
-        GU["Sedes Guaraní y Sedes Tesium"]
-        GB["Beneficios de requisitos"]
-        GD["Datos Personales y captura"]
-    end
-
-    subgraph Libs
-        API["shared-api<br/>Auth Service<br/>API Models"]
-        AUTH["ui-auth<br/>Login Component"]
-        LAYOUT["ui-layout<br/>Navbar/sidebar<br/>BuscadorCuentaContable<br/>BuscadorProveedor"]
-        FPROV["feature-proveedores<br/>Proveedores Component"]
-        FGAST["feature-gastos<br/>Gastos Component"]
-        ORDCOMPRA["feature-orden-compra<br/>OrdenCompra Module"]
+    subgraph Libs["Librerías compartidas"]
+        API["shared-api<br/>AuthService, guard e interceptores"]
+        AUTH["ui-auth<br/>Login lazy-loaded"]
+        LAYOUT["ui-layout<br/>Navbar, sidebar y buscadores"]
+        FPROV["feature-proveedores"]
+        FGAST["feature-gastos"]
+        ORDCOMPRA["feature-orden-compra"]
     end
 
     C --> API
@@ -155,7 +149,7 @@ nx test
     GB --> API
     GD --> API
 
-    API --> |AuthGuard| AUTH
+    API --> AUTH
 ```
 
 ## Tecnologías
@@ -171,12 +165,15 @@ nx test
 
 ## Despliegue con Docker
 
-Cada aplicación incluye su propio Dockerfile con multi-stage build, soporte SSL/TLS con certificados auto-firmados y proxy inverso para rutas `/api/` hacia el servicio `tesoreria-gateway-service:8301`.
+Cada aplicación incluye un Dockerfile de runtime Nginx que sirve el artefacto generado por Nx, soporte SSL/TLS con certificados auto-firmados y proxy inverso para rutas `/api/` hacia el servicio `tesoreria-gateway-service:8301`.
 
 ### Ejecutar contenedores
 
 ```bash
-# Construir imagen para compras
+# Construir primero el artefacto de producción
+npx nx build compras --configuration=production
+
+# Construir la imagen para compras
 docker build -f apps/compras/Dockerfile -t um-tesoreria-compras .
 
 # Ejecutar contenedor (puertos 80 redirigen a 443)
@@ -203,7 +200,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.12.0**
+Versión actual: **0.13.0**
 
 ## Licencia
 
