@@ -4,7 +4,7 @@
   "sourceRoot": "libs/feature-orden-compra/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": ["type:feature", "scope:compras"],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

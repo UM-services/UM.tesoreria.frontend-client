@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/compras/src",
-  "tags": [],
+  "tags": ["type:app", "scope:compras"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
