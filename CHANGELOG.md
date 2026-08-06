@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.13.1] - 2026-08-06
+
+### Fixed
+
+- fix(guarani): Limpia la búsqueda, selección y resultados de chequera al cambiar de propuesta, facultad o ubicación, y después de guardar una asociación.
+
 ## [0.13.0] - 2026-08-06
 
 ### Added
