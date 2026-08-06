@@ -3,12 +3,36 @@ name: UM.tesoreria.frontend-client Build and Push Images
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
-  build-and-push:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  build-apps:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build all apps with Nx
+        run: npx nx run-many -t build --configuration=production
+
+      - name: Upload dist build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-apps
+          path: dist/apps/
+
+  publish-docker:
+    needs: build-apps
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,7 +43,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Download dist build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-apps
+          path: dist/apps/
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v4

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.13.0] - 2026-08-06
+
+### Added
+
+- feat(auth): Añadidos interceptores compartidos para enviar el token Bearer y gestionar respuestas 401/403.
+- test(auth): Añadidas pruebas del interceptor de autenticación para solicitudes con y sin token.
+- feat(ci): Añadida validación de lint, tests y builds de proyectos afectados en Pull Requests hacia `main`.
+
+### Changed
+
+- refactor(auth): El estado de sesión ahora se expone también mediante signals para el interceptor y el guard.
+- refactor(routes): Login y funcionalidades compartidas se cargan de forma lazy en las aplicaciones configuradas.
+- refactor(docker): Los Dockerfiles pasan a ser imágenes Nginx runtime-only; el build de Nx se ejecuta previamente y sus artefactos se reutilizan en la publicación.
+- refactor(ci): El pipeline de imágenes construye las siete aplicaciones, comparte los artefactos `dist/apps` y publica la matriz incluyendo `guarani`.
+- feat(guarani): Los resultados de pendientes muestran el porcentaje de beneficio asociado a la chequera.
+- docs: Actualizados README, arquitectura Mermaid, versión y referencias al pipeline de documentación.
+
 ## [0.12.0] - 2026-08-06
 
 ### Added

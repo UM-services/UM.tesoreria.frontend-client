@@ -16,7 +16,7 @@
         end
 
         subgraph "Libraries"
-            SharedAPI["@tesoreria/shared-api<br/>AuthService<br/>AuthGuard<br/>Models"]
+            SharedAPI["@tesoreria/shared-api<br/>AuthService, AuthGuard<br/>Auth y error interceptors<br/>Models"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent"]
             UILayout["@tesoreria/ui-layout<br/>NavbarComponent<br/>SidebarComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
@@ -60,7 +60,7 @@
     Guarani --> UIAuth
     Guarani --> UILayout
 
-    SharedAPI -->|HTTP| BackendAPI["Backend API<br/>Tesorería"]
+    SharedAPI -->|"HTTP + Bearer"| BackendAPI["Backend API<br/>Tesorería"]
 ```
 
 ## Flujo de Autenticación
@@ -71,16 +71,24 @@ sequenceDiagram
     participant Login as Login Component
     participant AuthService as AuthService
     participant AuthGuard as AuthGuard
+    participant AuthInterceptor as Auth interceptor
+    participant ErrorInterceptor as Error interceptor
     participant API as Backend API
 
     User->>Login: Ingresar credenciales
     Login->>AuthService: login(login, password)
-    AuthService->>API: POST /auth/login
+    AuthService->>AuthInterceptor: POST /auth/login
+    AuthInterceptor->>API: Solicitud con token si existe
     API-->>AuthService: LoginResponse {token, userId, nombre, sede}
     AuthService-->>Login: Token almacenado
     Login->>AuthGuard: Navegar a ruta protegida
     AuthGuard->>AuthGuard: Verificar token
     AuthGuard-->>User: Acceso permitido
+    User->>AuthInterceptor: Solicitud protegida
+    AuthInterceptor->>API: Authorization: Bearer token
+    API-->>ErrorInterceptor: 401 o 403
+    ErrorInterceptor->>AuthService: logout()
+    ErrorInterceptor-->>User: Navegar a /login
 ```
 
 ## Estructura de Módulos - Compras
