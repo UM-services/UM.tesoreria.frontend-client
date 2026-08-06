@@ -10,17 +10,26 @@ export class DatosPersonalesService {
   private readonly url = `${environment.apiUrl.replace(/\/core\/auth\/?$/, '')}/guarani/alumno/documento`;
 
   consultar(documento: string): Observable<DatosPersonalesAlumno> {
-    return this.http.get<AlumnoGuarani | AlumnoGuarani[]>(`${this.url}/${encodeURIComponent(documento)}`).pipe(
-      map(data => {
-        const alumno = Array.isArray(data) ? data[0] : data;
-        const persona = alumno?.personaRel;
+    return this.http
+      .get<AlumnoGuarani | AlumnoGuarani[]>(`${this.url}/${encodeURIComponent(documento)}`)
+      .pipe(
+        map((data) => {
+          const alumno = Array.isArray(data) ? data[0] : data;
+          const persona = alumno?.personaRel;
 
-        if (!persona) {
-          throw new Error('No se encontraron datos personales para el alumno.');
-        }
+          if (!persona) {
+            throw new Error('No se encontraron datos personales para el alumno.');
+          }
 
-        return persona;
-      })
+          return persona;
+        }),
+      );
+  }
+
+  capturar(documento: string): Observable<boolean> {
+    const baseUrl = this.url.replace(/\/documento\/?$/, '');
+    return this.http.get<boolean>(
+      `${baseUrl}/generate/personales/documento/${encodeURIComponent(documento)}`,
     );
   }
 }

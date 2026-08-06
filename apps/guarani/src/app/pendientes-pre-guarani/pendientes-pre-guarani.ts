@@ -67,6 +67,7 @@ export interface PropuestaAspira {
     nombres: string;
     documentoPrincipalRel?: {
       nroDocumento?: string;
+      tipoDocumento?: number;
     };
     contactos?: Array<{
       contactoTipo?: string;
@@ -74,6 +75,13 @@ export interface PropuestaAspira {
     }>;
   };
   fechaInscripcion: string;
+  numeroChequera?: string | null;
+}
+
+export interface ChequeraSeriePreuniversitario {
+  facultadId: number;
+  tipoChequeraId: number;
+  chequeraSerieId: number;
 }
 
 export interface Lectivo {
@@ -306,7 +314,7 @@ export interface GuaraniPropuestaTipoChequera {
             <button
               type="button"
               (click)="revisar()"
-              [disabled]="!selectedPropuestaId || !selectedUbicacionId || !fechaInscripcionDesde || isLoadingResultados"
+              [disabled]="!selectedPropuestaId || !selectedUbicacionId || !selectedLectivoId || !fechaInscripcionDesde || isLoadingResultados"
               class="inline-flex items-center justify-center px-5 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               @if (isLoadingResultados) {
@@ -464,7 +472,7 @@ export interface GuaraniPropuestaTipoChequera {
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre</th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Documento</th>
                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha de inscripción</th>
-                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mail</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Número de chequera</th>
                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
@@ -475,7 +483,7 @@ export interface GuaraniPropuestaTipoChequera {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.nombres }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.personaRel.documentoPrincipalRel?.nroDocumento || '-' }}</td>
                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.fechaInscripcion | date: 'dd/MM/yyyy' }}</td>
-                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ obtenerEmail(resultado) || '-' }}</td>
+                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.numeroChequera || '-' }}</td>
                      <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                        <button
                          type="button"
@@ -516,6 +524,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   private readonly lectivosUrl = `${this.coreBaseUrl}/lectivo/reverse`;
   private readonly tiposChequeraSearchUrl = `${this.coreBaseUrl}/tipoChequera/search/1`;
   private readonly asociacionesUrl = `${this.coreBaseUrl}/guaraniPropuestaTipoChequera`;
+  private readonly chequeraSerieUrl = `${this.coreBaseUrl}/chequeraSerie/preuniversitario/guarani`;
 
   public facultades: Facultad[] = [];
   public selectedFacultadId: number | null = null;
@@ -555,6 +564,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   public consultaRealizada = false;
   public documentoDatosPersonales: string | null = null;
   private propuestasRequestId = 0;
+  private resultadosRequestId = 0;
 
   ngOnInit() {
     this.cargarFacultades();
@@ -623,6 +633,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   onLectivoChange() {
     this.errorAsociacion = '';
     this.successAsociacion = '';
+    this.limpiarResultados();
     this.cargarAsociacionRegistrada();
   }
 
@@ -780,7 +791,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   }
 
   revisar() {
-    if (!this.selectedPropuestaId || !this.selectedUbicacionId || !this.fechaInscripcionDesde) {
+    if (!this.selectedPropuestaId || !this.selectedUbicacionId || !this.selectedLectivoId || !this.fechaInscripcionDesde) {
       return;
     }
 
@@ -789,6 +800,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.consultaRealizada = false;
     this.isLoadingResultados = true;
     this.cdr.detectChanges();
+    const requestId = ++this.resultadosRequestId;
 
     const url = `${this.propuestasAspiraUrl}/propuesta/${this.selectedPropuestaId}/ubicacion/${this.selectedUbicacionId}/fechaInscripcionDesde/${this.fechaInscripcionDesde}`;
 
@@ -796,6 +808,9 @@ export class PendientesPreGuaraniComponent implements OnInit {
       catchError(err => {
         console.error('Error al cargar aspirantes:', err);
         this.zone.run(() => {
+          if (requestId !== this.resultadosRequestId) {
+            return;
+          }
           this.errorResultados = 'No se pudieron cargar las inscripciones.';
           this.isLoadingResultados = false;
           this.consultaRealizada = true;
@@ -804,8 +819,12 @@ export class PendientesPreGuaraniComponent implements OnInit {
         return of([]);
       })
     ).subscribe(data => {
+      if (requestId !== this.resultadosRequestId) {
+        return;
+      }
+
       this.zone.run(() => {
-        this.resultados = [...(data || [])].sort((a, b) => {
+        const resultadosOrdenados = [...(data || [])].sort((a, b) => {
           const apellidoOrden = a.personaRel.apellido.localeCompare(
             b.personaRel.apellido,
             'es',
@@ -818,18 +837,74 @@ export class PendientesPreGuaraniComponent implements OnInit {
             { sensitivity: 'base' }
           );
         });
+        this.resultados = resultadosOrdenados;
+        this.cargarNumerosChequera(resultadosOrdenados, requestId);
+      });
+    });
+  }
+
+  private cargarNumerosChequera(resultados: PropuestaAspira[], requestId: number) {
+    const facultad = this.facultades.find(item => item.facultadId === this.selectedFacultadId);
+    const propuesta = this.propuestas.find(item => item.propuesta === this.selectedPropuestaId);
+    const responsableAcademica = propuesta?.responsableAcademica || facultad?.guaraniResponsableAcademica;
+
+    forkJoin(
+      resultados.map(resultado => {
+        const documento = resultado.personaRel.documentoPrincipalRel;
+        if (
+          this.selectedLectivoId == null
+          || this.selectedUbicacionId == null
+          || responsableAcademica == null
+          || !documento?.nroDocumento
+          || documento.tipoDocumento == null
+        ) {
+          console.warn('Se omite la consulta de chequera por parámetros incompletos:', {
+            propuestaAspira: resultado.propuestaAspira,
+            lectivoId: this.selectedLectivoId,
+            nroDocumento: documento?.nroDocumento,
+            tipoDocumento: documento?.tipoDocumento,
+            ubicacion: this.selectedUbicacionId,
+            responsableAcademica,
+          });
+          return of(null);
+        }
+
+        const url = [
+          this.chequeraSerieUrl,
+          'lectivo', this.selectedLectivoId,
+          'nroDocumento', encodeURIComponent(documento.nroDocumento),
+          'tipoDocumento', documento.tipoDocumento,
+          'ubicacion', this.selectedUbicacionId,
+          'responsableAcademica', responsableAcademica,
+        ].join('/');
+        console.log('URL consulta de chequera:', url);
+
+        return this.http.get<ChequeraSeriePreuniversitario>(url).pipe(
+          catchError(err => {
+            if (err.status !== 404) {
+              console.error('Error al cargar la chequera del alumno:', err);
+            }
+            return of(null);
+          })
+        );
+      })
+    ).subscribe(chequeras => {
+      if (requestId !== this.resultadosRequestId) {
+        return;
+      }
+
+      this.zone.run(() => {
+        resultados.forEach((resultado, index) => {
+          const chequera = chequeras[index];
+          resultado.numeroChequera = chequera
+            ? `${chequera.facultadId}/${chequera.tipoChequeraId}/${chequera.chequeraSerieId}`
+            : null;
+        });
         this.isLoadingResultados = false;
         this.consultaRealizada = true;
         this.cdr.detectChanges();
       });
     });
-  }
-
-  obtenerEmail(resultado: PropuestaAspira): string | null {
-    const contactos = resultado.personaRel.contactos || [];
-    return contactos.find(contacto => contacto.contactoTipo === 'MP' && contacto.email)?.email
-      || contactos.find(contacto => contacto.email)?.email
-      || null;
   }
 
   abrirDatosPersonales(resultado: PropuestaAspira) {
@@ -940,6 +1015,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   }
 
   private limpiarResultados() {
+    this.resultadosRequestId++;
     this.resultados = [];
     this.errorResultados = '';
     this.consultaRealizada = false;
