@@ -3,7 +3,7 @@
 ## Diagrama de Componentes
 
 ```mermaid
-graph LR
+    flowchart LR
     subgraph "Frontend Client"
         subgraph "Apps"
             Compras["Compras App<br/>:4201"]
@@ -86,7 +86,7 @@ sequenceDiagram
 ## Estructura de Módulos - Compras
 
 ```mermaid
-graph TD
+    flowchart TD
     ComprasApp["Compras App"] --> AppRoutes["Rutas de la App"]
     AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
     AppRoutes --> Blank["Blank Component<br/>Contenedor protegido"]
@@ -107,7 +107,7 @@ graph TD
 ## Estructura de Módulos - Administrador
 
 ```mermaid
-graph TD
+    flowchart TD
     AdminApp["Administrador App"] --> AppRoutes["Rutas de la App"]
     AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
     AppRoutes --> Dependencias["Dependencias Component"]
@@ -123,7 +123,7 @@ graph TD
 ## Estructura de Módulos - Pagos
 
 ```mermaid
-graph TD
+    flowchart TD
     PagosApp["Pagos App"] --> AppRoutes["Rutas de la App"]
     AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
     AppRoutes --> Blank["Blank Component<br/>Contenedor protegido"]
@@ -139,7 +139,7 @@ graph TD
 ## Estructura de Módulos - Órdenes de Compra
 
 ```mermaid
-graph TD
+    flowchart TD
     OCMOD["feature-orden-compra"] --> Routes["Rutas"]
     Routes --> Dashboard["OcDashboardComponent<br/>/orden-compra"]
     Routes --> Create["OcCreateComponent<br/>/orden-compra/nueva"]
@@ -177,13 +177,15 @@ flowchart TD
     AppRoutes --> Pendientes["Pendientes Pre Guaraní"]
     AppRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
     AppRoutes --> Beneficios["Beneficios de requisitos"]
-    AppRoutes --> Datos["Datos Personales<br/>/datos-personales"]
+    AppRoutes --> Datos["Datos Personales y captura<br/>/datos-personales"]
 
     Pendientes --> GuaraniAPI["API Guaraní"]
+    Pendientes --> Chequeras["Consulta de números de chequera"]
     Pendientes --> CoreAPI
     Ubicaciones --> CoreAPI["API Core"]
     Beneficios --> CoreAPI
     Datos --> GuaraniAPI
+    Datos --> Captura["Captura de datos personales"]
 ```
 
 ## Modelos de Datos - Autenticación
@@ -191,15 +193,15 @@ flowchart TD
 ```mermaid
 classDiagram
     class LoginRequest {
-        +login: string
-        +password?: string
+        +string login
+        +string password
     }
 
     class LoginResponse {
-        +token: string
-        +userId: number
-        +nombre: string
-        +sede: string
+        +string token
+        +number userId
+        +string nombre
+        +string sede
     }
 
     class AuthService {

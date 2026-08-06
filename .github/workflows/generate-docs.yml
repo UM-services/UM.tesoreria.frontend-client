@@ -184,7 +184,7 @@ jobs:
               '        <li><a href="https://github.com/' + repo + '/issues" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Issues (' + openIssues + ' abiertos)</a></li>' +
               '        <li><a href="https://github.com/' + repo + '/pulls" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Pull Requests</a></li>' +
               '        <li><a href="https://github.com/' + repo + '/releases" class="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">Releases</a></li>' +
-              '        <li><a href="architecture.md" class="text-indigo-600 hover:text-indigo-800 hover:underline">Arquitectura detallada y diagramas</a></li>' +
+               '        <li><a href="architecture.html" class="text-indigo-600 hover:text-indigo-800 hover:underline">Arquitectura detallada y diagramas</a></li>' +
               '      </ul>' +
               '    </div>' +
               '  </div>' +
@@ -249,6 +249,18 @@ jobs:
               '</html>';
 
             fs.writeFileSync('docs-site/index.html', html);
+            const architecture = fs.readFileSync('docs/architecture.md', 'utf-8');
+            const architectureBody = architecture.replace(/```mermaid\n([\s\S]*?)```/g, (_, diagram) =>
+              '<div class="mermaid my-8 overflow-x-auto">' + diagram + '</div>'
+            );
+            fs.writeFileSync('docs-site/architecture.html',
+              '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
+              '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+              '<title>Arquitectura - Tesoreria Frontend v' + version + '</title>' +
+              '<script type="module">import m from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"; m.initialize({startOnLoad:true,theme:"default"});</script>' +
+              '<style>body{max-width:1200px;margin:0 auto;padding:2rem;font-family:Arial,sans-serif;color:#1f2937}pre{white-space:pre-wrap}.mermaid{background:#fff;padding:1rem}</style>' +
+              '</head><body><a href="index.html">Volver al portal</a><main>' + architectureBody + '</main></body></html>'
+            );
             console.log('Dashboard generated successfully with ' + commits.length + ' commits and ' + pulls.length + ' PRs');
           }
           build().catch(err => {
