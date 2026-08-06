@@ -1,24 +1,3 @@
-# Etapa 1: Construccion
-FROM node:24-alpine AS build
-
-WORKDIR /app
-
-# Copiamos package info e instalamos dependencias
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
-
-# Copiamos la configuracion del workspace
-COPY nx.json ./
-COPY tsconfig.base.json ./
-COPY eslint.config.mjs ./
-
-# Copiamos todo el código fuente del monorepo
-COPY . .
-
-# Construimos la aplicación de chequeras
-RUN npx nx run chequeras:build:production
-
-# Etapa 2: Nginx y ejecucion
 FROM nginx:alpine
 
 # Instalamos openssl y generamos un certificado auto-firmado al vuelo
@@ -28,9 +7,8 @@ RUN apk add --no-cache openssl \
     -keyout /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt \
     -subj "/C=AR/ST=Mendoza/L=Mendoza/O=UM/OU=Tesoreria/CN=tesoreria.local"
 
-
-# Copiamos el build desde la etapa anterior
-COPY --from=build /app/dist/apps/chequeras/browser /usr/share/nginx/html
+# Copiamos el build previamente generado por Nx
+COPY dist/apps/chequeras/browser /usr/share/nginx/html
 
 # Copiamos la configuracion propia de Nginx (para el ruteo de SPA)
 COPY apps/chequeras/nginx.conf /etc/nginx/conf.d/default.conf
