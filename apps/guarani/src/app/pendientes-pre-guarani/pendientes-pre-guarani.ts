@@ -650,11 +650,18 @@ export class PendientesPreGuaraniComponent implements OnInit {
   onPropuestaChange() {
     this.errorAsociacion = '';
     this.successAsociacion = '';
-    this.selectedTipoChequeraId = null;
-    this.selectedTipoChequeraNombre = '';
+    this.limpiarTipoChequera();
     this.asociacionRegistrada = null;
     this.consultaAsociacionRealizada = false;
+    this.limpiarResultados();
     this.cargarAsociacionRegistrada();
+  }
+
+  private limpiarTipoChequera() {
+    this.tipoChequeraSearch = '';
+    this.tiposChequera = [];
+    this.selectedTipoChequeraId = null;
+    this.selectedTipoChequeraNombre = '';
   }
 
   cargarAsociacionRegistrada() {
@@ -723,6 +730,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
               nombre: selectedTipoChequeraNombre,
             },
           };
+          this.limpiarTipoChequera();
           this.consultaAsociacionRealizada = true;
           this.successAsociacion = 'La asociación se guardó correctamente.';
           this.cdr.detectChanges();
@@ -955,8 +963,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.propuestas = [];
     this.selectedPropuestaId = null;
     this.errorPropuestas = '';
-    this.selectedTipoChequeraId = null;
-    this.selectedTipoChequeraNombre = '';
+    this.limpiarTipoChequera();
     this.successAsociacion = '';
     this.limpiarResultados();
     this.cargarPropuestasDisponibles();
@@ -966,8 +973,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.propuestas = [];
     this.selectedPropuestaId = null;
     this.errorPropuestas = '';
-    this.selectedTipoChequeraId = null;
-    this.selectedTipoChequeraNombre = '';
+    this.limpiarTipoChequera();
     this.successAsociacion = '';
     this.limpiarResultados();
     this.cargarPropuestasDisponibles();
