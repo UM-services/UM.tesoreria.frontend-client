@@ -17,12 +17,19 @@ export interface ContactoAlumno {
 }
 
 export interface RequisitoPresentado {
+  requisito?: number | null;
   fechaPresentacion?: string | null;
   fechaVencimiento?: string | null;
   observaciones?: string | null;
   requisitoRel?: {
     nombre?: string | null;
   } | null;
+}
+
+export interface GuaraniBeneficio {
+  guaraniBeneficioId: number;
+  requisito: number;
+  porcentajeBeneficio: number;
 }
 
 export interface DatosPersonalesAlumno {
