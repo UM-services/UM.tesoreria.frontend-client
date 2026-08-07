@@ -1,5 +1,17 @@
-import { Component, EventEmitter, Output, Input, inject, ChangeDetectorRef, NgZone, OnInit, OnDestroy, ElementRef, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  EventEmitter,
+  Output,
+  Input,
+  inject,
+  ChangeDetectorRef,
+  NgZone,
+  OnInit,
+  OnDestroy,
+  ElementRef,
+  HostListener,
+} from '@angular/core';
+
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
@@ -15,8 +27,8 @@ export interface ProveedorSearchResponse {
 @Component({
   selector: 'ui-buscador-proveedor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './buscador-proveedor.html'
+  imports: [ReactiveFormsModule],
+  templateUrl: './buscador-proveedor.html',
 })
 export class BuscadorProveedorComponent implements OnInit, OnDestroy {
   @Input() placeholder = 'Buscar por CUIT o Razón Social...';
@@ -33,7 +45,7 @@ export class BuscadorProveedorComponent implements OnInit, OnDestroy {
   public isLoading = false;
   public errorMessage = '';
   public showDropdown = false;
-  
+
   private searchSub: Subscription | null = null;
 
   @HostListener('document:click', ['$event'])
@@ -44,40 +56,50 @@ export class BuscadorProveedorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.searchSub = this.searchQuery.valueChanges.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      tap(() => { 
-         this.isLoading = true; 
-         this.errorMessage = ''; 
-         this.showDropdown = true;
-         this.cdr.detectChanges(); 
-      }),
-      switchMap(query => {
-        const term = query?.trim();
-        if (!term) {
-           this.showDropdown = false;
-           return of([]);
-        }
-        const conditions = term.split(/\s+/);
-        return this.http.post<ProveedorSearchResponse[]>(this.baseUrl + '/search', conditions).pipe(
-          catchError(() => {
-            this.zone.run(() => { this.errorMessage = 'Error al buscar proveedores.'; this.isLoading = false; this.cdr.detectChanges(); });
+    this.searchSub = this.searchQuery.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        tap(() => {
+          this.isLoading = true;
+          this.errorMessage = '';
+          this.showDropdown = true;
+          this.cdr.detectChanges();
+        }),
+        switchMap((query) => {
+          const term = query?.trim();
+          if (!term) {
+            this.showDropdown = false;
             return of([]);
-          })
-        );
-      })
-    ).subscribe(data => {
-      this.zone.run(() => {
-        this.proveedores = data || [];
-        this.isLoading = false;
-        this.showDropdown = this.searchQuery.value?.trim() ? true : false;
-        this.cdr.detectChanges();
+          }
+          const conditions = term.split(/\s+/);
+          return this.http
+            .post<ProveedorSearchResponse[]>(this.baseUrl + '/search', conditions)
+            .pipe(
+              catchError(() => {
+                this.zone.run(() => {
+                  this.errorMessage = 'Error al buscar proveedores.';
+                  this.isLoading = false;
+                  this.cdr.detectChanges();
+                });
+                return of([]);
+              }),
+            );
+        }),
+      )
+      .subscribe((data) => {
+        this.zone.run(() => {
+          this.proveedores = data || [];
+          this.isLoading = false;
+          this.showDropdown = this.searchQuery.value?.trim() ? true : false;
+          this.cdr.detectChanges();
+        });
       });
-    });
   }
 
-  ngOnDestroy() { if (this.searchSub) this.searchSub.unsubscribe(); }
+  ngOnDestroy() {
+    if (this.searchSub) this.searchSub.unsubscribe();
+  }
 
   onFocus() {
     if (this.searchQuery.value?.trim()) {

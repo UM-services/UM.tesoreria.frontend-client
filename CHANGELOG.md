@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.14.1] - 2026-08-07
+
+### Changed
+
+- refactor(ui): Migradas las vistas compartidas y de gestión al control flow moderno de Angular.
+- style(ui): Actualizados los templates y reglas de lint para mantener el formato y los selectores de componentes consistentes.
+
+### Fixed
+
+- fix(ui): Mejorada la interacción por teclado y el cierre de modales y menús desplegables.
+
 ## [0.14.0] - 2026-08-07
 
 ### Added

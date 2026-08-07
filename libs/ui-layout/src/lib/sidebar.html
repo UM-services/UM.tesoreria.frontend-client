@@ -3,7 +3,7 @@
     <!-- Brand / Logo Area -->
     <div class="h-16 flex items-center px-6 border-b border-gray-200">
       <div class="flex items-center gap-3">
-        <img src="/logo.png" alt="Logo UM" class="h-8 w-auto object-contain">
+        <img src="/logo.png" alt="Logo UM" class="h-8 w-auto object-contain" />
         <span class="text-xl font-bold text-gray-800 tracking-tight">{{ moduleName }}</span>
       </div>
     </div>
@@ -11,18 +11,32 @@
     <!-- Dynamic Navigation Links -->
     <nav class="p-4 space-y-1">
       <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Menú</p>
-      
-      <a *ngFor="let item of menuItems" 
-         [routerLink]="item.path" 
-         routerLinkActive="bg-blue-50 text-blue-600"
-         [routerLinkActiveOptions]="{exact: item.path === '/'}"
-         class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-blue-500" [ngClass]="{'text-blue-500': false}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.iconSvg" />
-        </svg>
-        {{ item.label }}
-      </a>
-      
+
+      @for (item of menuItems; track item) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="bg-blue-50 text-blue-600"
+          [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+          class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-blue-500"
+            [ngClass]="{ 'text-blue-500': false }"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              [attr.d]="item.iconSvg"
+            />
+          </svg>
+          {{ item.label }}
+        </a>
+      }
     </nav>
   </div>
 </aside>

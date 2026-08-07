@@ -464,7 +464,76 @@ export interface GuaraniPropuestaTipoChequera {
         </div>
       }
 
-      @if (!isLoadingResultados && !errorResultados && resultados.length > 0) {
+      @if (!isLoadingResultados && !errorResultados && consultaRealizada && resultados.length > 0) {
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 12.414V19a1 1 0 01-.553.894l-4 2A1 1 0 019 21v-8.586L3.293 6.707A1 1 0 013 6V4z" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-base font-semibold text-gray-900">Filtrar resultados</p>
+              <p class="text-sm text-gray-500">
+                Mostrando {{ resultadosVisibles.length }} de {{ resultados.length }} aspirantes
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2" role="group" aria-label="Filtrar resultados">
+            <button
+              type="button"
+              (click)="vistaResultados = 'todos'"
+              [attr.aria-pressed]="vistaResultados === 'todos'"
+              [class.border-blue-500]="vistaResultados === 'todos'"
+              [class.bg-blue-50]="vistaResultados === 'todos'"
+              class="flex items-center justify-between gap-4 rounded-lg border-2 border-gray-200 px-4 py-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
+            >
+              <span class="flex items-center gap-3">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </span>
+                <span>
+                  <span class="block text-sm font-semibold text-gray-900">Todos Los Aspirantes</span>
+                  <span class="block text-xs text-gray-500">Ver la lista completa</span>
+                </span>
+              </span>
+              <span class="rounded-full bg-blue-100 px-2.5 py-1 text-sm font-bold text-blue-700">{{ resultados.length }}</span>
+            </button>
+            <button
+              type="button"
+              (click)="vistaResultados = 'sin-chequera'"
+              [attr.aria-pressed]="vistaResultados === 'sin-chequera'"
+              [class.border-amber-500]="vistaResultados === 'sin-chequera'"
+              [class.bg-amber-50]="vistaResultados === 'sin-chequera'"
+              class="flex items-center justify-between gap-4 rounded-lg border-2 border-gray-200 px-4 py-3 text-left transition-colors hover:border-amber-300 hover:bg-amber-50"
+            >
+              <span class="flex items-center gap-3">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16a2 2 0 001.73 3z" />
+                  </svg>
+                </span>
+                <span>
+                  <span class="block text-sm font-semibold text-gray-900">Aspirantes Sin Chequera</span>
+                  <span class="block text-xs text-gray-500">Requieren atención</span>
+                </span>
+              </span>
+              <span class="rounded-full bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-700">{{ resultadosSinChequera.length }}</span>
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (!isLoadingResultados && !errorResultados && consultaRealizada && resultados.length > 0 && resultadosVisibles.length === 0) {
+        <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-200 text-center text-gray-500">
+          No se encontraron aspirantes sin número de chequera.
+        </div>
+      }
+
+      @if (!isLoadingResultados && !errorResultados && resultadosVisibles.length > 0) {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -480,7 +549,7 @@ export interface GuaraniPropuestaTipoChequera {
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                @for (resultado of resultados; track resultado.propuestaAspira) {
+                @for (resultado of resultadosVisibles; track resultado.propuestaAspira) {
                   <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.apellido }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.nombres }}</td>
@@ -569,12 +638,21 @@ export class PendientesPreGuaraniComponent implements OnInit {
 
   public fechaInscripcionDesde = '';
   public resultados: PropuestaAspira[] = [];
+  public vistaResultados: 'todos' | 'sin-chequera' = 'todos';
   public isLoadingResultados = false;
   public errorResultados = '';
   public consultaRealizada = false;
   public documentoDatosPersonales: string | null = null;
   private propuestasRequestId = 0;
   private resultadosRequestId = 0;
+
+  get resultadosVisibles(): PropuestaAspira[] {
+    return this.vistaResultados === 'sin-chequera' ? this.resultadosSinChequera : this.resultados;
+  }
+
+  get resultadosSinChequera(): PropuestaAspira[] {
+    return this.resultados.filter(resultado => !resultado.numeroChequera);
+  }
 
   ngOnInit() {
     this.cargarFacultades();
@@ -1034,6 +1112,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   private limpiarResultados() {
     this.resultadosRequestId++;
     this.resultados = [];
+    this.vistaResultados = 'todos';
     this.errorResultados = '';
     this.consultaRealizada = false;
   }

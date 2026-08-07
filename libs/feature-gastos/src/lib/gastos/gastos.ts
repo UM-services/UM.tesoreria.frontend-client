@@ -1,8 +1,19 @@
 import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators, FormControl, FormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+  FormControl,
+  FormsModule,
+} from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BuscadorProveedorComponent, BuscadorCuentaContableComponent, CuentaSearchResponse, ProveedorSearchResponse } from '@tesoreria/ui-layout';
+import {
+  BuscadorProveedorComponent,
+  BuscadorCuentaContableComponent,
+  CuentaSearchResponse,
+  ProveedorSearchResponse,
+} from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -48,37 +59,42 @@ export interface UbicacionArticulo {
 @Component({
   selector: 'app-gastos',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, BuscadorCuentaContableComponent, BuscadorProveedorComponent, CommonModule],
-  templateUrl: './gastos.html'
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    BuscadorCuentaContableComponent,
+    BuscadorProveedorComponent,
+    CommonModule,
+  ],
+  templateUrl: './gastos.html',
 })
 export class GastosComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
-  
-        
-    private readonly articuloUrl = '/api/tesoreria/core/articulo';
+
+  private readonly articuloUrl = '/api/tesoreria/core/articulo';
   private readonly ubicacionUrl = '/api/tesoreria/core/ubicacion';
   private readonly ubicacionArticuloUrl = '/api/tesoreria/core/ubicacionArticulo';
 
   public gastos: Articulo[] = [];
   public filteredGastos: Articulo[] = [];
   public selectedGasto: Articulo | null = null;
-  
+
   public isLoading = false;
   public errorMessage = '';
   public successMessage = '';
 
   public isModalOpen = false;
   public isBuscadorCuentaOpen = false;
-  
+
   // Imputaciones State
   public ubicaciones: Ubicacion[] = [];
   public imputaciones: UbicacionArticulo[] = [];
   public isBuscadorCuentaImputacionOpen = false;
   public selectedUbicacionId: number | null = null;
-  public selectedImputacionCuenta: { numeroCuenta: number, nombre: string } | null = null;
+  public selectedImputacionCuenta: { numeroCuenta: number; nombre: string } | null = null;
 
   public searchQuery = new FormControl('');
   public isSearching = false;
@@ -92,90 +108,102 @@ export class GastosComponent implements OnInit {
     nombre: ['', Validators.required],
     directo: [false],
     numeroCuenta: [null as number | null, Validators.required],
-    nombreCuenta: [{ value: '', disabled: true }]
+    nombreCuenta: [{ value: '', disabled: true }],
   });
 
   ngOnInit() {
     this.loadGastos(0);
     this.loadUbicaciones();
-    
-    this.searchQuery.valueChanges.pipe(
-      debounceTime(400),
-      distinctUntilChanged()
-    ).subscribe(query => {
-      this.zone.run(() => {
-        const q = (query || '').trim();
-        if (q.length > 0) {
-          this.buscarGastos(q);
-        } else {
-          this.loadGastos(0);
-        }
+
+    this.searchQuery.valueChanges
+      .pipe(debounceTime(400), distinctUntilChanged())
+      .subscribe((query) => {
+        this.zone.run(() => {
+          const q = (query || '').trim();
+          if (q.length > 0) {
+            this.buscarGastos(q);
+          } else {
+            this.loadGastos(0);
+          }
+        });
       });
-    });
   }
 
-  loadGastos(page: number = 0) {
+  loadGastos(page = 0) {
     this.isLoading = true;
     this.isSearching = false;
-    let params = new HttpParams().set('page', page.toString()).set('size', this.pageSize.toString());
-    this.http.get<PaginatedResponse<Articulo>>(`${this.articuloUrl}/tipo/gasto/page`, { params }).pipe(
-      catchError(err => {
-        console.error('Error al cargar la lista de gastos.', err);
-        this.showError('Error de conexión con el servidor.');
-        return of(null);
-      })
-    ).subscribe(response => {
-      this.zone.run(() => {
-        if (response) {
-          this.gastos = response.data || [];
-          this.filteredGastos = [...this.gastos];
-          this.currentPage = response.currentPage;
-          this.totalPages = response.totalPages;
-        } else {
-          this.gastos = [];
-          this.filteredGastos = [];
-        }
-        this.isLoading = false;
-        this.cdr.detectChanges();
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', this.pageSize.toString());
+    this.http
+      .get<PaginatedResponse<Articulo>>(`${this.articuloUrl}/tipo/gasto/page`, { params })
+      .pipe(
+        catchError((err) => {
+          console.error('Error al cargar la lista de gastos.', err);
+          this.showError('Error de conexión con el servidor.');
+          return of(null);
+        }),
+      )
+      .subscribe((response) => {
+        this.zone.run(() => {
+          if (response) {
+            this.gastos = response.data || [];
+            this.filteredGastos = [...this.gastos];
+            this.currentPage = response.currentPage;
+            this.totalPages = response.totalPages;
+          } else {
+            this.gastos = [];
+            this.filteredGastos = [];
+          }
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        });
       });
-    });
   }
 
   loadUbicaciones() {
-    this.http.get<Ubicacion[]>(`${this.ubicacionUrl}/`).subscribe(data => {
+    this.http.get<Ubicacion[]>(`${this.ubicacionUrl}/`).subscribe((data) => {
       this.ubicaciones = data || [];
       this.cdr.detectChanges();
     });
   }
 
   loadImputaciones(articuloId: number) {
-    this.http.get<UbicacionArticulo[]>(`${this.ubicacionArticuloUrl}/articulo/${articuloId}`).subscribe(data => {
-      this.imputaciones = data || [];
-      this.cdr.detectChanges();
-    });
+    this.http
+      .get<UbicacionArticulo[]>(`${this.ubicacionArticuloUrl}/articulo/${articuloId}`)
+      .subscribe((data) => {
+        this.imputaciones = data || [];
+        this.cdr.detectChanges();
+      });
   }
 
   buscarGastos(query: string) {
     this.isLoading = true;
     this.isSearching = true;
     this.cdr.detectChanges();
-    const conditions = query.trim().split(/\s+/).filter(c => c.length > 0);
-    this.http.post<any[]>(`${this.articuloUrl}/search`, conditions).pipe(
-      catchError(err => {
-        this.showError('Error al realizar la búsqueda.');
-        return of([]);
-      })
-    ).subscribe(data => {
-      this.zone.run(() => {
-        // La respuesta del backend ya trae 'numeroCuenta' y el objeto 'cuenta' hidratado correctamente.
-        this.gastos = data.filter(a => (a.tipo || '').toLowerCase() === 'gasto');
-        this.filteredGastos = [...this.gastos];
-        this.currentPage = 0;
-        this.totalPages = 1;
-        this.isLoading = false;
-        this.cdr.detectChanges();
+    const conditions = query
+      .trim()
+      .split(/\s+/)
+      .filter((c) => c.length > 0);
+    this.http
+      .post<any[]>(`${this.articuloUrl}/search`, conditions)
+      .pipe(
+        catchError((err) => {
+          this.showError('Error al realizar la búsqueda.');
+          return of([]);
+        }),
+      )
+      .subscribe((data) => {
+        this.zone.run(() => {
+          // La respuesta del backend ya trae 'numeroCuenta' y el objeto 'cuenta' hidratado correctamente.
+          this.gastos = data.filter((a) => (a.tipo || '').toLowerCase() === 'gasto');
+          this.filteredGastos = [...this.gastos];
+          this.currentPage = 0;
+          this.totalPages = 1;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        });
       });
-    });
   }
 
   limpiarBusqueda() {
@@ -184,7 +212,8 @@ export class GastosComponent implements OnInit {
   }
 
   nextPage() {
-    if (this.currentPage < this.totalPages - 1 && !this.isSearching) this.loadGastos(this.currentPage + 1);
+    if (this.currentPage < this.totalPages - 1 && !this.isSearching)
+      this.loadGastos(this.currentPage + 1);
   }
 
   prevPage() {
@@ -192,7 +221,10 @@ export class GastosComponent implements OnInit {
   }
 
   abrirBuscadorCuenta() {
-    this.zone.run(() => { this.isBuscadorCuentaOpen = true; this.cdr.detectChanges(); });
+    this.zone.run(() => {
+      this.isBuscadorCuentaOpen = true;
+      this.cdr.detectChanges();
+    });
   }
 
   onCuentaSelected(cuenta: CuentaSearchResponse) {
@@ -204,12 +236,18 @@ export class GastosComponent implements OnInit {
   }
 
   cerrarBuscadorCuenta() {
-    this.zone.run(() => { this.isBuscadorCuentaOpen = false; this.cdr.detectChanges(); });
+    this.zone.run(() => {
+      this.isBuscadorCuentaOpen = false;
+      this.cdr.detectChanges();
+    });
   }
 
   // Imputaciones methods
   abrirBuscadorCuentaImputacion() {
-    this.zone.run(() => { this.isBuscadorCuentaImputacionOpen = true; this.cdr.detectChanges(); });
+    this.zone.run(() => {
+      this.isBuscadorCuentaImputacionOpen = true;
+      this.cdr.detectChanges();
+    });
   }
 
   onCuentaImputacionSelected(cuenta: CuentaSearchResponse) {
@@ -221,7 +259,11 @@ export class GastosComponent implements OnInit {
   }
 
   asignarUbicacion() {
-    if (!this.selectedUbicacionId || !this.selectedImputacionCuenta || !this.selectedGasto?.articuloId) {
+    if (
+      !this.selectedUbicacionId ||
+      !this.selectedImputacionCuenta ||
+      !this.selectedGasto?.articuloId
+    ) {
       this.showError('Seleccione ubicación y cuenta para asignar.');
       return;
     }
@@ -229,7 +271,7 @@ export class GastosComponent implements OnInit {
     const payload = {
       ubicacionId: Number(this.selectedUbicacionId),
       articuloId: this.selectedGasto.articuloId,
-      numeroCuenta: this.selectedImputacionCuenta.numeroCuenta
+      numeroCuenta: this.selectedImputacionCuenta.numeroCuenta,
     };
 
     this.isLoading = true;
@@ -249,7 +291,7 @@ export class GastosComponent implements OnInit {
           this.isLoading = false;
           this.showError('Error al asignar la ubicación.');
         });
-      }
+      },
     });
   }
 
@@ -268,7 +310,7 @@ export class GastosComponent implements OnInit {
           nombre: gasto.nombre,
           directo: gasto.directo === 1,
           numeroCuenta: gasto.numeroCuenta,
-          nombreCuenta: gasto.cuenta ? gasto.cuenta.nombre : ''
+          nombreCuenta: gasto.cuenta ? gasto.cuenta.nombre : '',
         });
         if (gasto.articuloId) this.loadImputaciones(gasto.articuloId);
         this.isModalOpen = true;
@@ -286,14 +328,24 @@ export class GastosComponent implements OnInit {
               this.cdr.detectChanges();
             });
           },
-          error: () => { this.zone.run(() => { this.isLoading = false; this.showError('No se pudo inicializar un nuevo Gasto.'); }); }
+          error: () => {
+            this.zone.run(() => {
+              this.isLoading = false;
+              this.showError('No se pudo inicializar un nuevo Gasto.');
+            });
+          },
         });
       }
     });
   }
 
   cerrarModal() {
-    this.zone.run(() => { this.isModalOpen = false; this.selectedGasto = null; this.gastoForm.reset(); this.cdr.detectChanges(); });
+    this.zone.run(() => {
+      this.isModalOpen = false;
+      this.selectedGasto = null;
+      this.gastoForm.reset();
+      this.cdr.detectChanges();
+    });
   }
 
   guardar() {
@@ -314,20 +366,33 @@ export class GastosComponent implements OnInit {
       precio: 0,
       inventariable: 0,
       stockMinimo: 0,
-      habilitado: 0
+      habilitado: 0,
     };
     this.isLoading = true;
     this.cdr.detectChanges();
-    const request$ = payload.articuloId && this.selectedGasto
-      ? this.http.put<Articulo>(`${this.articuloUrl}/${payload.articuloId}`, payload)
-      : this.http.post<Articulo>(`${this.articuloUrl}/`, payload);
-    request$.pipe(
-      catchError(() => { this.zone.run(() => { this.isLoading = false; this.showError('Error al guardar el gasto.'); }); return of(null); })
-    ).subscribe(result => {
-      if (result) {
-        this.zone.run(() => { this.cerrarModal(); this.showSuccess('Gasto guardado correctamente.'); this.loadGastos(0); });
-      }
-    });
+    const request$ =
+      payload.articuloId && this.selectedGasto
+        ? this.http.put<Articulo>(`${this.articuloUrl}/${payload.articuloId}`, payload)
+        : this.http.post<Articulo>(`${this.articuloUrl}/`, payload);
+    request$
+      .pipe(
+        catchError(() => {
+          this.zone.run(() => {
+            this.isLoading = false;
+            this.showError('Error al guardar el gasto.');
+          });
+          return of(null);
+        }),
+      )
+      .subscribe((result) => {
+        if (result) {
+          this.zone.run(() => {
+            this.cerrarModal();
+            this.showSuccess('Gasto guardado correctamente.');
+            this.loadGastos(0);
+          });
+        }
+      });
   }
 
   eliminar(gasto: Articulo) {
@@ -336,19 +401,39 @@ export class GastosComponent implements OnInit {
       this.isLoading = true;
       this.cdr.detectChanges();
       this.http.delete(`${this.articuloUrl}/${gasto.articuloId}`).subscribe({
-        next: () => { this.zone.run(() => { this.showSuccess('Gasto eliminado correctamente.'); this.loadGastos(0); }); },
-        error: () => { this.zone.run(() => { this.showError('Error al eliminar el gasto.'); this.isLoading = false; }); }
+        next: () => {
+          this.zone.run(() => {
+            this.showSuccess('Gasto eliminado correctamente.');
+            this.loadGastos(0);
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.showError('Error al eliminar el gasto.');
+            this.isLoading = false;
+          });
+        },
       });
     }
   }
 
   private showError(msg: string) {
     this.errorMessage = msg;
-    setTimeout(() => { this.zone.run(() => { this.errorMessage = ''; this.cdr.detectChanges(); }); }, 5000);
+    setTimeout(() => {
+      this.zone.run(() => {
+        this.errorMessage = '';
+        this.cdr.detectChanges();
+      });
+    }, 5000);
   }
 
   private showSuccess(msg: string) {
     this.successMessage = msg;
-    setTimeout(() => { this.zone.run(() => { this.successMessage = ''; this.cdr.detectChanges(); }); }, 3000);
+    setTimeout(() => {
+      this.zone.run(() => {
+        this.successMessage = '';
+        this.cdr.detectChanges();
+      });
+    }, 3000);
   }
 }

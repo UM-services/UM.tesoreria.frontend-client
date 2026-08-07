@@ -1,57 +1,103 @@
 <!-- Overlay: z-40 covers the page but is BELOW the header (z-50) -->
-<div *ngIf="isDropdownOpen" (click)="toggleDropdown()" class="fixed inset-0 z-40 bg-black/0 cursor-default"></div>
+@if (isDropdownOpen) {
+  <div
+    tabindex="-1"
+    (click)="toggleDropdown()"
+    (keydown.escape)="toggleDropdown()"
+    class="fixed inset-0 z-40 bg-black/0 cursor-default"
+  ></div>
+}
 
-<header class="w-full h-full px-6 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm relative z-50">
+<header
+  class="w-full h-full px-6 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm relative z-50"
+>
   <!-- Left Side -->
   <div class="flex items-center">
     <button class="md:hidden text-gray-500 hover:text-gray-700 focus:outline-none">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"
+        />
       </svg>
     </button>
   </div>
 
   <!-- Right Side -->
-  <div class="flex items-center gap-6" *ngIf="user$ | async as user">
-    
-    <div class="hidden md:flex flex-col items-end">
-      <span class="text-sm font-semibold text-gray-800">{{ user.nombre }}</span>
-      <span class="text-xs text-gray-500">Sede: {{ user.sede }}</span>
-    </div>
+  @if (user$ | async; as user) {
+    <div class="flex items-center gap-6">
+      <div class="hidden md:flex flex-col items-end">
+        <span class="text-sm font-semibold text-gray-800">{{ user.nombre }}</span>
+        <span class="text-xs text-gray-500">Sede: {{ user.sede }}</span>
+      </div>
 
-    <div class="relative">
-      <button (click)="toggleDropdown()" class="flex items-center focus:outline-none cursor-pointer">
-        <div class="h-9 w-9 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md hover:shadow-lg transition-shadow">
-          {{ user.nombre.charAt(0) | uppercase }}
-        </div>
-      </button>
+      <div class="relative">
+        <button
+          (click)="toggleDropdown()"
+          class="flex items-center focus:outline-none cursor-pointer"
+        >
+          <div
+            class="h-9 w-9 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md hover:shadow-lg transition-shadow"
+          >
+            {{ user.nombre.charAt(0) | uppercase }}
+          </div>
+        </button>
 
-      <!-- Dropdown: Inherits z-50 from header, stays on top of z-40 overlay -->
-      <div *ngIf="isDropdownOpen" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-xl py-2 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-        <div class="px-4 py-2 border-b border-gray-100">
-          <p class="text-sm font-semibold text-gray-900 truncate">{{ user.nombre }}</p>
-          <p class="text-xs text-gray-500">ID: {{ user.userId }}</p>
-        </div>
-        
-        <div class="py-1">
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi Perfil</a>
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Configuración</a>
-        </div>
-        
-        <div class="border-t border-gray-100"></div>
-        
-        <div class="px-2 py-1">
-          <button 
-            type="button"
-            (click)="logout()" 
-            class="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md font-semibold cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" class="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Cerrar Sesión
-          </button>
-        </div>
+        <!-- Dropdown: Inherits z-50 from header, stays on top of z-40 overlay -->
+        @if (isDropdownOpen) {
+          <div
+            class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-xl py-2 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+          >
+            <div class="px-4 py-2 border-b border-gray-100">
+              <p class="text-sm font-semibold text-gray-900 truncate">{{ user.nombre }}</p>
+              <p class="text-xs text-gray-500">ID: {{ user.userId }}</p>
+            </div>
+
+            <div class="py-1">
+              <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >Mi Perfil</a
+              >
+              <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >Configuración</a
+              >
+            </div>
+
+            <div class="border-t border-gray-100"></div>
+
+            <div class="px-2 py-1">
+              <button
+                type="button"
+                (click)="logout()"
+                class="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md font-semibold cursor-pointer"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="mr-3 h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        }
       </div>
     </div>
-  </div>
+  }
 </header>
