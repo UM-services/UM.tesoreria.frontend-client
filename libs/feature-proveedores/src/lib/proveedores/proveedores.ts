@@ -35,14 +35,14 @@ export interface PaginatedResponse<T> {
   selector: 'app-proveedores',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, BuscadorProveedorComponent],
-  templateUrl: './proveedores.html'
+  templateUrl: './proveedores.html',
 })
 export class ProveedoresComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
-  
+
   private readonly apiUrlBase = '/api/tesoreria/core';
   private readonly baseUrl = `${this.apiUrlBase}/proveedor`;
   private readonly sheetUrl = `${this.apiUrlBase}/sheet`;
@@ -77,14 +77,12 @@ export class ProveedoresComponent implements OnInit {
     telefono: [''],
     celular: [''],
     fax: [''],
-    cbu: ['']
+    cbu: [''],
   });
 
   ngOnInit() {
     this.loadProveedores(0);
-    this.searchQuery.valueChanges.pipe(
-      debounceTime(400)
-    ).subscribe(query => {
+    this.searchQuery.valueChanges.pipe(debounceTime(400)).subscribe((query) => {
       this.zone.run(() => {
         const q = (query || '').trim();
         if (q.length > 0) {
@@ -99,44 +97,55 @@ export class ProveedoresComponent implements OnInit {
   loadProveedores(page: number) {
     this.isLoading = true;
     this.isSearching = false;
-    let params = new HttpParams().set('page', page.toString()).set('size', this.pageSize.toString());
-    this.http.get<PaginatedResponse<Proveedor>>(`${this.baseUrl}/page`, { params }).pipe(
-      catchError(err => {
-        this.showError('Error de conexión con el servidor.');
-        return of(null);
-      })
-    ).subscribe(response => {
-      if (response) {
-        this.proveedores = response.data || [];
-        this.currentPage = response.currentPage;
-        this.totalPages = response.totalPages;
-      } else {
-        this.proveedores = [];
-      }
-      this.isLoading = false;
-      this.cdr.detectChanges();
-    });
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', this.pageSize.toString());
+    this.http
+      .get<PaginatedResponse<Proveedor>>(`${this.baseUrl}/page`, { params })
+      .pipe(
+        catchError((err) => {
+          this.showError('Error de conexión con el servidor.');
+          return of(null);
+        }),
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.proveedores = response.data || [];
+          this.currentPage = response.currentPage;
+          this.totalPages = response.totalPages;
+        } else {
+          this.proveedores = [];
+        }
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      });
   }
 
   buscarProveedores(query: string) {
     this.isLoading = true;
     this.isSearching = true;
-    const conditions = query.trim().split(/\s+/).filter(c => c.length > 0);
-    this.http.post<any[]>(`${this.baseUrl}/search`, conditions).pipe(
-      catchError(err => {
-        this.showError('Error al realizar la búsqueda.');
-        return of([]);
-      })
-    ).subscribe(data => {
-      this.proveedores = data.map(p => ({
+    const conditions = query
+      .trim()
+      .split(/\s+/)
+      .filter((c) => c.length > 0);
+    this.http
+      .post<any[]>(`${this.baseUrl}/search`, conditions)
+      .pipe(
+        catchError((err) => {
+          this.showError('Error al realizar la búsqueda.');
+          return of([]);
+        }),
+      )
+      .subscribe((data) => {
+        this.proveedores = data.map((p) => ({
           ...p,
-          numeroCuenta: p.numeroCuenta !== undefined ? p.numeroCuenta : p.cuenta
-      }));
-      this.currentPage = 0;
-      this.totalPages = 1;
-      this.isLoading = false;
-      this.cdr.detectChanges();
-    });
+          numeroCuenta: p.numeroCuenta !== undefined ? p.numeroCuenta : p.cuenta,
+        }));
+        this.currentPage = 0;
+        this.totalPages = 1;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      });
   }
 
   limpiarBusqueda() {
@@ -145,7 +154,8 @@ export class ProveedoresComponent implements OnInit {
   }
 
   nextPage() {
-    if (this.currentPage < this.totalPages - 1 && !this.isSearching) this.loadProveedores(this.currentPage + 1);
+    if (this.currentPage < this.totalPages - 1 && !this.isSearching)
+      this.loadProveedores(this.currentPage + 1);
   }
 
   prevPage() {
@@ -161,7 +171,10 @@ export class ProveedoresComponent implements OnInit {
 
   onCuentaSelected(cuenta: ProveedorSearchResponse) {
     this.zone.run(() => {
-      this.proveedorForm.patchValue({ numeroCuenta: cuenta.numeroCuenta, nombreCuenta: cuenta.razonSocial });
+      this.proveedorForm.patchValue({
+        numeroCuenta: cuenta.numeroCuenta,
+        nombreCuenta: cuenta.razonSocial,
+      });
       this.isBuscadorCuentaOpen = false;
       this.cdr.detectChanges();
     });
@@ -193,7 +206,7 @@ export class ProveedoresComponent implements OnInit {
           telefono: prov.telefono,
           celular: prov.celular,
           fax: prov.fax,
-          cbu: prov.cbu
+          cbu: prov.cbu,
         });
       } else {
         this.selectedProveedor = null;
@@ -222,29 +235,34 @@ export class ProveedoresComponent implements OnInit {
     const formValue = this.proveedorForm.getRawValue() as Proveedor;
     this.isLoading = true;
     this.cdr.detectChanges();
-    this.http.get<Proveedor>(`${this.baseUrl}/cuit/${formValue.cuit}`).pipe(
-      catchError(() => of(null))
-    ).subscribe(existingProv => {
-      if (existingProv && existingProv.proveedorId) {
-          if ((!formValue.proveedorId) || (formValue.proveedorId && formValue.proveedorId !== existingProv.proveedorId)) {
-             this.showError(`ERROR: CUIT Repetido -> ${existingProv.razonSocial}`);
-             return;
+    this.http
+      .get<Proveedor>(`${this.baseUrl}/cuit/${formValue.cuit}`)
+      .pipe(catchError(() => of(null)))
+      .subscribe((existingProv) => {
+        if (existingProv && existingProv.proveedorId) {
+          if (
+            !formValue.proveedorId ||
+            (formValue.proveedorId && formValue.proveedorId !== existingProv.proveedorId)
+          ) {
+            this.showError(`ERROR: CUIT Repetido -> ${existingProv.razonSocial}`);
+            return;
           }
-      }
-      this.zone.run(() => {
-        const req$ = formValue.proveedorId 
-          ? this.http.put<Proveedor>(`${this.baseUrl}/${formValue.proveedorId}`, formValue)
-          : this.http.post<Proveedor>(`${this.baseUrl}/`, formValue);
-        req$.subscribe({
-          next: () => {
-            this.cerrarModal();
-            this.showSuccess('Proveedor guardado correctamente.');
-            if (this.isSearching) this.buscarProveedores(this.searchQuery.value || ''); else this.loadProveedores(this.currentPage);
-          },
-          error: () => this.showError('Error al guardar proveedor.')
+        }
+        this.zone.run(() => {
+          const req$ = formValue.proveedorId
+            ? this.http.put<Proveedor>(`${this.baseUrl}/${formValue.proveedorId}`, formValue)
+            : this.http.post<Proveedor>(`${this.baseUrl}/`, formValue);
+          req$.subscribe({
+            next: () => {
+              this.cerrarModal();
+              this.showSuccess('Proveedor guardado correctamente.');
+              if (this.isSearching) this.buscarProveedores(this.searchQuery.value || '');
+              else this.loadProveedores(this.currentPage);
+            },
+            error: () => this.showError('Error al guardar proveedor.'),
+          });
         });
       });
-    });
   }
 
   eliminar(prov: Proveedor) {
@@ -255,15 +273,19 @@ export class ProveedoresComponent implements OnInit {
       this.http.delete(`${this.baseUrl}/${prov.proveedorId}`).subscribe({
         next: () => {
           this.showSuccess('Proveedor eliminado correctamente.');
-          if (this.isSearching) this.buscarProveedores(this.searchQuery.value || ''); else this.loadProveedores(this.currentPage);
+          if (this.isSearching) this.buscarProveedores(this.searchQuery.value || '');
+          else this.loadProveedores(this.currentPage);
         },
-        error: () => this.showError('Error al eliminar proveedor.')
+        error: () => this.showError('Error al eliminar proveedor.'),
       });
     }
   }
 
   descargarPlanilla() {
-    this.zone.run(() => { this.isDownloadingSheet = true; this.cdr.detectChanges(); });
+    this.zone.run(() => {
+      this.isDownloadingSheet = true;
+      this.cdr.detectChanges();
+    });
     this.http.get(`${this.sheetUrl}/generateProveedores`, { responseType: 'blob' }).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
@@ -273,9 +295,17 @@ export class ProveedoresComponent implements OnInit {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        this.zone.run(() => { this.isDownloadingSheet = false; this.cdr.detectChanges(); });
+        this.zone.run(() => {
+          this.isDownloadingSheet = false;
+          this.cdr.detectChanges();
+        });
       },
-      error: () => { this.zone.run(() => { this.isDownloadingSheet = false; this.showError('Error al generar la planilla.'); }); }
+      error: () => {
+        this.zone.run(() => {
+          this.isDownloadingSheet = false;
+          this.showError('Error al generar la planilla.');
+        });
+      },
     });
   }
 
@@ -293,13 +323,19 @@ export class ProveedoresComponent implements OnInit {
     this.errorMessage = msg;
     this.isLoading = false;
     this.cdr.detectChanges();
-    setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 5000);
+    setTimeout(() => {
+      this.errorMessage = '';
+      this.cdr.detectChanges();
+    }, 5000);
   }
 
   private showSuccess(msg: string) {
     this.successMessage = msg;
     this.isLoading = false;
     this.cdr.detectChanges();
-    setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 5000);
+    setTimeout(() => {
+      this.successMessage = '';
+      this.cdr.detectChanges();
+    }, 5000);
   }
 }

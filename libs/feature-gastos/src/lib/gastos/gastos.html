@@ -5,77 +5,167 @@
       <p class="mt-1 text-sm text-gray-500">Gestión de artículos y conceptos de gasto.</p>
     </div>
     <div class="flex items-center gap-3">
-      <button type="button" (click)="abrirModal()" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      <button
+        type="button"
+        (click)="abrirModal()"
+        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="mr-2 h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
         </svg>
         Nuevo Gasto
       </button>
     </div>
   </div>
 
-  <div *ngIf="errorMessage" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
-    <div class="flex">
-      <div class="flex-shrink-0">
-        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-        </svg>
+  @if (errorMessage) {
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-red-700">{{ errorMessage }}</p>
+        </div>
       </div>
-      <div class="ml-3"><p class="text-sm text-red-700">{{ errorMessage }}</p></div>
     </div>
-  </div>
-  
-  <div *ngIf="successMessage" class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-sm">
-    <div class="flex">
-      <div class="flex-shrink-0">
-        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-        </svg>
+  }
+
+  @if (successMessage) {
+    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-sm">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-green-700">{{ successMessage }}</p>
+        </div>
       </div>
-      <div class="ml-3"><p class="text-sm text-green-700">{{ successMessage }}</p></div>
     </div>
-  </div>
+  }
 
   <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
     <!-- Toolbar (Search & Pagination) -->
-    <div class="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between flex-wrap gap-4">
+    <div
+      class="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between flex-wrap gap-4"
+    >
       <div class="relative w-full sm:max-w-md flex items-center gap-2">
         <div class="relative w-full">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              class="h-5 w-5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             [formControl]="searchQuery"
-            class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out" 
-            placeholder="Buscar gastos (escribe para buscar)...">
-            
-          <button *ngIf="isSearching || searchQuery.value" (click)="limpiarBusqueda()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-            </svg>
-          </button>
+            class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
+            placeholder="Buscar gastos (escribe para buscar)..."
+          />
+
+          @if (isSearching || searchQuery.value) {
+            <button
+              (click)="limpiarBusqueda()"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          }
         </div>
       </div>
 
       <!-- Pagination Controls -->
       <div class="flex items-center space-x-2 text-sm text-gray-600">
-        <span *ngIf="isSearching" class="text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">Resultados de Búsqueda</span>
-        <ng-container *ngIf="!isSearching">
-          <button (click)="prevPage()" [disabled]="currentPage === 0 || isLoading" class="p-1 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        @if (isSearching) {
+          <span class="text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded"
+            >Resultados de Búsqueda</span
+          >
+        }
+        @if (!isSearching) {
+          <button
+            (click)="prevPage()"
+            [disabled]="currentPage === 0 || isLoading"
+            class="p-1 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
             </svg>
           </button>
-          <span class="font-medium px-2 py-1 bg-white border border-gray-200 rounded shadow-sm">Pág {{ currentPage + 1 }} de {{ totalPages === 0 ? 1 : totalPages }}</span>
-          <button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1 || isLoading" class="p-1 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          <span class="font-medium px-2 py-1 bg-white border border-gray-200 rounded shadow-sm"
+            >Pág {{ currentPage + 1 }} de {{ totalPages === 0 ? 1 : totalPages }}</span
+          >
+          <button
+            (click)="nextPage()"
+            [disabled]="currentPage >= totalPages - 1 || isLoading"
+            class="p-1 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"
+              />
             </svg>
           </button>
-        </ng-container>
+        }
       </div>
     </div>
 
@@ -83,217 +173,459 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-16">#</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cuenta Directa/Puente</th>
-            <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Directo</th>
-            <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-16"
+            >
+              #
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+            >
+              Nombre
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+            >
+              Cuenta Directa/Puente
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider"
+            >
+              Directo
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
+            >
+              Acciones
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          
-          <tr *ngIf="isLoading && gastos.length === 0">
-            <td colspan="5" class="px-6 py-12 text-center">
-              <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p class="mt-2 text-sm text-gray-500">Cargando gastos...</p>
-            </td>
-          </tr>
+          @if (isLoading && gastos.length === 0) {
+            <tr>
+              <td colspan="5" class="px-6 py-12 text-center">
+                <svg
+                  class="animate-spin h-8 w-8 text-blue-600 mx-auto"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <p class="mt-2 text-sm text-gray-500">Cargando gastos...</p>
+              </td>
+            </tr>
+          }
 
-          <tr *ngIf="!isLoading && filteredGastos.length === 0">
-            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-              <p class="text-sm font-medium">No se encontraron gastos.</p>
-            </td>
-          </tr>
+          @if (!isLoading && filteredGastos.length === 0) {
+            <tr>
+              <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                <p class="text-sm font-medium">No se encontraron gastos.</p>
+              </td>
+            </tr>
+          }
 
-          <tr *ngFor="let g of filteredGastos" class="hover:bg-blue-50/50 transition-colors">
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
-              {{ g.articuloId }}
-            </td>
-            <td class="px-6 py-4">
-              <div class="text-sm font-bold text-gray-900">{{ g.nombre }}</div>
-            </td>
-            <td class="px-6 py-4">
-              <div class="text-sm text-gray-900">{{ g.cuenta?.nombre || '-' }}</div>
-              <div class="text-xs text-gray-500">{{ g.numeroCuenta }}</div>
-            </td>
-            <td class="px-6 py-4 text-center">
-              <span *ngIf="g.directo === 1" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Sí</span>
-              <span *ngIf="g.directo === 0" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">No</span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button (click)="abrirModal(g)" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors mr-2">
-                Editar
-              </button>
-              <button (click)="eliminar(g)" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors">
-                Eliminar
-              </button>
-            </td>
-          </tr>
+          @for (g of filteredGastos; track g) {
+            <tr class="hover:bg-blue-50/50 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
+                {{ g.articuloId }}
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm font-bold text-gray-900">{{ g.nombre }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-gray-900">{{ g.cuenta?.nombre || '-' }}</div>
+                <div class="text-xs text-gray-500">{{ g.numeroCuenta }}</div>
+              </td>
+              <td class="px-6 py-4 text-center">
+                @if (g.directo === 1) {
+                  <span
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                    >Sí</span
+                  >
+                }
+                @if (g.directo === 0) {
+                  <span
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+                    >No</span
+                  >
+                }
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button
+                  (click)="abrirModal(g)"
+                  class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors mr-2"
+                >
+                  Editar
+                </button>
+                <button
+                  (click)="eliminar(g)"
+                  class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>
   </div>
 </div>
 
-<div *ngIf="isModalOpen" class="relative z-[9999]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+@if (isModalOpen) {
+  <div class="relative z-[9999]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
-  <div class="fixed inset-0 z-10 w-screen overflow-y-auto" (click)="cerrarModal()">
-    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-      
-      <div (click)="$event.stopPropagation()" class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl flex flex-col">
-        
-        <div class="bg-white px-4 py-4 sm:px-6 border-b border-gray-200 flex justify-between items-center shrink-0">
-          <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
-            {{ selectedGasto ? 'Editar Gasto' : 'Nuevo Gasto' }}
-          </h3>
-          <button type="button" (click)="cerrarModal()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
-            <span class="sr-only">Cerrar</span>
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+    <div
+      tabindex="-1"
+      class="fixed inset-0 z-10 w-screen overflow-y-auto"
+      (click)="cerrarModal()"
+      (keydown.escape)="cerrarModal()"
+    >
+      <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+        <div
+          tabindex="-1"
+          (click)="$event.stopPropagation()"
+          (keydown)="$event.stopPropagation()"
+          class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl flex flex-col"
+        >
+          <div
+            class="bg-white px-4 py-4 sm:px-6 border-b border-gray-200 flex justify-between items-center shrink-0"
+          >
+            <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
+              {{ selectedGasto ? 'Editar Gasto' : 'Nuevo Gasto' }}
+            </h3>
+            <button
+              type="button"
+              (click)="cerrarModal()"
+              class="text-gray-400 hover:text-gray-500 focus:outline-none"
+            >
+              <span class="sr-only">Cerrar</span>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
 
-        <div class="overflow-y-auto px-4 py-5 sm:p-6 bg-white flex-1 min-h-[300px]">
-          <form [formGroup]="gastoForm" (ngSubmit)="guardar()" class="grid grid-cols-1 md:grid-cols-12 gap-5">
-            
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">ID</label>
-              <input type="number" formControlName="articuloId" class="block w-full border-gray-200 bg-gray-50 rounded-md shadow-sm sm:text-sm py-2 px-3 border text-gray-500 cursor-not-allowed">
-            </div>
-
-            <div class="md:col-span-10">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre <span class="text-red-500">*</span></label>
-              <input type="text" formControlName="nombre" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border" [ngClass]="{'border-red-300 ring-1 ring-red-300': gastoForm.get('nombre')?.invalid && gastoForm.get('nombre')?.touched}">
-            </div>
-
-            <div class="md:col-span-12">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Cuenta Directa/Puente <span class="text-red-500">*</span></label>
-              <div class="flex gap-2">
-                <div class="relative flex items-center w-1/3">
-                  <input type="number" formControlName="numeroCuenta" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border pr-8" [ngClass]="{'border-red-300 ring-1 ring-red-300': gastoForm.get('numeroCuenta')?.invalid && gastoForm.get('numeroCuenta')?.touched}">
-                  <button type="button" (click)="abrirBuscadorCuenta()" class="absolute right-1 p-1 text-gray-400 hover:text-blue-600 focus:outline-none transition-colors" title="Buscar Cuenta Contable">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-                <input type="text" formControlName="nombreCuenta" class="block w-2/3 border-gray-200 bg-gray-100 rounded-md shadow-sm sm:text-sm py-2 px-3 border text-gray-600 truncate cursor-not-allowed" placeholder="Nombre de la cuenta...">
+          <div class="overflow-y-auto px-4 py-5 sm:p-6 bg-white flex-1 min-h-[300px]">
+            <form
+              [formGroup]="gastoForm"
+              (ngSubmit)="guardar()"
+              class="grid grid-cols-1 md:grid-cols-12 gap-5"
+            >
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">ID</label>
+                <input
+                  type="number"
+                  formControlName="articuloId"
+                  class="block w-full border-gray-200 bg-gray-50 rounded-md shadow-sm sm:text-sm py-2 px-3 border text-gray-500 cursor-not-allowed"
+                />
               </div>
-            </div>
 
-            <div class="md:col-span-12 mt-2">
-              <div class="relative flex items-start">
-                <div class="flex h-5 items-center">
-                  <input id="directo" formControlName="directo" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                </div>
-                <div class="ml-3 text-sm">
-                  <label for="directo" class="font-medium text-gray-900 cursor-pointer">Asignación Directa</label>
-                  <p class="text-gray-500">Marque esta opción si el gasto no requiere ser distribuido en diferentes centros de costo (Ubicaciones).</p>
-                </div>
+              <div class="md:col-span-10">
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Nombre <span class="text-red-500">*</span></label
+                >
+                <input
+                  type="text"
+                  formControlName="nombre"
+                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
+                  [ngClass]="{
+                    'border-red-300 ring-1 ring-red-300':
+                      gastoForm.get('nombre')?.invalid && gastoForm.get('nombre')?.touched,
+                  }"
+                />
               </div>
-            </div>
 
-            <!-- Sección Imputaciones Completada -->
-            <div *ngIf="!gastoForm.get('directo')?.value" class="md:col-span-12 mt-6 border-t border-gray-200 pt-6">
-              <h4 class="text-md font-medium text-gray-900 mb-4 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                Imputaciones por Ubicación
-              </h4>
-              
-              <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-4">
-                  <div class="md:col-span-5">
-                    <label class="block text-sm font-medium text-gray-600 mb-1">Ubicación</label>
-                    <select [(ngModel)]="selectedUbicacionId" [ngModelOptions]="{standalone: true}" class="block w-full border-gray-300 rounded-md shadow-sm sm:text-sm py-2 px-3 border bg-white focus:ring-blue-500 focus:border-blue-500">
-                      <option [value]="null">Seleccione una ubicación...</option>
-                      <option *ngFor="let u of ubicaciones" [value]="u.ubicacionId">{{ u.nombre }}</option>
-                    </select>
-                  </div>
-                  <div class="md:col-span-5">
-                    <label class="block text-sm font-medium text-gray-600 mb-1">Cuenta Centro de Costo</label>
-                    <div class="relative flex items-center">
-                      <input 
-                        readonly 
-                        type="text" 
-                        [value]="selectedImputacionCuenta ? selectedImputacionCuenta.numeroCuenta + ' - ' + selectedImputacionCuenta.nombre : ''" 
-                        placeholder="Seleccione una cuenta..." 
-                        class="block w-full border-gray-300 rounded-md shadow-sm sm:text-sm py-2 px-3 border bg-white cursor-pointer"
-                        (click)="abrirBuscadorCuentaImputacion()">
-                      <button type="button" (click)="abrirBuscadorCuentaImputacion()" class="absolute right-1 p-1 text-gray-400 hover:text-blue-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="md:col-span-2">
-                    <button type="button" (click)="asignarUbicacion()" [disabled]="!selectedUbicacionId || !selectedImputacionCuenta" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none disabled:opacity-50 transition-colors">
-                      Asignar
+              <div class="md:col-span-12">
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Cuenta Directa/Puente <span class="text-red-500">*</span></label
+                >
+                <div class="flex gap-2">
+                  <div class="relative flex items-center w-1/3">
+                    <input
+                      type="number"
+                      formControlName="numeroCuenta"
+                      class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border pr-8"
+                      [ngClass]="{
+                        'border-red-300 ring-1 ring-red-300':
+                          gastoForm.get('numeroCuenta')?.invalid &&
+                          gastoForm.get('numeroCuenta')?.touched,
+                      }"
+                    />
+                    <button
+                      type="button"
+                      (click)="abrirBuscadorCuenta()"
+                      class="absolute right-1 p-1 text-gray-400 hover:text-blue-600 focus:outline-none transition-colors"
+                      title="Buscar Cuenta Contable"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
                     </button>
                   </div>
-                </div>
-
-                <div class="max-h-[300px] overflow-y-auto">
-                  <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-md overflow-hidden bg-white">
-                    <thead class="bg-gray-100 sticky top-0">
-                      <tr>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Ubicación</th>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Cuenta Centro</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                      <tr *ngIf="imputaciones.length === 0">
-                        <td colspan="2" class="px-4 py-6 text-center text-sm text-gray-400 italic">No hay ubicaciones asignadas para este gasto.</td>
-                      </tr>
-                      <tr *ngFor="let imp of imputaciones" class="hover:bg-gray-50">
-                        <td class="px-4 py-2 text-sm font-medium text-gray-900">{{ imp.ubicacion?.nombre }}</td>
-                        <td class="px-4 py-2 text-sm text-gray-600">
-                          <div class="font-medium text-gray-800">{{ imp.cuenta?.nombre }}</div>
-                          <div class="text-xs">{{ imp.numeroCuenta }}</div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <input
+                    type="text"
+                    formControlName="nombreCuenta"
+                    class="block w-2/3 border-gray-200 bg-gray-100 rounded-md shadow-sm sm:text-sm py-2 px-3 border text-gray-600 truncate cursor-not-allowed"
+                    placeholder="Nombre de la cuenta..."
+                  />
                 </div>
               </div>
-            </div>
 
-          </form>
-        </div>
-        
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200 shrink-0">
-          <button type="button" (click)="guardar()" [disabled]="isLoading" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition-colors disabled:opacity-50">
-            <svg *ngIf="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Guardar Gasto
-          </button>
-          <button type="button" (click)="cerrarModal()" [disabled]="isLoading" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-            Cancelar
-          </button>
+              <div class="md:col-span-12 mt-2">
+                <div class="relative flex items-start">
+                  <div class="flex h-5 items-center">
+                    <input
+                      id="directo"
+                      formControlName="directo"
+                      type="checkbox"
+                      class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div class="ml-3 text-sm">
+                    <label for="directo" class="font-medium text-gray-900 cursor-pointer"
+                      >Asignación Directa</label
+                    >
+                    <p class="text-gray-500">
+                      Marque esta opción si el gasto no requiere ser distribuido en diferentes
+                      centros de costo (Ubicaciones).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sección Imputaciones Completada -->
+              @if (!gastoForm.get('directo')?.value) {
+                <div class="md:col-span-12 mt-6 border-t border-gray-200 pt-6">
+                  <h4 class="text-md font-medium text-gray-900 mb-4 flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5 mr-2 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                      />
+                    </svg>
+                    Imputaciones por Ubicación
+                  </h4>
+
+                  <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-4">
+                      <div class="md:col-span-5">
+                        <label class="block text-sm font-medium text-gray-600 mb-1"
+                          >Ubicación</label
+                        >
+                        <select
+                          [(ngModel)]="selectedUbicacionId"
+                          [ngModelOptions]="{ standalone: true }"
+                          class="block w-full border-gray-300 rounded-md shadow-sm sm:text-sm py-2 px-3 border bg-white focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option [value]="null">Seleccione una ubicación...</option>
+                          @for (u of ubicaciones; track u) {
+                            <option [value]="u.ubicacionId">{{ u.nombre }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="md:col-span-5">
+                        <label class="block text-sm font-medium text-gray-600 mb-1"
+                          >Cuenta Centro de Costo</label
+                        >
+                        <div class="relative flex items-center">
+                          <input
+                            readonly
+                            type="text"
+                            [value]="
+                              selectedImputacionCuenta
+                                ? selectedImputacionCuenta.numeroCuenta +
+                                  ' - ' +
+                                  selectedImputacionCuenta.nombre
+                                : ''
+                            "
+                            placeholder="Seleccione una cuenta..."
+                            class="block w-full border-gray-300 rounded-md shadow-sm sm:text-sm py-2 px-3 border bg-white cursor-pointer"
+                            (click)="abrirBuscadorCuentaImputacion()"
+                          />
+                          <button
+                            type="button"
+                            (click)="abrirBuscadorCuentaImputacion()"
+                            class="absolute right-1 p-1 text-gray-400 hover:text-blue-600"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fill-rule="evenodd"
+                                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                clip-rule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="md:col-span-2">
+                        <button
+                          type="button"
+                          (click)="asignarUbicacion()"
+                          [disabled]="!selectedUbicacionId || !selectedImputacionCuenta"
+                          class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none disabled:opacity-50 transition-colors"
+                        >
+                          Asignar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="max-h-[300px] overflow-y-auto">
+                      <table
+                        class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-md overflow-hidden bg-white"
+                      >
+                        <thead class="bg-gray-100 sticky top-0">
+                          <tr>
+                            <th
+                              class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase"
+                            >
+                              Ubicación
+                            </th>
+                            <th
+                              class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase"
+                            >
+                              Cuenta Centro
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                          @if (imputaciones.length === 0) {
+                            <tr>
+                              <td
+                                colspan="2"
+                                class="px-4 py-6 text-center text-sm text-gray-400 italic"
+                              >
+                                No hay ubicaciones asignadas para este gasto.
+                              </td>
+                            </tr>
+                          }
+                          @for (imp of imputaciones; track imp) {
+                            <tr class="hover:bg-gray-50">
+                              <td class="px-4 py-2 text-sm font-medium text-gray-900">
+                                {{ imp.ubicacion?.nombre }}
+                              </td>
+                              <td class="px-4 py-2 text-sm text-gray-600">
+                                <div class="font-medium text-gray-800">
+                                  {{ imp.cuenta?.nombre }}
+                                </div>
+                                <div class="text-xs">{{ imp.numeroCuenta }}</div>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              }
+            </form>
+          </div>
+
+          <div
+            class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200 shrink-0"
+          >
+            <button
+              type="button"
+              (click)="guardar()"
+              [disabled]="isLoading"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition-colors disabled:opacity-50"
+            >
+              @if (isLoading) {
+                <svg
+                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              }
+              Guardar Gasto
+            </button>
+            <button
+              type="button"
+              (click)="cerrarModal()"
+              [disabled]="isLoading"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
+}
 
 <ui-buscador-cuenta-contable
   [isOpen]="isBuscadorCuentaOpen"
   (cuentaSelected)="onCuentaSelected($event)"
-  (closed)="cerrarBuscadorCuenta()">
+  (closed)="cerrarBuscadorCuenta()"
+>
 </ui-buscador-cuenta-contable>
 
 <!-- Segundo buscador para imputaciones (para evitar conflictos de estado) -->
 <ui-buscador-cuenta-contable
   [isOpen]="isBuscadorCuentaImputacionOpen"
   (cuentaSelected)="onCuentaImputacionSelected($event)"
-  (closed)="isBuscadorCuentaImputacionOpen = false">
+  (closed)="isBuscadorCuentaImputacionOpen = false"
+>
 </ui-buscador-cuenta-contable>
