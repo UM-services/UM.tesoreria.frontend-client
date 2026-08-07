@@ -2,12 +2,17 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AlumnoGuarani, DatosPersonalesAlumno } from './datos-personales.models';
+import {
+  AlumnoGuarani,
+  DatosPersonalesAlumno,
+  GuaraniBeneficio,
+} from './datos-personales.models';
 
 @Injectable({ providedIn: 'root' })
 export class DatosPersonalesService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl.replace(/\/core\/auth\/?$/, '')}/guarani/alumno/documento`;
+  private readonly beneficiosUrl = `${environment.apiUrl.replace(/\/auth\/?$/, '')}/guaraniBeneficio`;
 
   consultar(documento: string): Observable<DatosPersonalesAlumno> {
     return this.http
@@ -24,6 +29,10 @@ export class DatosPersonalesService {
           return persona;
         }),
       );
+  }
+
+  consultarBeneficios(): Observable<GuaraniBeneficio[]> {
+    return this.http.get<GuaraniBeneficio[]>(`${this.beneficiosUrl}/`);
   }
 
   capturar(documento: string): Observable<boolean> {

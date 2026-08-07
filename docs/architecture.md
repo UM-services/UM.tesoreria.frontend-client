@@ -184,7 +184,7 @@ flowchart TD
     GuaraniApp["Guaraní App"] --> AppRoutes["Rutas protegidas"]
     AppRoutes --> Pendientes["Pendientes Pre Guaraní"]
     AppRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
-    AppRoutes --> Beneficios["Beneficios de requisitos"]
+    AppRoutes --> Beneficios["Beneficios de requisitos y porcentajes"]
     AppRoutes --> Datos["Datos Personales y captura<br/>/datos-personales"]
 
     Pendientes --> GuaraniAPI["API Guaraní"]
@@ -193,6 +193,7 @@ flowchart TD
     Ubicaciones --> CoreAPI["API Core"]
     Beneficios --> CoreAPI
     Datos --> GuaraniAPI
+    Datos --> Beneficios
     Datos --> Captura["Captura de datos personales"]
 ```
 

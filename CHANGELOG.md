@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.14.0] - 2026-08-07
+
+### Added
+
+- feat(guarani): Añadida la consulta de beneficios junto con los datos personales y la visualización del porcentaje asociado a cada requisito presentado.
+
+### Changed
+
+- chore(release): Sincronizadas las versiones de `package.json` y `package-lock.json` para que la instalación con `npm ci` del pipeline de GitHub sea reproducible.
+
 ## [0.13.1] - 2026-08-06
 
 ### Fixed

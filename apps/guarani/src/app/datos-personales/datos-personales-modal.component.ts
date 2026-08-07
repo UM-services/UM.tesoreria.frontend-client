@@ -10,9 +10,9 @@ import {
   SimpleChanges,
   inject,
 } from '@angular/core';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { DatosPersonalesService } from './datos-personales.service';
-import { DatosPersonalesAlumno } from './datos-personales.models';
+import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.models';
 
 @Component({
   selector: 'app-datos-personales-modal',
@@ -174,6 +174,7 @@ import { DatosPersonalesAlumno } from './datos-personales.models';
                           <th class="px-4 py-3 text-left font-semibold text-gray-600">
                             Observaciones
                           </th>
+                          <th class="px-4 py-3 text-left font-semibold text-gray-600">Beneficio</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-gray-200">
@@ -190,6 +191,13 @@ import { DatosPersonalesAlumno } from './datos-personales.models';
                             </td>
                             <td class="px-4 py-3 text-gray-700">
                               {{ requisito.observaciones || '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                              @if (beneficioDe(requisito.requisito); as beneficio) {
+                                {{ porcentajeMostrado(beneficio.porcentajeBeneficio) }}%
+                              } @else {
+                                -
+                              }
                             </td>
                           </tr>
                         }
@@ -217,6 +225,7 @@ export class DatosPersonalesModalComponent implements OnChanges {
   private requestId = 0;
 
   public alumno: DatosPersonalesAlumno | null = null;
+  public beneficios: GuaraniBeneficio[] = [];
   public isLoading = false;
   public isCapturing = false;
   public captureMessage = '';
@@ -284,13 +293,16 @@ export class DatosPersonalesModalComponent implements OnChanges {
 
     const requestId = ++this.requestId;
     this.alumno = null;
+    this.beneficios = [];
     this.errorMessage = '';
     this.captureMessage = '';
     this.captureError = '';
     this.isLoading = true;
 
-    this.datosPersonalesService
-      .consultar(documento)
+    forkJoin({
+      alumno: this.datosPersonalesService.consultar(documento),
+      beneficios: this.datosPersonalesService.consultarBeneficios(),
+    })
       .pipe(
         finalize(() => {
           this.zone.run(() => {
@@ -302,13 +314,14 @@ export class DatosPersonalesModalComponent implements OnChanges {
         }),
       )
       .subscribe({
-        next: (alumno) => {
+        next: ({ alumno, beneficios }) => {
           this.zone.run(() => {
             if (requestId !== this.requestId) {
               return;
             }
 
             this.alumno = alumno;
+            this.beneficios = beneficios || [];
             this.cdr.detectChanges();
           });
         },
@@ -327,5 +340,17 @@ export class DatosPersonalesModalComponent implements OnChanges {
           });
         },
       });
+  }
+
+  beneficioDe(requisito: number | null | undefined): GuaraniBeneficio | undefined {
+    if (requisito === null || requisito === undefined) {
+      return undefined;
+    }
+
+    return this.beneficios.find(beneficio => beneficio.requisito === requisito);
+  }
+
+  porcentajeMostrado(porcentaje: number): number {
+    return Number((porcentaje * 100).toFixed(2));
   }
 }

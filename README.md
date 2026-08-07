@@ -35,7 +35,7 @@ La aplicación `guarani` también permite asociar tipos de chequera a propuestas
 ## Instalación
 
 ```bash
-npm install
+npm ci
 ```
 
 ## Desarrollo
@@ -89,7 +89,7 @@ nx test
         DEP["Administrador: dependencias"]
         GP["Guaraní: pendientes y chequeras"]
         GU["Guaraní: ubicaciones"]
-        GB["Guaraní: beneficios"]
+        GB["Guaraní: beneficios y porcentajes"]
         GD["Guaraní: datos personales y captura"]
     end
 
@@ -161,7 +161,7 @@ nx test
 | Tailwind CSS | 4.2.4                                      |
 | TypeScript   | 5.9.2                                      |
 | Vitest       | 4.0.8                                      |
-| Docker       | 24-alpine (build) / nginx:alpine (runtime) |
+| Docker       | nginx:alpine (runtime)                     |
 
 ## Despliegue con Docker
 
@@ -200,7 +200,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.13.1**
+Versión actual: **0.14.0**
 
 ## Licencia
 
