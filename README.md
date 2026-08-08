@@ -88,6 +88,7 @@ nx test
         FP["Pagos: facturas pendientes"]
         DEP["Administrador: dependencias"]
         GP["Guaraní: pendientes y chequeras"]
+        GS["Guaraní: acceso y ubicaciones por sede"]
         GU["Guaraní: ubicaciones"]
         GB["Guaraní: beneficios y porcentajes"]
         GD["Guaraní: datos personales y captura"]
@@ -141,6 +142,7 @@ nx test
     G --> AUTH
     G --> LAYOUT
     G --> GP
+    G --> GS
     G --> GU
     G --> GB
     G --> GD
@@ -200,7 +202,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.14.1**
+Versión actual: **0.15.0**
 
 ## Licencia
 

@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { catchError } from 'rxjs/operators';
-import { forkJoin, of } from 'rxjs';
+import { catchError, timeout } from 'rxjs/operators';
+import { EMPTY, forkJoin, of } from 'rxjs';
+import { AuthService } from '@tesoreria/shared-api';
 import { DatosPersonalesModalComponent } from '../datos-personales/datos-personales-modal.component';
 
 export interface Facultad {
@@ -58,6 +59,12 @@ export interface Ubicacion {
   institucionAraucano?: string | null;
   latitud?: number | null;
   longitud?: number | null;
+}
+
+export interface GuaraniUbicacion {
+  guaraniUbicacionId: number;
+  ubicacion: number;
+  geograficaId: number;
 }
 
 export interface PropuestaAspira {
@@ -137,6 +144,17 @@ export interface GuaraniPropuestaTipoChequera {
     nombre?: string;
     descripcion?: string;
   };
+}
+
+export function ubicacionesDeGeografica(
+  ubicaciones: Ubicacion[],
+  asociaciones: GuaraniUbicacion[],
+  geograficaId: number,
+): Ubicacion[] {
+  const idsDeMiSede = new Set(
+    asociaciones.filter(asociacion => asociacion.geograficaId === geograficaId).map(asociacion => asociacion.ubicacion),
+  );
+  return ubicaciones.filter(ubicacion => idsDeMiSede.has(ubicacion.ubicacion));
 }
 
 @Component({
@@ -307,6 +325,7 @@ export interface GuaraniPropuestaTipoChequera {
               id="fechaInscripcionDesde"
               type="date"
               [(ngModel)]="fechaInscripcionDesde"
+              (change)="guardarFiltros()"
               class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all duration-200 shadow-sm font-medium"
             />
           </div>
@@ -589,9 +608,11 @@ export interface GuaraniPropuestaTipoChequera {
   `
 })
 export class PendientesPreGuaraniComponent implements OnInit {
+  private readonly filtrosStorageKey = 'guarani-pendientes-pre-filtros';
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
+  private readonly authService = inject(AuthService);
 
   private readonly facultadesUrl = environment.apiUrl.replace(/\/auth\/?$/, '') + '/facultad/con-responsable-academica';
   private readonly guaraniBaseUrl = environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaResponsableAcademica/responsableAcademica/preuniversitario';
@@ -600,6 +621,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   private readonly propuestasOfertaUrl = environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaOferta';
   private readonly propuestaTipoPreuniversitario = 204;
   private readonly coreBaseUrl = environment.apiUrl.replace(/\/auth\/?$/, '');
+  private readonly guaraniUbicacionesUrl = `${this.coreBaseUrl}/guaraniUbicacion`;
   private readonly lectivosUrl = `${this.coreBaseUrl}/lectivo/reverse`;
   private readonly tiposChequeraSearchUrl = `${this.coreBaseUrl}/tipoChequera/search/1`;
   private readonly asociacionesUrl = `${this.coreBaseUrl}/guaraniPropuestaTipoChequera`;
@@ -645,6 +667,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   public documentoDatosPersonales: string | null = null;
   private propuestasRequestId = 0;
   private resultadosRequestId = 0;
+  private filtrosRestaurados = false;
 
   get resultadosVisibles(): PropuestaAspira[] {
     return this.vistaResultados === 'sin-chequera' ? this.resultadosSinChequera : this.resultados;
@@ -658,6 +681,64 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.cargarFacultades();
     this.cargarUbicaciones();
     this.cargarLectivos();
+  }
+
+  guardarFiltros() {
+    sessionStorage.setItem(this.filtrosStorageKey, JSON.stringify({
+      facultadId: this.selectedFacultadId,
+      ubicacionId: this.selectedUbicacionId,
+      propuestaId: this.selectedPropuestaId,
+      lectivoId: this.selectedLectivoId,
+      fechaInscripcionDesde: this.fechaInscripcionDesde,
+    }));
+  }
+
+  private restaurarFiltrosSiEsPosible() {
+    if (
+      this.filtrosRestaurados
+      || this.isLoadingFacultades
+      || this.isLoadingUbicaciones
+      || this.isLoadingLectivos
+      || this.facultades.length === 0
+      || this.ubicaciones.length === 0
+      || this.lectivos.length === 0
+    ) {
+      return;
+    }
+
+    const filtrosGuardados = sessionStorage.getItem(this.filtrosStorageKey);
+    if (!filtrosGuardados) {
+      this.filtrosRestaurados = true;
+      return;
+    }
+
+    try {
+      this.filtrosRestaurados = true;
+      const filtros = JSON.parse(filtrosGuardados) as {
+        facultadId?: number | null;
+        ubicacionId?: number | null;
+        propuestaId?: number | null;
+        lectivoId?: number | null;
+        fechaInscripcionDesde?: string;
+      };
+
+      this.selectedFacultadId = this.facultades.some(item => item.facultadId === filtros.facultadId)
+        ? filtros.facultadId ?? null
+        : null;
+      this.selectedUbicacionId = this.ubicaciones.some(item => item.ubicacion === filtros.ubicacionId)
+        ? filtros.ubicacionId ?? null
+        : null;
+      this.selectedLectivoId = this.lectivos.some(item => item.lectivoId === filtros.lectivoId)
+        ? filtros.lectivoId ?? null
+        : null;
+      this.fechaInscripcionDesde = filtros.fechaInscripcionDesde || '';
+
+      if (this.selectedFacultadId && this.selectedUbicacionId) {
+        this.cargarPropuestasDisponibles(filtros.propuestaId ?? null);
+      }
+    } catch {
+      sessionStorage.removeItem(this.filtrosStorageKey);
+    }
   }
 
   cargarLectivos() {
@@ -676,6 +757,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
       this.zone.run(() => {
         this.lectivos = data || [];
         this.isLoadingLectivos = false;
+        this.restaurarFiltrosSiEsPosible();
         this.cdr.detectChanges();
       });
     });
@@ -722,6 +804,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.errorAsociacion = '';
     this.successAsociacion = '';
     this.limpiarResultados();
+    this.guardarFiltros();
     this.cargarAsociacionRegistrada();
   }
 
@@ -732,6 +815,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.asociacionRegistrada = null;
     this.consultaAsociacionRealizada = false;
     this.limpiarResultados();
+    this.guardarFiltros();
     this.cargarAsociacionRegistrada();
   }
 
@@ -879,11 +963,41 @@ export class PendientesPreGuaraniComponent implements OnInit {
       })
     ).subscribe(data => {
       this.zone.run(() => {
-        this.ubicaciones = data || [];
-        this.isLoadingUbicaciones = false;
-        this.cdr.detectChanges();
+        const ubicaciones = data || [];
+        const user = this.authService.currentUserSignal();
+        const geograficaId = user?.geograficaId;
+        if (geograficaId != null && geograficaId !== 1) {
+          this.cargarUbicacionesDeMiSede(ubicaciones, geograficaId);
+        } else {
+          this.aplicarUbicaciones(ubicaciones);
+        }
       });
     });
+  }
+
+  private cargarUbicacionesDeMiSede(ubicaciones: Ubicacion[], geograficaId: number) {
+    this.http.get<GuaraniUbicacion[]>(this.guaraniUbicacionesUrl).pipe(
+      catchError(err => {
+        console.error('Error al cargar las asociaciones de ubicaciones:', err);
+        this.zone.run(() => {
+          this.errorUbicaciones = 'No se pudieron cargar las ubicaciones.';
+          this.isLoadingUbicaciones = false;
+          this.cdr.detectChanges();
+        });
+        return of([]);
+      })
+    ).subscribe(asociaciones => {
+      this.zone.run(() => {
+        this.aplicarUbicaciones(ubicacionesDeGeografica(ubicaciones, asociaciones || [], geograficaId));
+      });
+    });
+  }
+
+  private aplicarUbicaciones(ubicaciones: Ubicacion[]) {
+    this.ubicaciones = ubicaciones;
+    this.isLoadingUbicaciones = false;
+    this.restaurarFiltrosSiEsPosible();
+    this.cdr.detectChanges();
   }
 
   revisar() {
@@ -901,6 +1015,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
     const url = `${this.propuestasAspiraUrl}/propuesta/${this.selectedPropuestaId}/ubicacion/${this.selectedUbicacionId}/fechaInscripcionDesde/${this.fechaInscripcionDesde}`;
 
     this.http.get<PropuestaAspira[]>(url).pipe(
+      timeout(30000),
       catchError(err => {
         console.error('Error al cargar aspirantes:', err);
         this.zone.run(() => {
@@ -912,7 +1027,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
           this.consultaRealizada = true;
           this.cdr.detectChanges();
         });
-        return of([]);
+        return EMPTY;
       })
     ).subscribe(data => {
       if (requestId !== this.resultadosRequestId) {
@@ -920,33 +1035,67 @@ export class PendientesPreGuaraniComponent implements OnInit {
       }
 
       this.zone.run(() => {
-        const resultadosOrdenados = [...(data || [])].sort((a, b) => {
-          const apellidoOrden = a.personaRel.apellido.localeCompare(
-            b.personaRel.apellido,
+        if (!Array.isArray(data) || data.length === 0) {
+          this.resultados = [];
+          this.isLoadingResultados = false;
+          this.consultaRealizada = true;
+          this.cdr.detectChanges();
+          return;
+        }
+
+        const validItems = data.filter(item => item && item.personaRel);
+
+        const resultadosOrdenados = [...validItems].sort((a, b) => {
+          const apellidoA = a.personaRel?.apellido || '';
+          const apellidoB = b.personaRel?.apellido || '';
+          const apellidoOrden = apellidoA.localeCompare(
+            apellidoB,
             'es',
             { sensitivity: 'base' }
           );
 
-          return apellidoOrden || a.personaRel.nombres.localeCompare(
-            b.personaRel.nombres,
+          if (apellidoOrden !== 0) {
+            return apellidoOrden;
+          }
+
+          const nombresA = a.personaRel?.nombres || '';
+          const nombresB = b.personaRel?.nombres || '';
+          return nombresA.localeCompare(
+            nombresB,
             'es',
             { sensitivity: 'base' }
           );
         });
+
         this.resultados = resultadosOrdenados;
+
+        if (resultadosOrdenados.length === 0) {
+          this.isLoadingResultados = false;
+          this.consultaRealizada = true;
+          this.cdr.detectChanges();
+          return;
+        }
+
         this.cargarNumerosChequera(resultadosOrdenados, requestId);
       });
     });
   }
 
   private cargarNumerosChequera(resultados: PropuestaAspira[], requestId: number) {
+    if (!Array.isArray(resultados) || resultados.length === 0) {
+      this.isLoadingResultados = false;
+      this.consultaRealizada = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
     const facultad = this.facultades.find(item => item.facultadId === this.selectedFacultadId);
     const propuesta = this.propuestas.find(item => item.propuesta === this.selectedPropuestaId);
     const responsableAcademica = propuesta?.responsableAcademica || facultad?.guaraniResponsableAcademica;
 
     forkJoin(
       resultados.map(resultado => {
-        const documento = resultado.personaRel.documentoPrincipalRel;
+        const documento = resultado.personaRel?.documentoPrincipalRel;
         if (
           this.selectedLectivoId == null
           || this.selectedUbicacionId == null
@@ -973,9 +1122,9 @@ export class PendientesPreGuaraniComponent implements OnInit {
           'ubicacion', this.selectedUbicacionId,
           'responsableAcademica', responsableAcademica,
         ].join('/');
-        console.log('URL consulta de chequera:', url);
 
         return this.http.get<ChequeraSeriePreuniversitario>(url).pipe(
+          timeout(30000),
           catchError(err => {
             if (err.status !== 404) {
               console.error('Error al cargar la chequera del alumno:', err);
@@ -984,6 +1133,11 @@ export class PendientesPreGuaraniComponent implements OnInit {
           })
         );
       })
+    ).pipe(
+      catchError(err => {
+        console.error('Error al cargar números de chequera:', err);
+        return of(resultados.map(() => null));
+      })
     ).subscribe(chequeras => {
       if (requestId !== this.resultadosRequestId) {
         return;
@@ -991,12 +1145,12 @@ export class PendientesPreGuaraniComponent implements OnInit {
 
       this.zone.run(() => {
         resultados.forEach((resultado, index) => {
-          const chequera = chequeras[index];
-           resultado.numeroChequera = chequera
-             ? `${chequera.facultadId}/${chequera.tipoChequeraId}/${chequera.chequeraSerieId}`
-             : null;
-           resultado.becaPorcentaje = chequera?.becaPorcentaje ?? null;
-         });
+          const chequera = chequeras ? chequeras[index] : null;
+          resultado.numeroChequera = chequera
+            ? `${chequera.facultadId}/${chequera.tipoChequeraId}/${chequera.chequeraSerieId}`
+            : null;
+          resultado.becaPorcentaje = chequera?.becaPorcentaje ?? null;
+        });
         this.isLoadingResultados = false;
         this.consultaRealizada = true;
         this.cdr.detectChanges();
@@ -1032,6 +1186,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
       this.zone.run(() => {
         this.facultades = data || [];
         this.isLoadingFacultades = false;
+        this.restaurarFiltrosSiEsPosible();
         this.cdr.detectChanges();
       });
     });
@@ -1044,6 +1199,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.limpiarTipoChequera();
     this.successAsociacion = '';
     this.limpiarResultados();
+    this.guardarFiltros();
     this.cargarPropuestasDisponibles();
   }
 
@@ -1054,10 +1210,11 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.limpiarTipoChequera();
     this.successAsociacion = '';
     this.limpiarResultados();
+    this.guardarFiltros();
     this.cargarPropuestasDisponibles();
   }
 
-  private cargarPropuestasDisponibles() {
+  private cargarPropuestasDisponibles(propuestaGuardadaId: number | null = null) {
     const requestId = ++this.propuestasRequestId;
     const facultad = this.facultades.find(f => f.facultadId === this.selectedFacultadId);
     if (!facultad?.guaraniResponsableAcademica || !this.selectedUbicacionId) {
@@ -1103,7 +1260,11 @@ export class PendientesPreGuaraniComponent implements OnInit {
         this.propuestas = (data.propuestasFacultad || []).filter(propuesta =>
           propuestasOfertaIds.has(propuesta.propuesta)
         );
+        this.selectedPropuestaId = this.propuestas.some(item => item.propuesta === propuestaGuardadaId)
+          ? propuestaGuardadaId
+          : null;
         this.isLoadingPropuestas = false;
+        this.guardarFiltros();
         this.cdr.detectChanges();
       });
     });
@@ -1115,5 +1276,6 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.vistaResultados = 'todos';
     this.errorResultados = '';
     this.consultaRealizada = false;
+    this.isLoadingResultados = false;
   }
 }

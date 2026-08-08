@@ -8,4 +8,5 @@ export interface LoginResponse {
   userId: number;
   nombre: string;
   sede: string;
+  geograficaId?: number;
 }

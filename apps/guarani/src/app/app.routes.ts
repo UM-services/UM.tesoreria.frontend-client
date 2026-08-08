@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@tesoreria/shared-api';
+import { guaraniSedePrincipalGuard } from './guarani-sede-principal.guard';
 import { PendientesPreGuaraniComponent } from './pendientes-pre-guarani/pendientes-pre-guarani';
 import { GuaraniUbicacionesComponent } from './guarani-ubicaciones/guarani-ubicaciones';
 import { GuaraniBeneficiosComponent } from './guarani-beneficios/guarani-beneficios';
@@ -23,17 +24,17 @@ export const appRoutes: Route[] = [
   {
     path: 'guarani-ubicaciones',
     component: GuaraniUbicacionesComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, guaraniSedePrincipalGuard],
   },
   {
     path: 'guarani-beneficios',
     component: GuaraniBeneficiosComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, guaraniSedePrincipalGuard],
   },
   {
     path: 'datos-personales',
     component: DatosPersonalesComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, guaraniSedePrincipalGuard],
   },
   {
     path: '**',

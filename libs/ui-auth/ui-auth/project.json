@@ -1,7 +1,7 @@
 {
   "name": "ui-auth",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "ui-auth/src",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui-auth/ui-auth/src",
   "prefix": "lib",
   "projectType": "library",
   "tags": ["type:ui", "scope:shared"],

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.15.0] - 2026-08-08
+
+### Added
+
+- feat(guarani): Añadido control de acceso y filtrado de ubicaciones por `geograficaId` para limitar las opciones administrativas a la sede principal.
+- test(guarani): Añadidas pruebas para el menú por sede, el guard de navegación y la carga de pendientes.
+
+### Changed
+
+- feat(guarani): Persistidos los filtros de pendientes en la sesión y restaurados al volver a la pantalla.
+- fix(guarani): Robustecida la consulta de pendientes ante respuestas vacías, inválidas, lentas o con errores HTTP.
+- refactor(auth): Ampliado `LoginResponse` con el identificador geográfico opcional de la sede.
+
+## [0.14.2] - 2026-08-07
+
+### Changed
+
+- test: Actualizadas las pruebas de aplicaciones y componentes para usar los nombres y componentes standalone actuales.
+- chore(ui-auth): Corregidas las rutas relativas de configuración, salida de compilación, caché y cobertura de la librería.
+
 ## [0.14.1] - 2026-08-07
 
 ### Changed
