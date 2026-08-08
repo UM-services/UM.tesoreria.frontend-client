@@ -1,20 +1,20 @@
 import { TestBed } from '@angular/core/testing';
-import { App } from './app';
-import { NxWelcome } from './nx-welcome';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { API_URL } from '@tesoreria/shared-api';
+import { AppComponent } from './app';
 
-describe('App', () => {
+describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App, NxWelcome],
+      imports: [AppComponent],
+      providers: [provideRouter([]), provideHttpClient(), { provide: API_URL, useValue: '' }],
     }).compileComponents();
   });
 
-  it('should render title', async () => {
-    const fixture = TestBed.createComponent(App);
+  it('should create', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
     await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'Welcome contratados'
-    );
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

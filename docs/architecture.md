@@ -182,12 +182,14 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     GuaraniApp["Guaraní App"] --> AppRoutes["Rutas protegidas"]
+    AppRoutes --> SedeGuard["GuaraniSedePrincipalGuard<br/>Rutas administrativas por sede"]
     AppRoutes --> Pendientes["Pendientes Pre Guaraní"]
     AppRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
     AppRoutes --> Beneficios["Beneficios de requisitos y porcentajes"]
     AppRoutes --> Datos["Datos Personales y captura<br/>/datos-personales"]
 
     Pendientes --> GuaraniAPI["API Guaraní"]
+    Pendientes --> SedeFilter["Filtrado de ubicaciones por sede"]
     Pendientes --> Chequeras["Consulta de números de chequera"]
     Pendientes --> CoreAPI
     Ubicaciones --> CoreAPI["API Core"]
@@ -211,6 +213,7 @@ classDiagram
         +number userId
         +string nombre
         +string sede
+        +number geograficaId
     }
 
     class AuthService {
