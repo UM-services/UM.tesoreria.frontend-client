@@ -54,10 +54,12 @@ export class AppComponent {
   readonly menuItems = computed<MenuItem[]>(() => {
     const user = this.authService.currentUserSignal();
     // Solo la sede principal (geograficaId 1) ve las opciones administrativas;
-    // el resto de las sedes únicamente accede a Pendientes Pre Guaraní.
+    // el resto de las sedes accede a Pendientes Pre Guaraní y Datos Personales.
     const esSedePrincipal = user?.geograficaId == null || user.geograficaId === 1;
     return esSedePrincipal
       ? this.allMenuItems
-      : this.allMenuItems.filter(item => item.path === '/pendientes-pre-guarani');
+      : this.allMenuItems.filter(item =>
+          item.path === '/pendientes-pre-guarani' || item.path === '/datos-personales'
+        );
   });
 }

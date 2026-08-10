@@ -34,7 +34,7 @@ export const appRoutes: Route[] = [
   {
     path: 'datos-personales',
     component: DatosPersonalesComponent,
-    canActivate: [authGuard, guaraniSedePrincipalGuard],
+    canActivate: [authGuard],
   },
   {
     path: '**',
