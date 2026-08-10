@@ -38,7 +38,7 @@ export class DatosPersonalesService {
   capturar(documento: string): Observable<boolean> {
     const baseUrl = this.url.replace(/\/documento\/?$/, '');
     return this.http.get<boolean>(
-      `${baseUrl}/generate/personales/documento/${encodeURIComponent(documento)}`,
+      `${baseUrl}/generate/personales/create/${encodeURIComponent(documento)}`,
     );
   }
 }
