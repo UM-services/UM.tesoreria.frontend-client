@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.0] - 2026-08-10
+
+### Added
+
+- feat(guarani): Datos Personales disponible para todas las sedes: la ruta `/datos-personales` ya no exige sede principal y el menú de las sedes secundarias lo incluye junto a Pendientes Pre Guaraní.
+
+### Changed
+
+- test(guarani): Actualizadas las pruebas del menú para cubrir el acceso de las sedes secundarias a Datos Personales.
+
+### Fixed
+
+- fix(guarani): La captura de datos personales apunta al endpoint del backend `/generate/personales/create/{documento}` en lugar de `/generate/personales/documento/{documento}`.
+
 ## [0.15.0] - 2026-08-08
 
 ### Added
