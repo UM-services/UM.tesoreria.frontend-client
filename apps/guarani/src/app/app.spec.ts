@@ -38,7 +38,7 @@ describe('AppComponent', () => {
     ]);
   });
 
-  it('muestra únicamente Pendientes Pre Guaraní para una sede con geograficaId distinto de 1', () => {
+  it('muestra Pendientes Pre Guaraní y Datos Personales para una sede con geograficaId distinto de 1', () => {
     const authService = TestBed.inject(AuthService);
     authService.currentUserSignal.set({
       token: 'token',
@@ -50,7 +50,7 @@ describe('AppComponent', () => {
 
     const fixture = TestBed.createComponent(AppComponent);
     const paths = fixture.componentInstance.menuItems().map(item => item.path);
-    expect(paths).toEqual(['/pendientes-pre-guarani']);
+    expect(paths).toEqual(['/pendientes-pre-guarani', '/datos-personales']);
   });
 
   it('muestra el menú completo cuando el usuario no expone geograficaId', () => {
