@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.17.1] - 2026-08-24
+
+### Changed
+
+- chore(ci): Ajustada la estrategia de tags Docker en los workflows de `develop` y `staging` para usar `type=raw,value=${{ github.sha }}` en lugar de `type=sha`, garantizando el uso del SHA completo del commit.
+
+## [0.17.0] - 2026-08-24
+
+### Added
+
+- feat(ci): Añadidos workflows de despliegue automatizado para los entornos `develop` y `staging`. Cada pipeline verifica la aplicación (lint, test y build de todas las apps con Nx), construye las imágenes Docker de las siete aplicaciones, las publica en Docker Hub con tag de commit y las despliega en runners self-hosted mediante scripts de infraestructura.
+
 ## [0.16.0] - 2026-08-10
 
 ### Added
