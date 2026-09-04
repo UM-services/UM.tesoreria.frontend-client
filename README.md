@@ -202,7 +202,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.17.0**
+Versión actual: **0.18.0**
 
 ## Licencia
 

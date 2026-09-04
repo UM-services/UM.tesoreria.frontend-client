@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.18.0] - 2026-09-04
+
+### Added
+
+- feat(guarani): Añadido el filtro obligatorio "Año académico" en Pendientes Pre Guaraní: entrada numérica de máximo 4 dígitos con saneo de caracteres no numéricos, se persiste en la sesión junto al resto de filtros y se añade al final de la consulta como `/anio/academico/{anio}`.
+- feat(guarani): Añadida la columna "Año académico" en la tabla de resultados de Pendientes Pre Guaraní, a partir del nuevo campo opcional `anioAcademico` de `PropuestaAspira`.
+- feat(guarani): Añadida la acción "Crear Preuniversitario" en el modal de Datos Personales, que invoca `GET /generate/preuniversitario/create/{documento}` y muestra mensajes de éxito o error. La función queda temporalmente deshabilitada (`preuniversitarioHabilitado = false`) durante su validación.
+- test(guarani): Añadidas pruebas de Pendientes Pre Guaraní para la URL con año académico, el bloqueo de la consulta sin año académico y el descarte de caracteres no numéricos en el filtro.
+
+### Changed
+
+- feat(ui): Renombrada la etiqueta "Ciclo lectivo" a "Ciclo lectivo Chequera" en la sección de resultados de Pendientes Pre Guaraní.
+
+### Fixed
+
+- fix(deploy): Los `nginx.conf` de las siete aplicaciones usan ahora el resolver DNS interno de Docker (`127.0.0.11` con TTL de 10 s) y un `proxy_pass` dinámico sobre `$request_uri` para el proxy `/api/` al gateway, de modo que el nombre `tesoreria-gateway-service` se resuelve en cada petición y no queda cacheado tras reinicios del gateway.
+
 ## [0.17.1] - 2026-08-24
 
 ### Changed
