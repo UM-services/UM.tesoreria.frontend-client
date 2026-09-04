@@ -82,6 +82,7 @@ export interface PropuestaAspira {
     }>;
   };
   fechaInscripcion: string;
+  anioAcademico?: number | null;
   numeroChequera?: string | null;
   becaPorcentaje?: number | null;
 }
@@ -182,7 +183,7 @@ export function ubicacionesDeGeografica(
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <!-- Grid layout side-by-side -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          
+
           <!-- First Dropdown: Facultades -->
           <div class="space-y-2">
             <label for="facultadSelect" class="block text-sm font-semibold text-gray-700">
@@ -316,18 +317,34 @@ export function ubicacionesDeGeografica(
             }
           </div>
 
-          <!-- Date Filter -->
-          <div class="space-y-2 md:order-4">
-            <label for="fechaInscripcionDesde" class="block text-sm font-semibold text-gray-700">
-              Fecha de inscripción desde
-            </label>
-            <input
-              id="fechaInscripcionDesde"
-              type="date"
-              [(ngModel)]="fechaInscripcionDesde"
-              (change)="guardarFiltros()"
-              class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all duration-200 shadow-sm font-medium"
-            />
+          <!-- Date & Academic Year Filters -->
+          <div class="md:order-4 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <div class="space-y-2">
+              <label for="fechaInscripcionDesde" class="block text-sm font-semibold text-gray-700">
+                Fecha de inscripción desde
+              </label>
+              <input
+                id="fechaInscripcionDesde"
+                type="date"
+                [(ngModel)]="fechaInscripcionDesde"
+                (change)="guardarFiltros()"
+                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all duration-200 shadow-sm font-medium"
+              />
+            </div>
+            <div class="space-y-2">
+              <label for="anioAcademicoFiltro" class="block text-sm font-semibold text-gray-700">
+                Año académico
+              </label>
+              <input
+                id="anioAcademicoFiltro"
+                type="text"
+                inputmode="numeric"
+                maxlength="4"
+                [(ngModel)]="anioAcademicoFiltro"
+                (input)="onAnioAcademicoInput($event)"
+                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all duration-200 shadow-sm font-medium"
+              />
+            </div>
           </div>
 
           <!-- Review Action -->
@@ -335,7 +352,7 @@ export function ubicacionesDeGeografica(
             <button
               type="button"
               (click)="revisar()"
-              [disabled]="!selectedPropuestaId || !selectedUbicacionId || !selectedLectivoId || !fechaInscripcionDesde || isLoadingResultados"
+              [disabled]="!selectedPropuestaId || !selectedUbicacionId || !selectedLectivoId || !fechaInscripcionDesde || !anioAcademicoFiltro || isLoadingResultados"
               class="inline-flex items-center justify-center px-5 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               @if (isLoadingResultados) {
@@ -401,7 +418,7 @@ export function ubicacionesDeGeografica(
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div class="space-y-2">
             <label for="lectivoSelect" class="block text-sm font-semibold text-gray-700">
-              Ciclo lectivo
+              Ciclo lectivo Chequera
             </label>
             <select
               id="lectivoSelect"
@@ -561,6 +578,7 @@ export function ubicacionesDeGeografica(
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Apellido</th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre</th>
                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Documento</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Año académico</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha de inscripción</th>
                      <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Número de chequera</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Beneficio</th>
@@ -573,6 +591,7 @@ export function ubicacionesDeGeografica(
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.apellido }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ resultado.personaRel.nombres }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.personaRel.documentoPrincipalRel?.nroDocumento || '-' }}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.anioAcademico !== null && resultado.anioAcademico !== undefined ? (resultado.anioAcademico | number: '1.0-0') : '-' }}</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.fechaInscripcion | date: 'dd/MM/yyyy' }}</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ resultado.numeroChequera || '-' }}</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
@@ -659,6 +678,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   public consultaAsociacionRealizada = false;
 
   public fechaInscripcionDesde = '';
+  public anioAcademicoFiltro = '';
   public resultados: PropuestaAspira[] = [];
   public vistaResultados: 'todos' | 'sin-chequera' = 'todos';
   public isLoadingResultados = false;
@@ -690,7 +710,16 @@ export class PendientesPreGuaraniComponent implements OnInit {
       propuestaId: this.selectedPropuestaId,
       lectivoId: this.selectedLectivoId,
       fechaInscripcionDesde: this.fechaInscripcionDesde,
+      anioAcademicoFiltro: this.anioAcademicoFiltro,
     }));
+  }
+
+  onAnioAcademicoInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const valor = input.value.replace(/\D/g, '');
+    input.value = valor;
+    this.anioAcademicoFiltro = valor;
+    this.guardarFiltros();
   }
 
   private restaurarFiltrosSiEsPosible() {
@@ -720,6 +749,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
         propuestaId?: number | null;
         lectivoId?: number | null;
         fechaInscripcionDesde?: string;
+        anioAcademicoFiltro?: string;
       };
 
       this.selectedFacultadId = this.facultades.some(item => item.facultadId === filtros.facultadId)
@@ -732,6 +762,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
         ? filtros.lectivoId ?? null
         : null;
       this.fechaInscripcionDesde = filtros.fechaInscripcionDesde || '';
+      this.anioAcademicoFiltro = (filtros.anioAcademicoFiltro || '').replace(/\D/g, '');
 
       if (this.selectedFacultadId && this.selectedUbicacionId) {
         this.cargarPropuestasDisponibles(filtros.propuestaId ?? null);
@@ -1001,7 +1032,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   }
 
   revisar() {
-    if (!this.selectedPropuestaId || !this.selectedUbicacionId || !this.selectedLectivoId || !this.fechaInscripcionDesde) {
+    if (!this.selectedPropuestaId || !this.selectedUbicacionId || !this.selectedLectivoId || !this.fechaInscripcionDesde || !this.anioAcademicoFiltro) {
       return;
     }
 
@@ -1012,7 +1043,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
     this.cdr.detectChanges();
     const requestId = ++this.resultadosRequestId;
 
-    const url = `${this.propuestasAspiraUrl}/propuesta/${this.selectedPropuestaId}/ubicacion/${this.selectedUbicacionId}/fechaInscripcionDesde/${this.fechaInscripcionDesde}`;
+    const url = `${this.propuestasAspiraUrl}/propuesta/${this.selectedPropuestaId}/ubicacion/${this.selectedUbicacionId}/fechaInscripcionDesde/${this.fechaInscripcionDesde}/anio/academico/${this.anioAcademicoFiltro}`;
 
     this.http.get<PropuestaAspira[]>(url).pipe(
       timeout(30000),
