@@ -59,13 +59,27 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
             @if (captureError) {
               <p class="mr-auto text-sm text-red-600" role="alert">{{ captureError }}</p>
             }
+            @if (preuniversitarioMessage) {
+              <p class="mr-auto text-sm text-green-700" role="status">{{ preuniversitarioMessage }}</p>
+            }
+            @if (preuniversitarioError) {
+              <p class="mr-auto text-sm text-red-600" role="alert">{{ preuniversitarioError }}</p>
+            }
             <button
               type="button"
               (click)="capturar()"
-              [disabled]="isLoading || isCapturing"
+              [disabled]="isLoading || isCapturing || isCreatingPreuniversitario"
               class="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold shadow-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ isCapturing ? 'Capturando...' : 'Captura' }}
+            </button>
+            <button
+              type="button"
+              (click)="crearPreuniversitario()"
+              [disabled]="!preuniversitarioHabilitado || isLoading || isCapturing || isCreatingPreuniversitario"
+              class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isCreatingPreuniversitario ? 'Creando...' : 'Crear Preuniversitario' }}
             </button>
           </div>
 
@@ -228,8 +242,13 @@ export class DatosPersonalesModalComponent implements OnChanges {
   public beneficios: GuaraniBeneficio[] = [];
   public isLoading = false;
   public isCapturing = false;
+  public isCreatingPreuniversitario = false;
+  // Temporal: función en prueba, volver a habilitar cuando se termine la validación
+  public preuniversitarioHabilitado = false;
   public captureMessage = '';
   public captureError = '';
+  public preuniversitarioMessage = '';
+  public preuniversitarioError = '';
   public errorMessage = '';
 
   ngOnChanges(changes: SimpleChanges) {
@@ -241,6 +260,7 @@ export class DatosPersonalesModalComponent implements OnChanges {
   cerrar() {
     this.requestId++;
     this.isCapturing = false;
+    this.isCreatingPreuniversitario = false;
     this.closed.emit();
   }
 
@@ -285,6 +305,47 @@ export class DatosPersonalesModalComponent implements OnChanges {
       });
   }
 
+  crearPreuniversitario() {
+    const documento = this.documento;
+    if (documento === null || this.isCreatingPreuniversitario) {
+      return;
+    }
+
+    this.isCreatingPreuniversitario = true;
+    this.preuniversitarioMessage = '';
+    this.preuniversitarioError = '';
+
+    this.datosPersonalesService
+      .crearPreuniversitario(documento)
+      .pipe(
+        finalize(() => {
+          this.zone.run(() => {
+            this.isCreatingPreuniversitario = false;
+            this.cdr.detectChanges();
+          });
+        }),
+      )
+      .subscribe({
+        next: (preuniversitarios) => {
+          this.zone.run(() => {
+            if (preuniversitarios && preuniversitarios.length > 0) {
+              this.preuniversitarioMessage = 'Preuniversitario creado correctamente.';
+            } else {
+              this.preuniversitarioError = 'No se pudo crear el preuniversitario.';
+            }
+            this.cdr.detectChanges();
+          });
+        },
+        error: (err) => {
+          console.error('Error al crear preuniversitario:', err);
+          this.zone.run(() => {
+            this.preuniversitarioError = 'No se pudo crear el preuniversitario.';
+            this.cdr.detectChanges();
+          });
+        },
+      });
+  }
+
   private consultar() {
     const documento = this.documento;
     if (documento === null) {
@@ -297,6 +358,8 @@ export class DatosPersonalesModalComponent implements OnChanges {
     this.errorMessage = '';
     this.captureMessage = '';
     this.captureError = '';
+    this.preuniversitarioMessage = '';
+    this.preuniversitarioError = '';
     this.isLoading = true;
 
     forkJoin({

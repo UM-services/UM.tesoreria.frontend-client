@@ -6,6 +6,7 @@ import {
   AlumnoGuarani,
   DatosPersonalesAlumno,
   GuaraniBeneficio,
+  PersonalesResponse,
 } from './datos-personales.models';
 
 @Injectable({ providedIn: 'root' })
@@ -39,6 +40,13 @@ export class DatosPersonalesService {
     const baseUrl = this.url.replace(/\/documento\/?$/, '');
     return this.http.get<boolean>(
       `${baseUrl}/generate/personales/create/${encodeURIComponent(documento)}`,
+    );
+  }
+
+  crearPreuniversitario(documento: string): Observable<AlumnoGuarani[]> {
+    const baseUrl = this.url.replace(/\/documento\/?$/, '');
+    return this.http.get<AlumnoGuarani[]>(
+      `${baseUrl}/generate/preuniversitario/create/${encodeURIComponent(documento)}`,
     );
   }
 }

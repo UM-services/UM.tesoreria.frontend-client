@@ -51,3 +51,5 @@ export interface DatosPersonalesAlumno {
 export interface AlumnoGuarani {
   personaRel?: DatosPersonalesAlumno | null;
 }
+
+export type PersonalesResponse = DatosPersonalesAlumno;
