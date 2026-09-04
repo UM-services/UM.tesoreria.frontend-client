@@ -74,6 +74,7 @@ describe('PendientesPreGuaraniComponent', () => {
     component.selectedUbicacionId = 1;
     component.selectedLectivoId = 1;
     component.fechaInscripcionDesde = '2026-01-01';
+    component.anioAcademicoFiltro = '2026';
   });
 
   afterEach(() => {
@@ -85,7 +86,7 @@ describe('PendientesPreGuaraniComponent', () => {
     expect(component.isLoadingResultados).toBe(true);
 
     const req = httpTestingController.expectOne(
-      req => req.url.includes('/guarani/propuestaAspira/propuesta/1/ubicacion/1/fechaInscripcionDesde/2026-01-01')
+      req => req.url.includes('/guarani/propuestaAspira/propuesta/1/ubicacion/1/fechaInscripcionDesde/2026-01-01/anio/academico/2026')
     );
     req.flush([]);
 
@@ -99,7 +100,7 @@ describe('PendientesPreGuaraniComponent', () => {
     expect(component.isLoadingResultados).toBe(true);
 
     const req = httpTestingController.expectOne(
-      req => req.url.includes('/guarani/propuestaAspira/propuesta/1/ubicacion/1/fechaInscripcionDesde/2026-01-01')
+      req => req.url.includes('/guarani/propuestaAspira/propuesta/1/ubicacion/1/fechaInscripcionDesde/2026-01-01/anio/academico/2026')
     );
     req.flush(null);
 
@@ -113,12 +114,26 @@ describe('PendientesPreGuaraniComponent', () => {
     expect(component.isLoadingResultados).toBe(true);
 
     const req = httpTestingController.expectOne(
-      req => req.url.includes('/guarani/propuestaAspira/propuesta/1/ubicacion/1/fechaInscripcionDesde/2026-01-01')
+      req => req.url.includes('/guarani/propuestaAspira/propuesta/1/ubicacion/1/fechaInscripcionDesde/2026-01-01/anio/academico/2026')
     );
     req.flush('Error de servidor', { status: 500, statusText: 'Internal Server Error' });
 
     expect(component.isLoadingResultados).toBe(false);
     expect(component.consultaRealizada).toBe(true);
     expect(component.errorResultados).toBe('No se pudieron cargar las inscripciones.');
+  });
+
+  it('no debe consultar si falta el año académico', () => {
+    component.anioAcademicoFiltro = '';
+    component.revisar();
+    expect(component.isLoadingResultados).toBe(false);
+  });
+
+  it('debe descartar caracteres no numéricos del año académico', () => {
+    const input = document.createElement('input');
+    input.value = 'a20b26!';
+    component.onAnioAcademicoInput({ target: input } as unknown as Event);
+    expect(component.anioAcademicoFiltro).toBe('2026');
+    expect(input.value).toBe('2026');
   });
 });
