@@ -418,7 +418,7 @@ export function ubicacionesDeGeografica(
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div class="space-y-2">
             <label for="lectivoSelect" class="block text-sm font-semibold text-gray-700">
-              Ciclo lectivo
+              Ciclo lectivo Chequera
             </label>
             <select
               id="lectivoSelect"
