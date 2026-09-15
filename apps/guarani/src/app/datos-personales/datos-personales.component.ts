@@ -30,7 +30,6 @@ import { DatosPersonalesModalComponent } from './datos-personales-modal.componen
             <input
               id="documentoAlumno"
               type="text"
-              inputmode="numeric"
               [(ngModel)]="documento"
               (keyup.enter)="consultar()"
               placeholder="Ingrese el documento"
@@ -72,8 +71,8 @@ export class DatosPersonalesComponent {
       return;
     }
 
-    if (!/^\d+$/.test(documento)) {
-      this.validationMessage = 'El documento solo debe contener números.';
+    if (!/^[0-9a-zA-Z]+$/.test(documento)) {
+      this.validationMessage = 'El documento solo debe contener letras y números.';
       return;
     }
 

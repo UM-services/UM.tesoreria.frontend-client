@@ -7,6 +7,7 @@ import { catchError, timeout } from 'rxjs/operators';
 import { EMPTY, forkJoin, of } from 'rxjs';
 import { AuthService } from '@tesoreria/shared-api';
 import { DatosPersonalesModalComponent } from '../datos-personales/datos-personales-modal.component';
+import { DatosPersonalesAlumno } from '../datos-personales/datos-personales.models';
 
 export interface Facultad {
   facultadId: number;
@@ -38,6 +39,7 @@ export interface PropuestaOferta {
     propuesta?: number;
     nombre?: string;
   };
+  ubicacion?: number;
 }
 
 export interface Ubicacion {
@@ -69,18 +71,7 @@ export interface GuaraniUbicacion {
 
 export interface PropuestaAspira {
   propuestaAspira: number;
-  personaRel: {
-    apellido: string;
-    nombres: string;
-    documentoPrincipalRel?: {
-      nroDocumento?: string;
-      tipoDocumento?: number;
-    };
-    contactos?: Array<{
-      contactoTipo?: string;
-      email?: string | null;
-    }>;
-  };
+  personaRel: DatosPersonalesAlumno;
   fechaInscripcion: string;
   anioAcademico?: number | null;
   numeroChequera?: string | null;
@@ -621,6 +612,7 @@ export function ubicacionesDeGeografica(
 
       <app-datos-personales-modal
         [documento]="documentoDatosPersonales"
+        [persona]="personaDatosPersonales"
         (closed)="cerrarDatosPersonales()"
       />
     </div>
@@ -685,6 +677,7 @@ export class PendientesPreGuaraniComponent implements OnInit {
   public errorResultados = '';
   public consultaRealizada = false;
   public documentoDatosPersonales: string | null = null;
+  public personaDatosPersonales: DatosPersonalesAlumno | null = null;
   private propuestasRequestId = 0;
   private resultadosRequestId = 0;
   private filtrosRestaurados = false;
@@ -1192,10 +1185,12 @@ export class PendientesPreGuaraniComponent implements OnInit {
   abrirDatosPersonales(resultado: PropuestaAspira) {
     const documento = resultado.personaRel.documentoPrincipalRel?.nroDocumento;
     this.documentoDatosPersonales = documento || null;
+    this.personaDatosPersonales = resultado.personaRel || null;
   }
 
   cerrarDatosPersonales() {
     this.documentoDatosPersonales = null;
+    this.personaDatosPersonales = null;
   }
 
   cargarFacultades() {

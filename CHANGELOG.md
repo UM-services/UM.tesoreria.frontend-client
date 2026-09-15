@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.19.0] - 2026-09-14
+
+### Added
+
+- feat(guarani): El modal de Datos Personales acepta ahora la entrada `persona` (`DatosPersonalesAlumno`), por lo que se puede abrir directamente desde la lista de Pendientes Pre Guaraní con el objeto de la persona sin volver a consultarla por documento.
+- feat(guarani): El campo "Documento" del modal muestra el tipo como `descripción (abreviatura)` combinando `descripcion` y `descAbreviada` de `tipoDocumentoRel`, con fallback a cada valor por separado y `-` cuando ambos ausentan (`tipoDocumentoEtiqueta`).
+- feat(guarani): La captura de datos personales processa ahora respuestas por alumno (`CreatePersonalesResponse[]` con `result`): mensaje de éxito si todos son correctos, aviso parcial con conteo (`X de Y alumnos`), error si ninguno se completó y mensaje distinto cuando no se encontraron alumnos. Tras un resultado total o parcial se recargan los datos.
+- feat(guarani): El documento del buscador de Datos Personales admite letras y números (validación `^[0-9a-zA-Z]+$`) en lugar de solo dígitos; se eliminó el `inputmode="numeric"`.
+- test(guarani): Añadidas pruebas de `DatosPersonalesService` (URLs de captura/preuniversitario, normalización de respuestas nulas, vacías o de objeto único y eliminación de elementos nulos) y de `DatosPersonalesModalComponent` (escenarios de captura total/parcial/nula/fallida, recarga tras crear preuniversitario y renderizado de `tipoDocumentoEtiqueta`).
+
+### Changed
+
+- feat(guarani): Tras crear el preuniversitario con éxito el modal recarga los datos del alumno automáticamente.
+- refactor(guarani): Las URLs del `DatosPersonalesService` se construyen desde una `baseUrl` común y las respuestas de `capturar`/`crearPreuniversitario` se estandarizan con `normalizarLista`, que convierte `null` u objeto único en arreglo.
+- refactor(guarani): `PropuestaAspira.personaRel` en Pendientes Pre Guaraní usa ahora el modelo `DatosPersonalesAlumno` en lugar de una estructura inline duplicada.
+
 ## [0.18.0] - 2026-09-04
 
 ### Added

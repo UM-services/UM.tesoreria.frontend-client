@@ -49,7 +49,12 @@ export interface DatosPersonalesAlumno {
 }
 
 export interface AlumnoGuarani {
+  alumno?: number | null;
+  persona?: number | null;
   personaRel?: DatosPersonalesAlumno | null;
 }
 
-export type PersonalesResponse = DatosPersonalesAlumno;
+export interface CreatePersonalesResponse {
+  result?: boolean | null;
+  alumnoGuarani?: AlumnoGuarani | null;
+}

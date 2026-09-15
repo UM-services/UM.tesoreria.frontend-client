@@ -19,7 +19,7 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
   standalone: true,
   imports: [CommonModule],
   template: `
-    @if (documento !== null) {
+    @if (documento !== null || persona !== null) {
       <div
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50"
         role="dialog"
@@ -58,6 +58,9 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
             }
             @if (captureError) {
               <p class="mr-auto text-sm text-red-600" role="alert">{{ captureError }}</p>
+            }
+            @if (captureWarning) {
+              <p class="mr-auto text-sm text-amber-700" role="status">{{ captureWarning }}</p>
             }
             @if (preuniversitarioMessage) {
               <p class="mr-auto text-sm text-green-700" role="status">{{ preuniversitarioMessage }}</p>
@@ -114,11 +117,7 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
                   }
                   <p>
                     <span class="font-semibold text-gray-700">Documento:</span>
-                    {{
-                      persona.documentoPrincipalRel?.tipoDocumentoRel?.descAbreviada ||
-                        persona.documentoPrincipalRel?.tipoDocumentoRel?.descripcion ||
-                        '-'
-                    }}
+                    {{ tipoDocumentoEtiqueta(persona) }}
                     {{ persona.documentoPrincipalRel?.nroDocumento || '-' }}
                   </p>
                   <p>
@@ -231,6 +230,7 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
 })
 export class DatosPersonalesModalComponent implements OnChanges {
   @Input() documento: string | null = null;
+  @Input() persona: DatosPersonalesAlumno | null = null;
   @Output() closed = new EventEmitter<void>();
 
   private readonly datosPersonalesService = inject(DatosPersonalesService);
@@ -246,13 +246,14 @@ export class DatosPersonalesModalComponent implements OnChanges {
   // Temporal: función en prueba, volver a habilitar cuando se termine la validación
   public preuniversitarioHabilitado = false;
   public captureMessage = '';
+  public captureWarning = '';
   public captureError = '';
   public preuniversitarioMessage = '';
   public preuniversitarioError = '';
   public errorMessage = '';
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['documento'] && this.documento !== null) {
+    if ((changes['documento'] || changes['persona']) && (this.documento !== null || this.persona !== null)) {
       this.consultar();
     }
   }
@@ -265,13 +266,14 @@ export class DatosPersonalesModalComponent implements OnChanges {
   }
 
   capturar() {
-    const documento = this.documento;
+    const documento = this.documento || this.alumno?.documentoPrincipalRel?.nroDocumento || null;
     if (documento === null || this.isCapturing) {
       return;
     }
 
     this.isCapturing = true;
     this.captureMessage = '';
+    this.captureWarning = '';
     this.captureError = '';
 
     this.datosPersonalesService
@@ -285,12 +287,21 @@ export class DatosPersonalesModalComponent implements OnChanges {
         }),
       )
       .subscribe({
-        next: (capturaRealizada) => {
+        next: (capturas) => {
           this.zone.run(() => {
-            if (capturaRealizada) {
+            const total = capturas.length;
+            const correctas = capturas.filter((captura) => captura.result === true).length;
+
+            if (total === 0) {
+              this.captureError = 'No se encontraron alumnos para capturar.';
+            } else if (correctas === total) {
               this.captureMessage = 'La captura se ejecutó correctamente.';
+              this.cargar();
+            } else if (correctas === 0) {
+              this.captureError = 'La captura no se pudo completar.';
             } else {
-              this.captureError = 'La captura no pudo ejecutarse.';
+              this.captureWarning = `La captura se completó parcialmente (${correctas} de ${total} alumnos).`;
+              this.cargar();
             }
             this.cdr.detectChanges();
           });
@@ -306,7 +317,7 @@ export class DatosPersonalesModalComponent implements OnChanges {
   }
 
   crearPreuniversitario() {
-    const documento = this.documento;
+    const documento = this.documento || this.alumno?.documentoPrincipalRel?.nroDocumento || null;
     if (documento === null || this.isCreatingPreuniversitario) {
       return;
     }
@@ -328,8 +339,9 @@ export class DatosPersonalesModalComponent implements OnChanges {
       .subscribe({
         next: (preuniversitarios) => {
           this.zone.run(() => {
-            if (preuniversitarios && preuniversitarios.length > 0) {
+            if (preuniversitarios.length > 0) {
               this.preuniversitarioMessage = 'Preuniversitario creado correctamente.';
+              this.cargar();
             } else {
               this.preuniversitarioError = 'No se pudo crear el preuniversitario.';
             }
@@ -347,19 +359,57 @@ export class DatosPersonalesModalComponent implements OnChanges {
   }
 
   private consultar() {
+    this.captureMessage = '';
+    this.captureWarning = '';
+    this.captureError = '';
+    this.preuniversitarioMessage = '';
+    this.preuniversitarioError = '';
+    this.cargar();
+  }
+
+  private cargar() {
+    const requestId = ++this.requestId;
+    this.errorMessage = '';
+    this.beneficios = [];
+
+    if (this.persona) {
+      this.alumno = this.persona;
+      this.isLoading = true;
+      this.datosPersonalesService
+        .consultarBeneficios()
+        .pipe(
+          finalize(() => {
+            this.zone.run(() => {
+              if (requestId === this.requestId) {
+                this.isLoading = false;
+                this.cdr.detectChanges();
+              }
+            });
+          }),
+        )
+        .subscribe({
+          next: (beneficios) => {
+            this.zone.run(() => {
+              if (requestId !== this.requestId) {
+                return;
+              }
+              this.beneficios = beneficios || [];
+              this.cdr.detectChanges();
+            });
+          },
+          error: (err) => {
+            console.error('Error al cargar beneficios:', err);
+          },
+        });
+      return;
+    }
+
     const documento = this.documento;
     if (documento === null) {
       return;
     }
 
-    const requestId = ++this.requestId;
     this.alumno = null;
-    this.beneficios = [];
-    this.errorMessage = '';
-    this.captureMessage = '';
-    this.captureError = '';
-    this.preuniversitarioMessage = '';
-    this.preuniversitarioError = '';
     this.isLoading = true;
 
     forkJoin({
@@ -413,7 +463,23 @@ export class DatosPersonalesModalComponent implements OnChanges {
     return this.beneficios.find(beneficio => beneficio.requisito === requisito);
   }
 
+  tipoDocumentoEtiqueta(persona: DatosPersonalesAlumno): string {
+    const tipo = persona.documentoPrincipalRel?.tipoDocumentoRel;
+    const descripcion = this.texto(tipo?.descripcion);
+    const abreviatura = this.texto(tipo?.descAbreviada);
+
+    if (descripcion && abreviatura) {
+      return `${descripcion} (${abreviatura})`;
+    }
+
+    return descripcion || abreviatura || '-';
+  }
+
   porcentajeMostrado(porcentaje: number): number {
     return Number((porcentaje * 100).toFixed(2));
+  }
+
+  private texto(valor: string | null | undefined): string {
+    return valor?.trim() ?? '';
   }
 }
