@@ -35,7 +35,14 @@
   @if (user$ | async; as user) {
     <div class="flex items-center gap-6">
       <div class="hidden md:flex flex-col items-end">
-        <span class="text-sm font-semibold text-gray-800">{{ user.nombre }}</span>
+        <span class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          {{ user.nombre }}
+          @if (hasEnvInfo) {
+            <span [class]="envBadgeClass" [title]="envTooltip">
+              {{ envDisplay.label }}
+            </span>
+          }
+        </span>
         <span class="text-xs text-gray-500">Sede: {{ user.sede }}</span>
       </div>
 
