@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [administrador, chequeras, compras, contable, contratados, pagos, guarani]
+        app: [administrador, chequeras, compras, contable, contratados, pagos, guarani, externo-consulta]
     permissions:
       contents: read
       packages: write

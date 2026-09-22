@@ -1,0 +1,7 @@
+export const environment = {
+  production: false,
+  apiUrl: 'BACKEND_URL_PLACEHOLDER/core/auth',
+  env: 'local',
+  version: 'dev',
+  enableDebug: true
+};

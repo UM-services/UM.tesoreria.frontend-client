@@ -15,6 +15,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - **contable** - Módulo contable (puerto 4205)
 - **contratados** - Gestión de contratados (puerto 4206)
 - **guarani** - Gestión de pendientes, ubicaciones, beneficios y datos personales de Guaraní (puerto 4207)
+- **externo-consulta** - Módulo de consulta para usuarios externos (puerto 4208)
 
 ### Librerías
 
@@ -56,6 +57,7 @@ nx serve administrador
 nx serve contable
 nx serve contratados
 nx serve guarani
+nx serve externo-consulta
 ```
 
 ### Construir
@@ -82,6 +84,7 @@ nx test
         CT["Contable<br/>:4205"]
         CR["Contratados<br/>:4206"]
         G["Guaraní<br/>:4207"]
+        EC["Externo Consulta<br/>:4208"]
     end
 
     subgraph Modules["Módulos de aplicación"]
@@ -151,6 +154,10 @@ nx test
     GB --> API
     GD --> API
 
+    EC --> API
+    EC --> AUTH
+    EC --> LAYOUT
+
     API --> AUTH
 ```
 
@@ -197,6 +204,7 @@ Aplicaciones disponibles:
 - `apps/contable/Dockerfile` - Módulo contable
 - `apps/contratados/Dockerfile` - Gestión de contratados
 - `apps/guarani/Dockerfile` - Gestión de Guaraní
+- `apps/externo-consulta/Dockerfile` - Consulta externa
 
 ## Versionado
 
