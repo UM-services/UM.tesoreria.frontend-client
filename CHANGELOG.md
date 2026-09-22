@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.20.0] - 2026-09-22
+
+### Added
+
+- feat(externo-consulta): Añadida la aplicación `externo-consulta` (puerto 4208) como módulo de consulta para usuarios externos: login con `@tesoreria/ui-auth`, ruta raíz protegida por `authGuard` con `BlankComponent` como contenedor, layout con `ui-navbar`/`ui-sidebar`, `Dockerfile`, `entrypoint.sh`, `nginx.conf` y proyectos de lint/test propios.
+- feat(ui): Indicador de entorno en el navbar de `@tesoreria/ui-layout`: badge de color junto al nombre del usuario (LOCAL gris, DESARROLLO ámbar, STAGING violeta, PRODUCCIÓN verde, SIN DEFINIR rojo) cuyo tooltip expone `Entorno | Versión`. Solo se renderiza cuando `APP_ENV_INFO` está proveído.
+- feat(shared-api): Añadida la API pública `env` (`libs/shared-api/src/lib/env.ts`): token `APP_ENV_INFO`, `provideAppEnvInfo` (provee la info y prefija el `document.title` con la etiqueta del entorno) y `getEnvDisplay`, que normaliza mayúsculas, espacios y guiones bajos y acepta sinónimos (`prod`, `dev`, `desarrollo`, `preproduccion`, `localhost`, etc.), devolviendo `unknown`/`SIN DEFINIR` para valores ausentes o no reconocidos.
+- feat(deploy): Los `entrypoint.sh` de las ocho aplicaciones reemplazan ahora los placeholders `ENV_NAME_PLACEHOLDER` y `APP_VERSION_PLACEHOLDER` en los `.js` compilados con las variables de entorno `ENV_NAME` y `APP_VERSION` del contenedor; si la variable no está definida se inyectan `desconocido`/`sin-version` para evidenciar despliegues mal configurados con el badge rojo. La lógica de reemplazo se factorizó en la función `replace_placeholder`.
+- feat(environments): Los `environment.ts` de producción de todas las apps exponen `env` y `version` sobre los placeholders, y los `environment.development.ts` fijan `env: 'local'` y `version: 'dev'`.
+- build: Añadido `fileReplacements` a la configuración `development` de los `project.json` de las ocho aplicaciones para que `nx serve` use el `environment.development.ts` correspondiente.
+- test: Añadida la spec de `getEnvDisplay` (mapeos, sinónimos, normalización de separadores y valores desconocidos/nulos) y extendida la spec de `NavbarComponent` para cubrir el badge (etiqueta, tooltip con versión, entorno desconocido en rojo) y su ausencia sin `APP_ENV_INFO`.
+- ci: Las matrices de `docker-publish.yml`, `deploy-develop.yml` y `deploy-staging.yml` incluyen `externo-consulta`; el diagrama de arquitectura del workflow de documentación suma el nodo `externo-consulta :4208` con su conexión al gateway.
+
+### Changed
+
+- chore: `npm run serve:all` levanta ahora también `externo-consulta` en el puerto 4208.
+- docs: README y AGENTS.md documentan la nueva aplicación, su puerto y su Dockerfile; el diagrama Mermaid del README incluye el nodo `EC` con sus dependencias a API, AUTH y LAYOUT.
+
 ## [0.19.0] - 2026-09-14
 
 ### Added
