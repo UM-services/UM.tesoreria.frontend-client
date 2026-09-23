@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.21.0] - 2026-09-23
+
+### Added
+
+- feat(externo-consulta): Nueva vista `/chequeras` ("Estado de Chequeras") para personal administrativo: consulta de chequeras de alumnos de las facultades asignadas al usuario, con el lenguaje visual de guarani y el orden de la pantalla "Estado de Chequera" del sistema de escritorio. Se busca por número y tipo de documento, por apellido y nombre con sugerencias mientras se escribe (a partir de 3 letras, ordenadas por relevancia y navegables con teclado), o por número de chequera (`facultad/tipo/serie` o `facultad/serie`, sólo de facultades asignadas). El lectivo por defecto es el vigente según sus fechas (`lectivo/last` devuelve el próximo). Consume `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}`, que devuelve sólo las chequeras de las facultades asignadas al usuario en `usuario_chequera_facultad`. Muestra titular, deuda vencida total, filtro local por unidad académica, tarjetas "Todas" / "Con deuda vencida", número de chequera como `facultad/tipo/serie` y paginación con "Ver más".
+- feat(externo-consulta): Modal de detalle de chequera con tarjeta de deuda (`chequeraCuota/deuda`; el centinela de chequera inexistente se muestra como "Deuda no disponible"), tabla de cuotas con estado (Pagada, Pendiente, Vencida desde el primer vencimiento, Baja, Compensada y "A definir" para cuotas impagas con importe 0, como el arancel de diciembre a febrero antes de fijarse su importe), pagos expandibles por cuota, cuota próxima resaltada y descargas en PDF: "Estado (PDF)" (`chequera/generateEstadoPdf/.../{debitoTipoId}` con débito directo por CBU, `debitoTipoId = 2`; endpoint nuevo del core que hasta publicarse responde 404 y la vista lo informa), "Cupones de pago (PDF)" (`chequera/generatePdf`, deshabilitado si no hay cuotas impagas con importe, porque el core responde 500) y el cupón de cada cuota impaga. Se cierra con Esc o con click en el fondo, mantiene el foco adentro y lo devuelve al botón que lo abrió.
+- feat(externo-consulta): Formato `es-AR` (`LOCALE_ID`) para montos en pesos. Las fechas se muestran por día calendario para que un vencimiento en UTC no se corra un día.
+- test(externo-consulta): Specs de utilidades de fechas y estados, focus trap, servicio (URLs, parámetros y blobs), store de búsqueda (cancelación, errores que no cortan búsquedas siguientes, paginación, filtro local, sugerencias por nombre con demora y búsqueda por número de chequera), componente (combobox navegable con teclado), modal (respuestas tardías de otra chequera, PDF inválido o con error) y rutas.
+
+### Changed
+
+- refactor(externo-consulta): La raíz y las rutas desconocidas redirigen a `/chequeras` (carga diferida con `authGuard`). Se eliminan el ítem "Inicio" y `BlankComponent`.
+- docs: README documenta la vista, cómo probarla localmente y la limitación de seguridad; la versión del README se actualiza a 0.21.0.
+
+### Security
+
+- El filtro por facultad depende del `userId` que envía el frontend y que hoy nadie verifica contra la sesión. No exponer la vista a usuarios externos reales hasta que el gateway vincule el `userId` a la sesión.
+- Las sugerencias por nombre usan `POST persona/search`, que busca en toda la universidad y devuelve hash de contraseña, CBU y CUIT. El frontend descarta esos campos, pero llegan al navegador. Hace falta un endpoint de sugerencias acotado a las facultades del usuario y con campos mínimos antes de habilitar la vista fuera de la red interna.
+
 ## [0.20.0] - 2026-09-22
 
 ### Added

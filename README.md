@@ -15,7 +15,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - **contable** - Módulo contable (puerto 4205)
 - **contratados** - Gestión de contratados (puerto 4206)
 - **guarani** - Gestión de pendientes, ubicaciones, beneficios y datos personales de Guaraní (puerto 4207)
-- **externo-consulta** - Módulo de consulta para usuarios externos (puerto 4208)
+- **externo-consulta** - Módulo de consulta para usuarios externos (puerto 4208): consulta del estado de chequeras de alumnos (por documento, apellido o número de chequera) en `/chequeras`
 
 ### Librerías
 
@@ -71,6 +71,32 @@ nx build
 ```bash
 nx test
 ```
+
+Con Node 25 o superior, el `localStorage` nativo de Node tapa al de jsdom y fallan los tests que construyen `AuthService`. Para correrlos localmente como en la CI (Node 20):
+
+```bash
+NODE_OPTIONS=--no-webstorage nx test externo-consulta
+```
+
+### Probar externo-consulta localmente
+
+`environment.development.ts` usa `BACKEND_URL_PLACEHOLDER/core/auth` como ruta relativa: `nx serve` necesita un proxy que la reenvíe al gateway. El script de preview de Conductor (`externo-consulta`) levanta Consul, el gateway y el core en Docker (Colima) y ejecuta `nx serve externo-consulta --proxy-config .conductor/proxy.json`, que mapea `/BACKEND_URL_PLACEHOLDER` → `http://127.0.0.1:8301/api/tesoreria`. Para usar la vista `/chequeras`:
+
+1. Tener el gateway en el puerto 8301 y un core que incluya `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}` y el alias `api/tesoreria/core/documento`.
+2. Usar un usuario que tenga filas en `usuario_chequera_facultad`. Sin facultades asignadas, la vista muestra "Su usuario no tiene facultades asignadas".
+3. Para probar los endpoints con curl, obtener un token:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8301/api/tesoreria/core/auth/login \
+  -H 'Content-Type: application/json' -d '{"login":"<usuario>","password":"<clave>"}' | jq -r .token)
+BASE=http://localhost:8301/api/tesoreria/core
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/usuarioChequeraFacultad/user/<userId>
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/chequeraSerie/usuario/<userId>/lectivo/<lectivoId>?personaId=<dni>&documentoId=<id>&page=0&size=100"
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/chequera/cuotas/pagos/<facultadId>/<tipoChequeraId>/<chequeraSerieId>/<alternativaId>
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/chequeraCuota/deuda/<facultadId>/<tipoChequeraId>/<chequeraSerieId>
+```
+
+El filtro por facultad lo aplica el core con el `userId` que manda el frontend, pero hoy nadie verifica que ese `userId` sea el de la sesión. No es control de acceso: la vista no debe exponerse a usuarios externos reales hasta que el gateway vincule el `userId` a la sesión.
 
 ## Arquitectura
 
@@ -210,7 +236,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.19.0**
+Versión actual: **0.21.0**
 
 ## Licencia
 
