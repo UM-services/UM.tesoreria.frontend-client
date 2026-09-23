@@ -19,7 +19,7 @@ export class AuthService {
 
   constructor() {
     // Basic session hydration from local storage
-    const storedUser = localStorage.getItem('currentUser');
+    const storedUser = this.storage?.getItem('currentUser');
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
@@ -27,9 +27,13 @@ export class AuthService {
         this.currentUserSignal.set(parsed);
       } catch (e) {
         console.error('Failed to parse stored user', e);
-        localStorage.removeItem('currentUser');
+        this.storage?.removeItem('currentUser');
       }
     }
+  }
+
+  private get storage(): Storage | null {
+    return typeof localStorage === 'undefined' ? null : localStorage;
   }
 
   public get currentUserValue(): LoginResponse | null {
@@ -40,7 +44,7 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
       tap((response) => {
         if (response && response.token) {
-          localStorage.setItem('currentUser', JSON.stringify(response));
+          this.storage?.setItem('currentUser', JSON.stringify(response));
           this.currentUserSubject.next(response);
           this.currentUserSignal.set(response);
         }
@@ -49,7 +53,7 @@ export class AuthService {
   }
 
   public logout(): void {
-    localStorage.removeItem('currentUser');
+    this.storage?.removeItem('currentUser');
     this.currentUserSubject.next(null);
     this.currentUserSignal.set(null);
   }
