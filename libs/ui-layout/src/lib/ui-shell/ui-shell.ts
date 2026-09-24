@@ -1,7 +1,8 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { APP_ENV_INFO, AuthService, EnvDisplayKey, getEnvDisplay } from '@tesoreria/shared-api';
+import { CambioClaveModalComponent } from '@tesoreria/ui-auth';
 
 export interface ShellMenuItem {
   label: string;
@@ -27,7 +28,7 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
 @Component({
   selector: 'ui-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, CambioClaveModalComponent],
   template: `
     @if (isLoggedIn$ | async) {
       <div class="flex min-h-screen bg-um-canvas text-um-ink">
@@ -74,13 +75,22 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
               <p class="text-sm text-um-sidebar-text">{{ user.nombre }}</p>
               <p class="mt-1 text-xs text-um-sidebar-muted">Sede {{ user.sede }}</p>
             }
-            <button
-              type="button"
-              (click)="cerrarSesion()"
-              class="mt-4 text-sm font-medium text-um-sidebar-text underline underline-offset-4 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            >
-              Cerrar sesión
-            </button>
+            <div class="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                (click)="abrirCambioClave()"
+                class="text-left text-sm font-medium text-um-sidebar-text underline underline-offset-4 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                Cambiar clave
+              </button>
+              <button
+                type="button"
+                (click)="cerrarSesion()"
+                class="text-left text-sm font-medium text-um-sidebar-text underline underline-offset-4 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                Cerrar sesión
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -102,13 +112,22 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
                 <span [class]="envBadgeClass" [title]="envTooltip">{{ envDisplay.label }}</span>
               }
             </span>
-            <button
-              type="button"
-              (click)="cerrarSesion()"
-              class="text-sm font-medium text-um-primary"
-            >
-              Salir
-            </button>
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                (click)="abrirCambioClave()"
+                class="text-sm font-medium text-um-primary underline underline-offset-4"
+              >
+                Cambiar clave
+              </button>
+              <button
+                type="button"
+                (click)="cerrarSesion()"
+                class="text-sm font-medium text-um-primary"
+              >
+                Salir
+              </button>
+            </div>
           </header>
           <nav
             class="flex gap-2 border-b border-um-border px-4 py-2 md:hidden"
@@ -128,6 +147,11 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
             <router-outlet></router-outlet>
           </main>
         </div>
+
+        <lib-cambio-clave-modal
+          [isOpen]="isCambioClaveOpen()"
+          (closed)="cerrarCambioClave()"
+        />
       </div>
     } @else {
       <div class="min-h-screen bg-um-canvas">
@@ -154,8 +178,19 @@ export class UiShellComponent {
   readonly isLoggedIn$ = this.authService.currentUser$;
   readonly usuario = this.authService.currentUserSignal;
 
+  readonly isCambioClaveOpen = signal(false);
+
+  abrirCambioClave(): void {
+    this.isCambioClaveOpen.set(true);
+  }
+
+  cerrarCambioClave(): void {
+    this.isCambioClaveOpen.set(false);
+  }
+
   cerrarSesion(): void {
     this.authService.logout();
     void this.router.navigate(['/login']);
   }
 }
+
