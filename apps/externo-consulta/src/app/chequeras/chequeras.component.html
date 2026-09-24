@@ -1,17 +1,17 @@
 <div class="text-um-ink">
   <header class="flex flex-wrap items-start justify-between gap-5 border-b border-um-border pb-7">
     <div>
-      <p class="text-xs font-bold uppercase tracking-[0.12em] text-[#50657D]">
+      <p class="text-xs font-bold uppercase tracking-[0.12em] text-um-muted">
         Consultas / Chequeras
       </p>
       <h1 class="mt-2 text-3xl font-bold tracking-tight">Estado de chequeras</h1>
-      <p class="mt-1 text-sm text-[#536579]">
+      <p class="mt-1 text-sm text-um-muted">
         Busque alumnos de sus facultades y revise sus cuotas.
       </p>
     </div>
     @if (store.facultades().length > 0) {
       <p
-        class="rounded bg-um-surface px-3 py-2 text-sm text-[#40556C]"
+        class="rounded bg-um-surface px-3 py-2 text-sm text-um-text"
         aria-label="Facultades asignadas"
       >
         {{ store.facultades().length }} facultades asignadas
@@ -22,12 +22,12 @@
   <section class="border-b border-um-border py-7" aria-labelledby="buscar-persona-titulo">
     <div class="mb-5 flex flex-wrap items-baseline justify-between gap-2">
       <h2 id="buscar-persona-titulo" class="text-lg font-bold">Buscar persona</h2>
-      <p class="text-sm text-[#566B80]">Documento, apellido o número de chequera</p>
+      <p class="text-sm text-um-muted">Documento, apellido o número de chequera</p>
     </div>
 
     @switch (store.catalogos().tipo) {
       @case ('cargando') {
-        <p class="text-sm text-[#536579]" role="status">Cargando facultades...</p>
+        <p class="text-sm text-um-muted" role="status">Cargando facultades...</p>
       }
       @case ('error') {
         <div
@@ -41,7 +41,7 @@
         </div>
       }
       @case ('sinFacultades') {
-        <p class="border-l-4 border-[#536579] bg-um-surface p-4 text-sm text-[#40556C]">
+        <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-um-text">
           Su usuario no tiene facultades asignadas para consultar chequeras. Contacte a Tesorería.
         </p>
       }
@@ -106,7 +106,7 @@
                   class="w-full rounded border border-um-border-strong bg-white px-3 py-2.5 text-sm focus:border-um-primary focus:outline-none focus:ring-2 focus:ring-um-primary/20"
                 />
                 @if (store.sugerencias().tipo === 'cargando') {
-                  <span class="absolute right-3 top-3 text-xs text-[#536579]">Buscando...</span>
+                  <span class="absolute right-3 top-3 text-xs text-um-muted">Buscando...</span>
                 }
                 @if (listaAbierta()) {
                   <ul
@@ -131,7 +131,7 @@
                         <span class="font-medium"
                           >{{ persona.apellido }}, {{ persona.nombre }}</span
                         >
-                        <span class="whitespace-nowrap text-xs tabular-nums text-[#536579]"
+                        <span class="whitespace-nowrap text-xs tabular-nums text-um-muted"
                           >{{ tipoDocumento(persona.documentoId) }} {{ persona.personaId }}</span
                         >
                       </li>
@@ -140,7 +140,7 @@
                         role="option"
                         aria-disabled="true"
                         aria-selected="false"
-                        class="px-3 py-2 text-sm text-[#536579]"
+                        class="px-3 py-2 text-sm text-um-muted"
                       >
                         Sin coincidencias
                       </li>
@@ -157,7 +157,7 @@
             <button
               type="submit"
               [disabled]="!store.puedeBuscar()"
-              class="h-[42px] rounded bg-um-primary px-5 text-sm font-bold text-white hover:bg-[#123E6D] focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              class="h-[42px] rounded bg-um-primary px-5 text-sm font-bold text-white hover:bg-um-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {{ store.busqueda().tipo === 'buscando' ? 'Buscando...' : 'Buscar' }}
             </button>
@@ -238,7 +238,7 @@
             <button
               type="submit"
               [disabled]="!store.numeroChequera() || store.buscandoNumero()"
-              class="rounded border border-[#AFC7DD] px-4 py-2.5 font-semibold text-um-primary hover:bg-um-selected disabled:opacity-50"
+              class="rounded border border-um-btn-border px-4 py-2.5 font-semibold text-um-primary hover:bg-um-selected disabled:opacity-50"
             >
               {{ store.buscandoNumero() ? 'Buscando...' : 'Buscar por número' }}
             </button>
@@ -255,16 +255,16 @@
     @switch (store.busqueda().tipo) {
       @case ('inicial') {
         @if (store.catalogos().tipo === 'listo') {
-          <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-[#536579]">
+          <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-um-muted">
             Busque al alumno por documento, por apellido o por número de chequera.
           </p>
         }
       }
       @case ('buscando') {
-        <p class="text-sm text-[#536579]" role="status">Buscando chequeras...</p>
+        <p class="text-sm text-um-muted" role="status">Buscando chequeras...</p>
       }
       @case ('sinResultados') {
-        <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-[#536579]">
+        <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-um-muted">
           El alumno no tiene chequeras en las facultades asignadas para el lectivo elegido.
         </p>
       }
@@ -286,12 +286,12 @@
           </p>
         }
         @if (store.chequerasFiltradas().length === 0) {
-          <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-[#536579]">
+          <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-um-muted">
             El alumno no tiene chequeras en esa unidad académica para el lectivo elegido.
           </p>
         } @else {
           <div
-            class="flex flex-wrap items-center justify-between gap-4 border-b border-[#CBD6E2] pb-6"
+            class="flex flex-wrap items-center justify-between gap-4 border-b border-um-border-strong pb-6"
           >
             <div>
               <p class="text-xs font-bold uppercase tracking-[0.12em] text-um-muted">
@@ -328,10 +328,10 @@
 
           <div class="grid gap-7 pt-6 xl:grid-cols-[minmax(270px,326px)_minmax(0,1fr)]">
             <div>
-              <div class="flex items-center justify-between gap-2 border-b border-[#D5DFE8] pb-3">
+              <div class="flex items-center justify-between gap-2 border-b border-um-border pb-3">
                 <h3 class="font-bold">
                   Chequeras
-                  <span class="font-normal text-[#617287]"
+                  <span class="font-normal text-um-muted"
                     >({{ store.chequerasFiltradas().length }})</span
                   >
                 </h3>
@@ -351,7 +351,7 @@
                     [disabled]="store.resumen().conDeuda === 0"
                     [attr.aria-pressed]="store.vista() === 'conDeuda'"
                     [class.font-bold]="store.vista() === 'conDeuda'"
-                    class="text-um-primary hover:underline disabled:cursor-not-allowed disabled:text-[#8A9AAB]"
+                    class="text-um-primary hover:underline disabled:cursor-not-allowed disabled:text-um-border-strong"
                   >
                     Con deuda
                   </button>
