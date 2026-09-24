@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.21.0] - 2026-09-24
+
+### Added
+
+- feat(externo-consulta): Nueva vista `/chequeras` ("Estado de Chequeras") para personal administrativo: consulta de chequeras de alumnos de las facultades asignadas al usuario, con el lenguaje visual de guarani y el orden de la pantalla "Estado de Chequera" del sistema de escritorio. Se busca por número y tipo de documento, por apellido y nombre con sugerencias mientras se escribe (a partir de 3 letras o dígitos sin contar signos, como exige el core; ordenadas por relevancia y navegables con teclado; si el core igual responde 400, la lista queda vacía en lugar de mostrar un error), o por número de chequera (`facultad/tipo/serie` o `facultad/serie`, sólo de facultades asignadas). El lectivo por defecto es el vigente según sus fechas (`lectivo/last` devuelve el próximo). Consume `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}`, que devuelve sólo las chequeras de las facultades asignadas al usuario en `usuario_chequera_facultad`. Muestra titular, deuda vencida total, filtro local por unidad académica, tarjetas "Todas" / "Con deuda vencida", número de chequera como `facultad/tipo/serie` y paginación con "Ver más".
+- feat(externo-consulta): Modal de detalle de chequera con tarjeta de deuda (`chequeraCuota/deuda`; el centinela de chequera inexistente se muestra como "Deuda no disponible") y cuotas con los campos del reporte "Estado de Chequera": agrupadas por producto, con Cuota n/total, Período, A pagar, Fecha de pago, Pagado con referencia (archivo o tipo de pago) y subtotales de producto, pagado y deuda (la deuda es el saldo de cada cuota impaga, así un recargo pagado en una cuota no descuenta deuda de otras). El "Primer vencimiento adeudado" sale de la primera cuota vencida e impaga, porque `vencimiento1`/`importe1` de `chequeraCuota/deuda` son de la primera cuota de la chequera aunque esté pagada. Cada cuota muestra su estado (Pagada, Pendiente, Vencida desde el primer vencimiento, Baja, Compensada y "A definir" para cuotas impagas con importe 0, como el arancel de diciembre a febrero antes de fijarse su importe) y se resalta la próxima. La única descarga es "Estado (PDF)" (`chequera/generateEstadoPdf/.../{debitoTipoId}` con débito directo por CBU, `debitoTipoId = 2`); es un endpoint nuevo del core que hasta publicarse responde 404, y la vista lo informa. Se cierra con Esc o con click en el fondo, mantiene el foco adentro y lo devuelve al botón que lo abrió.
+- feat(externo-consulta): Formato `es-AR` (`LOCALE_ID`) para montos en pesos. Las fechas se muestran por día calendario para que un vencimiento en UTC no se corra un día.
+- test(externo-consulta): Specs de utilidades de fechas y estados, focus trap, servicio (URLs, parámetros y blob del PDF de estado), store de búsqueda (cancelación, errores que no cortan búsquedas siguientes, paginación, filtro local, sugerencias por nombre con demora, mínimo de 3 letras o dígitos ("pe j", "o'r") y 400 como lista vacía, y búsqueda por número de chequera), componente (combobox navegable con teclado), modal (respuestas tardías de otra chequera, PDF inválido o con error) y rutas.
+
+### Changed
+
+- refactor(externo-consulta): La raíz y las rutas desconocidas redirigen a `/chequeras` (carga diferida con `authGuard`). Se eliminan el ítem "Inicio" y `BlankComponent`.
+- design: La vista de chequeras usa la dirección J2 y los tokens compartidos de color, tipografía y espaciado, disponibles para las ocho aplicaciones.
+- docs: README documenta la vista, cómo probarla localmente y la limitación de seguridad; la versión del README se actualiza a 0.21.0.
+
+### Fixed
+
+- fix(auth): El login muestra un error legible ante credenciales incorrectas, conserva la ruta de regreso y redirige a usuarios con sesión activa; los errores de otras solicitudes mantienen el `returnUrl` al volver al login.
+- fix(externo-consulta): Una búsqueda por documento limpia el error anterior de búsqueda por número de chequera; los textos de ayuda mantienen el tratamiento de usted.
+
+### Requisitos
+
+- La vista requiere un core que incluya el commit `43ada0cb` (rama `feat/chequeras-por-usuario-y-sugerencias`, todavía sin mergear en `develop`), que agrega `chequeraSerie/usuario/{userId}/lectivo/{lectivoId}` y `persona/sugerencias/usuario/{userId}`. Con un core anterior, la búsqueda y las sugerencias responden 404.
+- "Estado (PDF)" depende de `chequera/generateEstadoPdf/...`, que el core todavía no publicó. Hasta entonces el botón informa que el PDF no está disponible.
+
+### Security
+
+- El filtro por facultad depende del `userId` que envía el frontend y que hoy nadie verifica contra la sesión. No exponer la vista a usuarios externos reales hasta que el gateway vincule el `userId` a la sesión.
+- Las sugerencias por nombre usan `GET persona/sugerencias/usuario/{userId}`, acotado en el core a las facultades del usuario y con campos mínimos. Hereda la misma limitación: el `userId` no se verifica contra la sesión.
+
+## [0.20.0] - 2026-09-22
+
+### Added
+
+- feat(externo-consulta): Añadida la aplicación `externo-consulta` (puerto 4208) como módulo de consulta para usuarios externos: login con `@tesoreria/ui-auth`, ruta raíz protegida por `authGuard` con `BlankComponent` como contenedor, layout con `ui-navbar`/`ui-sidebar`, `Dockerfile`, `entrypoint.sh`, `nginx.conf` y proyectos de lint/test propios.
+- feat(ui): Indicador de entorno en el navbar de `@tesoreria/ui-layout`: badge de color junto al nombre del usuario (LOCAL gris, DESARROLLO ámbar, STAGING violeta, PRODUCCIÓN verde, SIN DEFINIR rojo) cuyo tooltip expone `Entorno | Versión`. Solo se renderiza cuando `APP_ENV_INFO` está proveído.
+- feat(shared-api): Añadida la API pública `env` (`libs/shared-api/src/lib/env.ts`): token `APP_ENV_INFO`, `provideAppEnvInfo` (provee la info y prefija el `document.title` con la etiqueta del entorno) y `getEnvDisplay`, que normaliza mayúsculas, espacios y guiones bajos y acepta sinónimos (`prod`, `dev`, `desarrollo`, `preproduccion`, `localhost`, etc.), devolviendo `unknown`/`SIN DEFINIR` para valores ausentes o no reconocidos.
+- feat(deploy): Los `entrypoint.sh` de las ocho aplicaciones reemplazan ahora los placeholders `ENV_NAME_PLACEHOLDER` y `APP_VERSION_PLACEHOLDER` en los `.js` compilados con las variables de entorno `ENV_NAME` y `APP_VERSION` del contenedor; si la variable no está definida se inyectan `desconocido`/`sin-version` para evidenciar despliegues mal configurados con el badge rojo. La lógica de reemplazo se factorizó en la función `replace_placeholder`.
+- feat(environments): Los `environment.ts` de producción de todas las apps exponen `env` y `version` sobre los placeholders, y los `environment.development.ts` fijan `env: 'local'` y `version: 'dev'`.
+- build: Añadido `fileReplacements` a la configuración `development` de los `project.json` de las ocho aplicaciones para que `nx serve` use el `environment.development.ts` correspondiente.
+- test: Añadida la spec de `getEnvDisplay` (mapeos, sinónimos, normalización de separadores y valores desconocidos/nulos) y extendida la spec de `NavbarComponent` para cubrir el badge (etiqueta, tooltip con versión, entorno desconocido en rojo) y su ausencia sin `APP_ENV_INFO`.
+- ci: Las matrices de `docker-publish.yml`, `deploy-develop.yml` y `deploy-staging.yml` incluyen `externo-consulta`; el diagrama de arquitectura del workflow de documentación suma el nodo `externo-consulta :4208` con su conexión al gateway.
+
+### Changed
+
+- chore: `npm run serve:all` levanta ahora también `externo-consulta` en el puerto 4208.
+- docs: README y AGENTS.md documentan la nueva aplicación, su puerto y su Dockerfile; el diagrama Mermaid del README incluye el nodo `EC` con sus dependencias a API, AUTH y LAYOUT.
+
 ## [0.19.0] - 2026-09-14
 
 ### Added

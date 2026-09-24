@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+@import '../../../libs/ui-layout/src/styles/tokens.css';
+
+/* Escala global del 87.5% (~14px base) para mejorar la densidad visual en escritorio */
+html {
+  font-size: 87.5%;
+}
+
+app-root {
+  font-family: var(--font-um);
+}

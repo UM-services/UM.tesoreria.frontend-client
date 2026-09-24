@@ -47,6 +47,12 @@
           "outputHashing": "all"
         },
         "development": {
+          "fileReplacements": [
+            {
+              "replace": "apps/compras/src/environments/environment.ts",
+              "with": "apps/compras/src/environments/environment.development.ts"
+            }
+          ],
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true

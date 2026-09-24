@@ -10,11 +10,15 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error) => {
-      if (error.status === 401 || error.status === 403) {
+      const isLoginRequest = req.url.split('?')[0].replace(/\/+$/, '').endsWith('/auth/login');
+      if ((error.status === 401 || error.status === 403) && !isLoginRequest) {
+        const returnUrl = router.url;
         authService.logout();
-        router.navigate(['/login']);
+        if (!returnUrl.startsWith('/login')) {
+          void router.navigate(['/login'], { queryParams: { returnUrl } });
+        }
       }
       return throwError(() => error);
-    })
+    }),
   );
 };

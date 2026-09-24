@@ -13,6 +13,7 @@
             Contable["Contable App<br/>:4205"]
             Contratados["Contratados App<br/>:4206"]
             Guarani["Guaraní App<br/>:4207"]
+            ExternoConsulta["Externo Consulta App<br/>:4208"]
         end
 
         subgraph "Libraries"
@@ -59,6 +60,10 @@
     Guarani --> SharedAPI
     Guarani --> UIAuth
     Guarani --> UILayout
+
+    ExternoConsulta --> SharedAPI
+    ExternoConsulta --> UIAuth
+    ExternoConsulta --> UILayout
 
     SharedAPI -->|"HTTP + Bearer"| BackendAPI["Backend API<br/>Tesorería"]
 ```
