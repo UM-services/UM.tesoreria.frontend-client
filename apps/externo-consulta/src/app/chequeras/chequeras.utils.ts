@@ -113,11 +113,6 @@ export function estadoCuota(cuota: CuotaConPagos, hoy: Date): EstadoCuota {
   return 'Pendiente';
 }
 
-/** Misma regla que la generación de PDF del core: no pagada, no dada de baja y con importe. */
-export function puedeDescargarPdfCuota(cuota: CuotaConPagos): boolean {
-  return !esVerdadero(cuota.pagado) && !esVerdadero(cuota.baja) && (cuota.importe1 ?? 0) > 0;
-}
-
 export function ordenarCuotas(cuotas: CuotaConPagos[]): CuotaConPagos[] {
   const tiempo = (cuota: CuotaConPagos) =>
     fechaCalendario(cuota.vencimiento1)?.getTime() ?? Number.MAX_SAFE_INTEGER;
@@ -133,6 +128,14 @@ export function proximaCuota(cuotas: CuotaConPagos[], hoy: Date): CuotaConPagos 
     return estado === 'Pendiente' || estado === 'Vencida';
   });
   return ordenarCuotas(candidatas)[0] ?? null;
+}
+
+/**
+ * La cuota Vencida con el primer vencimiento más temprano. `vencimiento1`/`importe1` de
+ * `chequeraCuota/deuda` son de la primera cuota de la chequera, aunque esté pagada.
+ */
+export function primeraCuotaVencida(cuotas: CuotaConPagos[], hoy: Date): CuotaConPagos | null {
+  return ordenarCuotas(cuotas.filter((cuota) => estadoCuota(cuota, hoy) === 'Vencida'))[0] ?? null;
 }
 
 export function tieneDeuda(chequera: ChequeraEstado): boolean {
@@ -169,11 +172,6 @@ export function totalElementos<T>(pagina: Pagina<T>): number {
 
 export function esDeudaCentinela(deuda: DeudaChequera): boolean {
   return Number(deuda.deuda) === DEUDA_CENTINELA && Number(deuda.cuotas) === CUOTAS_CENTINELA;
-}
-
-export function nombreArchivoPdf(chequera: ChequeraEstado, cuota?: CuotaConPagos): string {
-  const base = `chequera-${chequera.facultadId}-${chequera.tipoChequeraId}-${chequera.chequeraSerieId}`;
-  return cuota ? `${base}-cuota-${cuota.productoId}-${cuota.cuotaId}.pdf` : `${base}.pdf`;
 }
 
 export function nombreArchivoEstadoPdf(chequera: ChequeraEstado): string {
@@ -233,6 +231,11 @@ export function terminosBusqueda(texto: string): string[] {
     .map((termino) => termino.trim())
     .filter((termino) => termino.length >= 2)
     .slice(0, 4);
+}
+
+/** Letras y dígitos Unicode: el core rechaza con 400 las consultas de sugerencias con menos de 3. */
+export function contarAlfanumericos(texto: string): number {
+  return texto.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
 }
 
 export interface NumeroChequera {
@@ -327,7 +330,9 @@ export interface ProductoDelEstado {
 /**
  * Agrupa las cuotas por producto como el PDF "Estado de Chequera": productos por id ascendente
  * (Matrícula antes que Arancel), cuotas por número, y subtotales producto / pagado / deuda.
- * Las cuotas dadas de baja no suman al producto.
+ * Las cuotas dadas de baja no suman al producto. La deuda es lo que falta pagar de cada cuota
+ * impaga (no pagada, compensada ni de baja): un recargo pagado en una cuota no descuenta deuda
+ * de otras.
  */
 export function agruparPorProducto(cuotas: CuotaConPagos[]): ProductoDelEstado[] {
   const grupos = new Map<number, CuotaConPagos[]>();
@@ -353,13 +358,16 @@ export function agruparPorProducto(cuotas: CuotaConPagos[]): ProductoDelEstado[]
       const vigentes = filas.filter((fila) => !esVerdadero(fila.cuota.baja));
       const subtotalProducto = vigentes.reduce((total, fila) => total + fila.aPagar, 0);
       const subtotalPagado = filas.reduce((total, fila) => total + fila.pagado, 0);
+      const subtotalDeuda = vigentes
+        .filter((fila) => !esVerdadero(fila.cuota.pagado) && !esVerdadero(fila.cuota.compensada))
+        .reduce((total, fila) => total + Math.max(fila.aPagar - fila.pagado, 0), 0);
       return {
         productoId,
         nombre: ordenadas.find((cuota) => cuota.producto?.nombre)?.producto?.nombre ?? `Producto ${productoId}`,
         cuotas: filas,
         subtotalProducto,
         subtotalPagado,
-        subtotalDeuda: Math.max(subtotalProducto - subtotalPagado, 0),
+        subtotalDeuda,
       };
     });
 }

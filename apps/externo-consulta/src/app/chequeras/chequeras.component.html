@@ -1,0 +1,429 @@
+<div class="text-um-ink">
+  <header class="flex flex-wrap items-start justify-between gap-5 border-b border-um-border pb-7">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[0.12em] text-[#50657D]">
+        Consultas / Chequeras
+      </p>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight">Estado de chequeras</h1>
+      <p class="mt-1 text-sm text-[#536579]">
+        Busque alumnos de sus facultades y revise sus cuotas.
+      </p>
+    </div>
+    @if (store.facultades().length > 0) {
+      <p
+        class="rounded bg-um-surface px-3 py-2 text-sm text-[#40556C]"
+        aria-label="Facultades asignadas"
+      >
+        {{ store.facultades().length }} facultades asignadas
+      </p>
+    }
+  </header>
+
+  <section class="border-b border-um-border py-7" aria-labelledby="buscar-persona-titulo">
+    <div class="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id="buscar-persona-titulo" class="text-lg font-bold">Buscar persona</h2>
+      <p class="text-sm text-[#566B80]">Documento, apellido o número de chequera</p>
+    </div>
+
+    @switch (store.catalogos().tipo) {
+      @case ('cargando') {
+        <p class="text-sm text-[#536579]" role="status">Cargando facultades...</p>
+      }
+      @case ('error') {
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 border-l-4 border-red-600 bg-red-50 p-4 text-sm text-red-800"
+          role="alert"
+        >
+          <span>{{ mensajeCatalogos() }}</span>
+          <button type="button" (click)="store.cargarCatalogos()" class="font-semibold underline">
+            Reintentar
+          </button>
+        </div>
+      }
+      @case ('sinFacultades') {
+        <p class="border-l-4 border-[#536579] bg-um-surface p-4 text-sm text-[#40556C]">
+          Su usuario no tiene facultades asignadas para consultar chequeras. Contacte a Tesorería.
+        </p>
+      }
+      @case ('listo') {
+        <form (submit)="$event.preventDefault(); store.buscar()">
+          <div
+            class="grid gap-3 lg:grid-cols-[minmax(0,220px)_minmax(0,144px)_minmax(0,1fr)_112px] lg:items-end"
+          >
+            <div>
+              <label for="documentoNumero" class="mb-1.5 block text-xs font-bold text-um-text"
+                >Número de documento</label
+              >
+              <input
+                id="documentoNumero"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                maxlength="11"
+                [value]="store.dni()"
+                (input)="alEscribirDni($event)"
+                class="w-full rounded border border-um-border-strong bg-white px-3 py-2.5 text-sm tabular-nums focus:border-um-primary focus:outline-none focus:ring-2 focus:ring-um-primary/20"
+              />
+            </div>
+            <div>
+              <label for="documentoTipo" class="mb-1.5 block text-xs font-bold text-um-text"
+                >Tipo</label
+              >
+              <select
+                id="documentoTipo"
+                (change)="store.documentoId.set(numero($event))"
+                class="w-full rounded border border-um-border-strong bg-white px-3 py-2.5 text-sm focus:border-um-primary focus:outline-none focus:ring-2 focus:ring-um-primary/20"
+              >
+                @for (documento of store.documentos(); track documento.documentoId) {
+                  <option
+                    [value]="documento.documentoId"
+                    [selected]="documento.documentoId === store.documentoId()"
+                  >
+                    {{ documento.nombre }}
+                  </option>
+                }
+              </select>
+            </div>
+            <div>
+              <label for="personaNombre" class="mb-1.5 block text-xs font-bold text-um-text"
+                >Apellido y nombre</label
+              >
+              <div class="relative">
+                <input
+                  id="personaNombre"
+                  type="text"
+                  role="combobox"
+                  autocomplete="off"
+                  aria-autocomplete="list"
+                  aria-controls="sugerencias-personas"
+                  [attr.aria-expanded]="listaAbierta()"
+                  [attr.aria-activedescendant]="activa() >= 0 ? 'sugerencia-' + activa() : null"
+                  placeholder="Escriba al menos 3 letras del apellido"
+                  [value]="store.nombre()"
+                  (input)="alEscribirNombre($event)"
+                  (keydown)="alPresionarEnNombre($event)"
+                  (blur)="store.cerrarSugerencias()"
+                  class="w-full rounded border border-um-border-strong bg-white px-3 py-2.5 text-sm focus:border-um-primary focus:outline-none focus:ring-2 focus:ring-um-primary/20"
+                />
+                @if (store.sugerencias().tipo === 'cargando') {
+                  <span class="absolute right-3 top-3 text-xs text-[#536579]">Buscando...</span>
+                }
+                @if (listaAbierta()) {
+                  <ul
+                    id="sugerencias-personas"
+                    role="listbox"
+                    aria-label="Personas sugeridas"
+                    class="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded border border-um-border-strong bg-white py-1 shadow-lg"
+                  >
+                    @for (
+                      persona of personasSugeridas();
+                      track persona.personaId + '-' + persona.documentoId;
+                      let i = $index
+                    ) {
+                      <li
+                        [id]="'sugerencia-' + i"
+                        role="option"
+                        [attr.aria-selected]="i === activa()"
+                        (mousedown)="$event.preventDefault(); elegir(persona)"
+                        [class.bg-um-selected]="i === activa()"
+                        class="flex cursor-pointer items-center justify-between gap-4 px-3 py-2 text-sm hover:bg-um-selected"
+                      >
+                        <span class="font-medium"
+                          >{{ persona.apellido }}, {{ persona.nombre }}</span
+                        >
+                        <span class="whitespace-nowrap text-xs tabular-nums text-[#536579]"
+                          >{{ tipoDocumento(persona.documentoId) }} {{ persona.personaId }}</span
+                        >
+                      </li>
+                    } @empty {
+                      <li
+                        role="option"
+                        aria-disabled="true"
+                        aria-selected="false"
+                        class="px-3 py-2 text-sm text-[#536579]"
+                      >
+                        Sin coincidencias
+                      </li>
+                    }
+                  </ul>
+                }
+                @if (store.sugerencias().tipo === 'error') {
+                  <p class="mt-1 text-xs text-red-700" role="alert">
+                    No se pudieron cargar sugerencias. Busque por número de documento.
+                  </p>
+                }
+              </div>
+            </div>
+            <button
+              type="submit"
+              [disabled]="!store.puedeBuscar()"
+              class="h-[42px] rounded bg-um-primary px-5 text-sm font-bold text-white hover:bg-[#123E6D] focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {{ store.busqueda().tipo === 'buscando' ? 'Buscando...' : 'Buscar' }}
+            </button>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-end gap-3">
+            <div class="w-full sm:w-48">
+              <label for="lectivoSelect" class="mb-1.5 block text-xs font-bold text-um-text"
+                >Lectivo</label
+              >
+              <select
+                id="lectivoSelect"
+                (change)="store.cambiarLectivo(numero($event))"
+                class="w-full rounded border border-um-border-strong bg-white px-3 py-2 text-sm focus:border-um-primary focus:outline-none focus:ring-2 focus:ring-um-primary/20"
+              >
+                @for (lectivo of store.lectivos(); track lectivo.lectivoId) {
+                  <option
+                    [value]="lectivo.lectivoId"
+                    [selected]="lectivo.lectivoId === store.lectivoId()"
+                  >
+                    {{ lectivo.nombre }}
+                  </option>
+                }
+              </select>
+            </div>
+            <div class="w-full sm:w-80">
+              @if (store.facultades().length === 1) {
+                <p class="mb-1.5 text-xs font-bold text-um-text">Unidad académica</p>
+                <p class="py-2 text-sm">{{ nombreFacultad(store.facultades()[0]) }}</p>
+              } @else {
+                <label for="facultadSelect" class="mb-1.5 block text-xs font-bold text-um-text"
+                  >Unidad académica</label
+                >
+                <select
+                  id="facultadSelect"
+                  (change)="store.facultadFiltro.set(numero($event))"
+                  class="w-full rounded border border-um-border-strong bg-white px-3 py-2 text-sm focus:border-um-primary focus:outline-none focus:ring-2 focus:ring-um-primary/20"
+                >
+                  <option value="" [selected]="store.facultadFiltro() === null">
+                    Todas las facultades asignadas
+                  </option>
+                  @for (facultad of store.facultades(); track facultad.facultadId) {
+                    <option
+                      [value]="facultad.facultadId"
+                      [selected]="facultad.facultadId === store.facultadFiltro()"
+                    >
+                      {{ nombreFacultad(facultad) }}
+                    </option>
+                  }
+                </select>
+              }
+            </div>
+          </div>
+        </form>
+
+        <details class="group mt-4 text-sm">
+          <summary class="w-fit cursor-pointer font-semibold text-um-primary hover:underline">
+            Buscar por número de chequera
+          </summary>
+          <form
+            class="mt-4 flex flex-wrap items-end gap-3"
+            (submit)="$event.preventDefault(); store.buscarPorNumero()"
+          >
+            <div class="w-full sm:w-72">
+              <label for="numeroChequera" class="mb-1.5 block text-xs font-bold text-um-text"
+                >Número de chequera</label
+              >
+              <input
+                id="numeroChequera"
+                type="text"
+                autocomplete="off"
+                placeholder="Facultad/Tipo/Serie"
+                [value]="store.numeroChequera()"
+                (input)="alEscribirNumero($event)"
+                class="w-full rounded border border-um-border-strong bg-white px-3 py-2.5 text-sm tabular-nums focus:border-um-primary focus:outline-none focus:ring-2 focus:ring-um-primary/20"
+              />
+            </div>
+            <button
+              type="submit"
+              [disabled]="!store.numeroChequera() || store.buscandoNumero()"
+              class="rounded border border-[#AFC7DD] px-4 py-2.5 font-semibold text-um-primary hover:bg-um-selected disabled:opacity-50"
+            >
+              {{ store.buscandoNumero() ? 'Buscando...' : 'Buscar por número' }}
+            </button>
+            @if (store.errorNumero()) {
+              <p class="text-sm text-red-700" role="alert">{{ store.errorNumero() }}</p>
+            }
+          </form>
+        </details>
+      }
+    }
+  </section>
+
+  <section class="pt-7" aria-live="polite" aria-label="Resultados de la consulta">
+    @switch (store.busqueda().tipo) {
+      @case ('inicial') {
+        @if (store.catalogos().tipo === 'listo') {
+          <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-[#536579]">
+            Busque al alumno por documento, por apellido o por número de chequera.
+          </p>
+        }
+      }
+      @case ('buscando') {
+        <p class="text-sm text-[#536579]" role="status">Buscando chequeras...</p>
+      }
+      @case ('sinResultados') {
+        <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-[#536579]">
+          El alumno no tiene chequeras en las facultades asignadas para el lectivo elegido.
+        </p>
+      }
+      @case ('error') {
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 border-l-4 border-red-600 bg-red-50 p-4 text-sm text-red-800"
+          role="alert"
+        >
+          <span>{{ mensajeBusqueda() }}</span>
+          <button type="button" (click)="store.buscar()" class="font-semibold underline">
+            Reintentar
+          </button>
+        </div>
+      }
+      @case ('resultados') {
+        @if (store.resultadosDesactualizados()) {
+          <p class="mb-5 border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-900">
+            Resultados para el documento {{ dniBuscado() }}. Presione Buscar para actualizar.
+          </p>
+        }
+        @if (store.chequerasFiltradas().length === 0) {
+          <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-[#536579]">
+            El alumno no tiene chequeras en esa unidad académica para el lectivo elegido.
+          </p>
+        } @else {
+          <div
+            class="flex flex-wrap items-center justify-between gap-4 border-b border-[#CBD6E2] pb-6"
+          >
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.12em] text-um-muted">
+                {{ store.chequerasFiltradas().length }}
+                {{
+                  store.chequerasFiltradas().length === 1
+                    ? 'chequera encontrada'
+                    : 'chequeras encontradas'
+                }}
+              </p>
+              <h2 class="mt-1 text-2xl font-bold">{{ store.titular() }}</h2>
+              <p class="mt-1 text-sm text-um-muted">
+                DNI {{ dniBuscado() }} · {{ lectivoActual() }}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span
+                class="h-2 w-2 rounded-full"
+                [class.bg-green-700]="store.resumen().conDeuda === 0"
+                [class.bg-amber-600]="store.resumen().conDeuda > 0"
+              ></span>
+              <span
+                class="text-sm font-semibold"
+                [class.text-green-800]="store.resumen().conDeuda === 0"
+                [class.text-amber-800]="store.resumen().conDeuda > 0"
+              >
+                {{ store.resumen().conDeuda === 0 ? 'Sin deuda vencida' : 'Deuda vencida' }}
+              </span>
+              <strong class="text-xl tabular-nums">{{
+                store.resumen().deudaTotal | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
+              }}</strong>
+            </div>
+          </div>
+
+          <div class="grid gap-7 pt-6 xl:grid-cols-[minmax(270px,326px)_minmax(0,1fr)]">
+            <div>
+              <div class="flex items-center justify-between gap-2 border-b border-[#D5DFE8] pb-3">
+                <h3 class="font-bold">
+                  Chequeras
+                  <span class="font-normal text-[#617287]"
+                    >({{ store.chequerasFiltradas().length }})</span
+                  >
+                </h3>
+                <div class="flex gap-3 text-xs">
+                  <button
+                    type="button"
+                    (click)="store.vista.set('todas')"
+                    [attr.aria-pressed]="store.vista() === 'todas'"
+                    [class.font-bold]="store.vista() === 'todas'"
+                    class="text-um-primary hover:underline"
+                  >
+                    Todas
+                  </button>
+                  <button
+                    type="button"
+                    (click)="store.vista.set('conDeuda')"
+                    [disabled]="store.resumen().conDeuda === 0"
+                    [attr.aria-pressed]="store.vista() === 'conDeuda'"
+                    [class.font-bold]="store.vista() === 'conDeuda'"
+                    class="text-um-primary hover:underline disabled:cursor-not-allowed disabled:text-[#8A9AAB]"
+                  >
+                    Con deuda
+                  </button>
+                </div>
+              </div>
+              <div class="mt-1 space-y-1" role="group" aria-label="Chequeras de la persona">
+                @for (chequera of store.chequerasVisibles(); track chequera.chequeraId) {
+                  <button
+                    type="button"
+                    (click)="seleccionada.set(chequera)"
+                    [attr.aria-pressed]="chequeraEnDetalle()?.chequeraId === chequera.chequeraId"
+                    [class.border-um-primary]="
+                      chequeraEnDetalle()?.chequeraId === chequera.chequeraId
+                    "
+                    [class.bg-um-selected]="chequeraEnDetalle()?.chequeraId === chequera.chequeraId"
+                    class="w-full border-l-[3px] border-transparent px-4 py-4 text-left hover:bg-um-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
+                  >
+                    <span class="flex items-start justify-between gap-3 text-sm">
+                      <span class="font-bold">{{
+                        chequera.tipoChequera || chequera.tipoChequeraId
+                      }}</span>
+                      <span class="shrink-0 tabular-nums text-xs text-um-muted">{{
+                        numeroDe(chequera)
+                      }}</span>
+                    </span>
+                    <span class="mt-1 block text-sm text-um-muted">{{
+                      chequera.facultad || chequera.facultadId
+                    }}</span>
+                    <span
+                      class="mt-3 flex items-center justify-between gap-2 text-xs font-semibold"
+                    >
+                      <span
+                        [class.text-green-800]="!conDeuda(chequera)"
+                        [class.text-amber-800]="conDeuda(chequera)"
+                      >
+                        {{ conDeuda(chequera) ? 'Con deuda' : 'Al día' }}
+                      </span>
+                      <span class="text-um-primary">Ver cuotas →</span>
+                    </span>
+                  </button>
+                } @empty {
+                  <p class="py-4 text-sm text-um-muted">No hay chequeras con deuda vencida.</p>
+                }
+              </div>
+              @if (quedanMas()) {
+                <div
+                  class="mt-5 flex flex-wrap items-center justify-between gap-2 text-sm text-um-muted"
+                >
+                  <span>Mostrando {{ cantidadCargada() }} de {{ totalResultados() }}</span>
+                  <button
+                    type="button"
+                    (click)="store.cargarMas()"
+                    [disabled]="cargandoMas()"
+                    class="font-semibold text-um-primary hover:underline disabled:opacity-50"
+                  >
+                    {{ cargandoMas() ? 'Cargando...' : 'Ver más' }}
+                  </button>
+                </div>
+              }
+              @if (errorMas()) {
+                <p class="mt-2 text-sm text-red-700" role="alert">{{ errorMas() }}</p>
+              }
+            </div>
+
+            <div
+              class="min-w-0 border-t border-um-border pt-6 xl:border-l xl:border-t-0 xl:pl-7 xl:pt-0"
+            >
+              <app-chequera-detalle-modal [chequera]="chequeraEnDetalle()" [inline]="true" />
+            </div>
+          </div>
+        }
+      }
+    }
+  </section>
+</div>

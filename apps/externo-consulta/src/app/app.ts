@@ -1,36 +1,97 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { NavbarComponent, SidebarComponent } from '@tesoreria/ui-layout';
-import { AuthService } from '@tesoreria/shared-api';
+import { Router, RouterModule } from '@angular/router';
+import { APP_ENV_INFO, AuthService, getEnvDisplay } from '@tesoreria/shared-api';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterModule, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule],
   selector: 'app-root',
   template: `
     @if (isLoggedIn$ | async; as loggedIn) {
-      <div class="flex h-screen overflow-hidden bg-gray-50">
-        <!-- Sidebar -->
-        <ui-sidebar
-          moduleName="Externo Consulta"
-          [menuItems]="menuItems"
-          class="w-64 flex-shrink-0 border-r border-gray-200 bg-white hidden md:flex flex-col shadow-sm z-10"
+      <div class="flex min-h-screen bg-white">
+        <aside
+          class="hidden w-56 shrink-0 flex-col bg-um-sidebar px-4 py-7 text-white md:flex"
+          aria-label="Navegación principal"
         >
-        </ui-sidebar>
+          <div class="border-b border-white/20 px-3 pb-6">
+            <p class="text-lg font-bold leading-6">UM · Tesorería</p>
+            <p class="mt-1 text-sm text-[#C0CFDE]">Externo Consulta</p>
+          </div>
+          <nav class="pt-7" aria-label="Consultas">
+            <p
+              class="px-3 pb-3 text-xs font-semibold uppercase tracking-widest text-um-sidebar-muted"
+            >
+              Consultas
+            </p>
+            @for (item of menuItems; track item.path) {
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="bg-um-sidebar-active text-white"
+                class="block rounded px-3 py-3 text-sm font-semibold text-um-sidebar-text hover:bg-um-sidebar-active focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >{{ item.label }}</a
+              >
+            }
+          </nav>
+          <div class="mt-auto border-t border-white/20 px-3 pt-5">
+            @if (envInfo) {
+              <span
+                class="mb-4 inline-block rounded-full border border-white/30 px-2 py-0.5 text-xs font-bold tracking-wide text-um-sidebar-text"
+                [title]="envTooltip"
+                >{{ envDisplay.label }}</span
+              >
+            }
+            @if (usuario(); as user) {
+              <p class="text-sm text-um-sidebar-text">{{ user.nombre }}</p>
+              <p class="mt-1 text-xs text-um-sidebar-muted">Sede {{ user.sede }}</p>
+            }
+            <button
+              type="button"
+              (click)="cerrarSesion()"
+              class="mt-4 text-sm font-medium text-um-sidebar-text underline underline-offset-4 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </aside>
 
-        <!-- Main Content Wrapper -->
-        <div class="flex-1 flex flex-col w-full h-full">
-          <!-- Navbar -->
-          <ui-navbar
-            class="h-16 flex-shrink-0 bg-white border-b border-gray-200 shadow-sm z-10"
-          ></ui-navbar>
-
-          <!-- Scrollable Content -->
-          <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50">
-            <div class="max-w-7xl mx-auto">
-              <router-outlet></router-outlet>
-            </div>
+        <div class="min-w-0 flex-1">
+          <header
+            class="flex items-center justify-between border-b border-um-border px-4 py-4 md:hidden"
+          >
+            <span class="flex items-center gap-2 font-bold text-um-sidebar">
+              UM · Tesorería
+              @if (envInfo) {
+                <span
+                  class="rounded-full border border-[#B9C8D7] px-2 py-0.5 text-[10px] font-bold tracking-wide"
+                  [title]="envTooltip"
+                  >{{ envDisplay.label }}</span
+                >
+              }
+            </span>
+            <button
+              type="button"
+              (click)="cerrarSesion()"
+              class="text-sm font-medium text-um-primary"
+            >
+              Salir
+            </button>
+          </header>
+          <nav
+            class="flex gap-2 border-b border-um-border px-4 py-2 md:hidden"
+            aria-label="Consultas"
+          >
+            @for (item of menuItems; track item.path) {
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="bg-um-selected text-um-primary"
+                class="rounded px-3 py-2 text-sm font-semibold"
+                >{{ item.label }}</a
+              >
+            }
+          </nav>
+          <main class="mx-auto w-full max-w-[1320px] px-4 py-7 sm:px-7 lg:px-12 lg:py-9">
+            <router-outlet></router-outlet>
           </main>
         </div>
       </div>
@@ -44,14 +105,24 @@ import { AuthService } from '@tesoreria/shared-api';
 export class AppComponent {
   title = 'externo-consulta';
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  readonly envInfo = inject(APP_ENV_INFO, { optional: true });
+  readonly envDisplay = getEnvDisplay(this.envInfo?.name);
+  readonly envTooltip = this.envInfo
+    ? `Entorno: ${this.envDisplay.label} | Versión: ${this.envInfo.version}`
+    : '';
   isLoggedIn$ = this.authService.currentUser$;
+  readonly usuario = this.authService.currentUserSignal;
 
   menuItems = [
     {
       label: 'Chequeras',
       path: '/chequeras',
-      iconSvg:
-        'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
     },
   ];
+
+  cerrarSesion(): void {
+    this.authService.logout();
+    void this.router.navigate(['/login']);
+  }
 }

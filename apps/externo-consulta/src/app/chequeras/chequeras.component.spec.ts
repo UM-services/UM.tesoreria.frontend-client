@@ -32,16 +32,20 @@ const chequeras: ChequeraEstado[] = [
 ];
 
 const texto = (fixture: ComponentFixture<unknown>) =>
-  (fixture.nativeElement as HTMLElement).textContent?.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ') ?? '';
+  (fixture.nativeElement as HTMLElement).textContent
+    ?.replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ') ?? '';
 
 describe('ChequerasComponent', () => {
   let fixture: ComponentFixture<ChequerasComponent>;
   let servicio: Record<string, ReturnType<typeof vi.fn>>;
 
-  const crear = async (facultades = [
-    { userId: 7, facultadId: 1, facultad: { facultadId: 1, nombre: 'Ingeniería' } },
-    { userId: 7, facultadId: 2, facultad: { facultadId: 2, nombre: 'Derecho' } },
-  ]) => {
+  const crear = async (
+    facultades = [
+      { userId: 7, facultadId: 1, facultad: { facultadId: 1, nombre: 'Ingeniería' } },
+      { userId: 7, facultadId: 2, facultad: { facultadId: 2, nombre: 'Derecho' } },
+    ],
+  ) => {
     servicio = {
       facultadesUsuario: vi.fn().mockReturnValue(of(facultades)),
       documentos: vi.fn().mockReturnValue(of([{ documentoId: 1, nombre: 'DNI' }])),
@@ -100,7 +104,7 @@ describe('ChequerasComponent', () => {
     expect(input.value).toBe('30123456');
   });
 
-  it('busca y muestra titular, deuda en pesos y la fila de la chequera', async () => {
+  it('busca y muestra titular, deuda y la chequera seleccionable', async () => {
     await crear();
     await escribirDni('30123456');
     await buscar();
@@ -110,21 +114,57 @@ describe('ChequerasComponent', () => {
     expect(contenido).toContain('PEREZ, Juan');
     expect(contenido).toContain('$ 245.300,00');
     expect(contenido).toContain('Con deuda');
-    expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(1);
+    const lista = fixture.nativeElement.querySelector(
+      '[aria-label="Chequeras de la persona"]',
+    ) as HTMLElement;
+    expect(lista.querySelectorAll('button').length).toBe(1);
+    expect(lista.textContent).toContain('1/2/100');
   });
 
-  it('abre el detalle al presionar "Ver cuotas"', async () => {
+  it('muestra las cuotas en contexto al elegir la chequera', async () => {
     await crear();
     await escribirDni('30123456');
     await buscar();
 
-    const boton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
-      .find((b) => b.textContent?.includes('Ver cuotas'));
+    const boton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Ver cuotas'));
     boton?.click();
     await fixture.whenStable();
 
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-chequera-detalle-modal')).not.toBeNull();
+    expect(boton?.getAttribute('aria-pressed')).toBe('true');
     expect(servicio['cuotasConPagos']).toHaveBeenCalledWith(chequeras[0]);
+  });
+
+  it('cambia el detalle al seleccionar otra chequera del listado', async () => {
+    await crear();
+    const segunda = {
+      ...chequeras[0],
+      chequeraId: 2,
+      chequeraSerieId: 200,
+      tipoChequera: 'Posgrado',
+    };
+    servicio['chequerasPorUsuario'].mockReturnValue(
+      of({ content: [chequeras[0], segunda], totalElements: 2 }),
+    );
+    await escribirDni('30123456');
+    await buscar();
+
+    const lista = fixture.nativeElement.querySelector(
+      '[aria-label="Chequeras de la persona"]',
+    ) as HTMLElement;
+    const botones = lista.querySelectorAll('button');
+    expect(botones.length).toBe(2);
+    const botonPosgrado = Array.from(botones).find((boton) =>
+      boton.textContent?.includes('Posgrado'),
+    );
+    botonPosgrado?.click();
+    await fixture.whenStable();
+
+    expect(botonPosgrado?.getAttribute('aria-pressed')).toBe('true');
+    expect(servicio['cuotasConPagos']).toHaveBeenCalledWith(segunda);
   });
 
   it('muestra el número de chequera como facultad/tipo/serie', async () => {
@@ -139,7 +179,9 @@ describe('ChequerasComponent', () => {
     const input = fixture.nativeElement.querySelector('#personaNombre') as HTMLInputElement;
     input.value = 'pere';
     input.dispatchEvent(new Event('input'));
-    await vi.waitFor(() => expect(servicio['sugerirPersonas']).toHaveBeenCalledWith(7, 'pere', 8), { timeout: 2000 });
+    await vi.waitFor(() => expect(servicio['sugerirPersonas']).toHaveBeenCalledWith(7, 'pere', 8), {
+      timeout: 2000,
+    });
     await fixture.whenStable();
 
     expect(input.getAttribute('aria-expanded')).toBe('true');

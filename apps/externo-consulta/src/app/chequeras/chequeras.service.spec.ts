@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ChequeraEstado, CuotaConPagos } from './chequeras.models';
+import { ChequeraEstado } from './chequeras.models';
 import { ChequerasService, TAMANIO_PAGINA } from './chequeras.service';
 
 const chequera = {
@@ -62,19 +62,6 @@ describe('ChequerasService', () => {
 
     http.expectOne((r) => r.url.endsWith('/core/chequera/cuotas/pagos/1/2/300/4')).flush([]);
     http.expectOne((r) => r.url.endsWith('/core/chequeraCuota/deuda/1/2/300')).flush({});
-  });
-
-  it('descarga los PDF como blob', () => {
-    const cuota = { alternativaId: 4, productoId: 5, cuotaId: 6 } as CuotaConPagos;
-    service.descargarPdfChequera(chequera).subscribe();
-    service.descargarPdfCuota(chequera, cuota).subscribe();
-
-    const pdfChequera = http.expectOne((r) => r.url.endsWith('/core/chequera/generatePdf/1/2/300/4'));
-    const pdfCuota = http.expectOne((r) => r.url.endsWith('/core/chequera/generateCuotaPdf/1/2/300/4/5/6'));
-    expect(pdfChequera.request.responseType).toBe('blob');
-    expect(pdfCuota.request.responseType).toBe('blob');
-    pdfChequera.flush(new Blob(['%PDF']));
-    pdfCuota.flush(new Blob(['%PDF']));
   });
 
   it('pide sugerencias acotadas al usuario y conserva sólo los campos que se muestran', () => {

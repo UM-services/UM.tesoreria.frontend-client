@@ -331,6 +331,33 @@ describe('ChequerasBusquedaStore', () => {
       expect(store.sugerencias()).toEqual({ tipo: 'inactivo' });
     });
 
+    it('no pide sugerencias si los términos que quedan tienen menos de 3 letras ("pe j")', () => {
+      store.escribirNombre('pe j');
+      vi.advanceTimersByTime(300);
+      expect(servicio.sugerirPersonas).not.toHaveBeenCalled();
+      expect(store.sugerencias()).toEqual({ tipo: 'inactivo' });
+    });
+
+    it('no cuenta apóstrofos ni signos para el mínimo ("o\'r")', () => {
+      store.escribirNombre("o'r");
+      vi.advanceTimersByTime(300);
+      expect(servicio.sugerirPersonas).not.toHaveBeenCalled();
+      expect(store.sugerencias()).toEqual({ tipo: 'inactivo' });
+    });
+
+    it('pide sugerencias con 3 letras aunque haya signos ("o\'ro")', () => {
+      store.escribirNombre("o'ro");
+      vi.advanceTimersByTime(300);
+      expect(servicio.sugerirPersonas).toHaveBeenCalledWith(7, "o'ro", 8);
+    });
+
+    it('un 400 del core en sugerencias muestra la lista vacía, no un error', () => {
+      servicio.sugerirPersonas.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400 })));
+      store.escribirNombre('perez');
+      vi.advanceTimersByTime(300);
+      expect(store.sugerencias()).toEqual({ tipo: 'listo', personas: [] });
+    });
+
     it('un error en sugerencias no bloquea la búsqueda por documento', () => {
       servicio.sugerirPersonas.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
       store.escribirNombre('perez');
@@ -403,6 +430,19 @@ describe('ChequerasBusquedaStore', () => {
       store.buscarPorNumero();
       expect(store.errorNumero()).toBe('No existe una chequera con ese número.');
       expect(store.buscandoNumero()).toBe(false);
+    });
+
+    it('limpia el error de número al buscar por documento', () => {
+      servicio.chequeraPorNumero.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400 })));
+      store.numeroChequera.set('1/2/999');
+      store.buscarPorNumero();
+      expect(store.errorNumero()).toBe('No existe una chequera con ese número.');
+
+      store.actualizarDni('30123456');
+      store.buscar();
+
+      expect(store.errorNumero()).toBe('');
+      expect(store.busqueda().tipo).toBe('resultados');
     });
   });
 });

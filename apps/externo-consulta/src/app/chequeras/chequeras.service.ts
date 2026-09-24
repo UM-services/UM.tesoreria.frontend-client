@@ -114,14 +114,6 @@ export class ChequerasService {
     );
   }
 
-  descargarPdfChequera(chequera: ChequeraEstado): Observable<Blob> {
-    const { facultadId, tipoChequeraId, chequeraSerieId, alternativaId } = chequera;
-    return this.http.get(
-      `${this.coreBaseUrl}/chequera/generatePdf/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}`,
-      { responseType: 'blob' },
-    );
-  }
-
   /**
    * "Estado de Chequera": todas las cuotas (pagas e impagas) por producto con subtotales, y una
    * segunda hoja con la adhesión al débito automático del tipo indicado. Endpoint nuevo del core
@@ -131,14 +123,6 @@ export class ChequerasService {
     const { facultadId, tipoChequeraId, chequeraSerieId, alternativaId } = chequera;
     return this.http.get(
       `${this.coreBaseUrl}/chequera/generateEstadoPdf/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}/${debitoTipoId}`,
-      { responseType: 'blob' },
-    );
-  }
-
-  descargarPdfCuota(chequera: ChequeraEstado, cuota: CuotaConPagos): Observable<Blob> {
-    const { facultadId, tipoChequeraId, chequeraSerieId } = chequera;
-    return this.http.get(
-      `${this.coreBaseUrl}/chequera/generateCuotaPdf/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${cuota.alternativaId}/${cuota.productoId}/${cuota.cuotaId}`,
       { responseType: 'blob' },
     );
   }

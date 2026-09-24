@@ -26,6 +26,7 @@ import {
 } from './chequeras.models';
 import { ChequerasService } from './chequeras.service';
 import {
+  contarAlfanumericos,
   lectivoVigente,
   mensajeError,
   ordenarChequeras,
@@ -38,7 +39,7 @@ import {
   totalElementos,
 } from './chequeras.utils';
 
-/** Mínimo de caracteres del nombre antes de pedir sugerencias. */
+/** Mínimo de letras o dígitos del nombre antes de pedir sugerencias (el core responde 400 con menos). */
 export const MINIMO_SUGERENCIA = 3;
 const DEMORA_SUGERENCIA_MS = 300;
 const MAXIMO_SUGERENCIAS = 8;
@@ -255,7 +256,7 @@ export class ChequerasBusquedaStore {
 
   escribirNombre(texto: string): void {
     this.nombre.set(texto);
-    if (texto.trim().length < MINIMO_SUGERENCIA) {
+    if (contarAlfanumericos(terminosBusqueda(texto).join(' ')) < MINIMO_SUGERENCIA) {
       this.sugerencias.set({ tipo: 'inactivo' });
     }
     this.textoNombre$.next(texto);
@@ -327,17 +328,22 @@ export class ChequerasBusquedaStore {
 
   private sugerir(texto: string): Observable<EstadoSugerencias> {
     const terminos = terminosBusqueda(texto);
+    const consulta = terminos.join(' ');
     const userId = this.authService.currentUserSignal()?.userId;
-    if (texto.length < MINIMO_SUGERENCIA || terminos.length === 0 || userId == null) {
+    if (contarAlfanumericos(consulta) < MINIMO_SUGERENCIA || userId == null) {
       return of({ tipo: 'inactivo' });
     }
-    return this.service.sugerirPersonas(userId, terminos.join(' '), MAXIMO_SUGERENCIAS).pipe(
+    return this.service.sugerirPersonas(userId, consulta, MAXIMO_SUGERENCIAS).pipe(
       map((personas): EstadoSugerencias => ({
         tipo: 'listo',
         personas: ordenarSugerencias(personas, terminos).slice(0, MAXIMO_SUGERENCIAS),
       })),
       catchError((error: unknown) => {
         registrarError('persona/sugerencias/usuario/:userId', error);
+        // 400: la consulta no alcanza el mínimo del core; se trata como "sin coincidencias".
+        if (error instanceof HttpErrorResponse && error.status === 400) {
+          return of<EstadoSugerencias>({ tipo: 'listo', personas: [] });
+        }
         return of<EstadoSugerencias>({ tipo: 'error' });
       }),
       startWith<EstadoSugerencias>({ tipo: 'cargando' }),
@@ -345,6 +351,7 @@ export class ChequerasBusquedaStore {
   }
 
   buscar(): void {
+    this.errorNumero.set('');
     const documentoId = this.documentoId();
     const lectivoId = this.lectivoId();
     if (!this.formularioCompleto() || documentoId === null || lectivoId === null) {

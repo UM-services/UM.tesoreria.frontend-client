@@ -11,7 +11,16 @@ import { ChequerasService } from './chequeras.service';
 
 registerLocaleData(localeEsAr);
 
-const chequeraA = { chequeraId: 1, facultadId: 1, tipoChequeraId: 2, chequeraSerieId: 100, alternativaId: 1, tipoChequera: 'Grado', facultad: 'Ingeniería', titular: 'PEREZ, Juan' } as ChequeraEstado;
+const chequeraA = {
+  chequeraId: 1,
+  facultadId: 1,
+  tipoChequeraId: 2,
+  chequeraSerieId: 100,
+  alternativaId: 1,
+  tipoChequera: 'Grado',
+  facultad: 'Ingeniería',
+  titular: 'PEREZ, Juan',
+} as ChequeraEstado;
 const chequeraB = { ...chequeraA, chequeraId: 2, chequeraSerieId: 200 } as ChequeraEstado;
 
 function cuota(parcial: Partial<CuotaConPagos> = {}): CuotaConPagos {
@@ -47,7 +56,9 @@ const deuda = (parcial: Partial<DeudaChequera> = {}): DeudaChequera => ({
 });
 
 const texto = (fixture: ComponentFixture<unknown>) =>
-  (fixture.nativeElement as HTMLElement).textContent?.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ') ?? '';
+  (fixture.nativeElement as HTMLElement).textContent
+    ?.replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ') ?? '';
 
 describe('ChequeraDetalleModalComponent', () => {
   let fixture: ComponentFixture<ChequeraDetalleModalComponent>;
@@ -57,9 +68,7 @@ describe('ChequeraDetalleModalComponent', () => {
     servicio = {
       cuotasConPagos: vi.fn().mockReturnValue(of([cuota()])),
       deuda: vi.fn().mockReturnValue(of(deuda())),
-      descargarPdfChequera: vi.fn(),
       descargarPdfEstado: vi.fn(),
-      descargarPdfCuota: vi.fn(),
     };
     TestBed.configureTestingModule({
       imports: [ChequeraDetalleModalComponent],
@@ -89,18 +98,29 @@ describe('ChequeraDetalleModalComponent', () => {
     expect(contenido).toContain('Grado N° 100');
     expect(contenido).toContain('Sin deuda vencida');
     expect(contenido).toContain('$ 540.000,00');
-    expect(contenido).toContain('Arancel: 1/1');
+    expect(contenido).toContain('1/1');
     expect(contenido).toContain('Pendiente');
     expect(contenido).toContain('Próxima');
   });
 
   it('muestra la tarjeta de deuda vencida', async () => {
-    servicio['deuda'].mockReturnValue(of(deuda({ deuda: 90000, cuotas: 2, vencimiento1: '2026-08-10T00:00:00Z', importe1: 45000 })));
+    // vencimiento1/importe1 de la deuda son de la primera cuota de la chequera (aunque esté pagada):
+    // el primer vencimiento adeudado sale de las cuotas.
+    servicio['deuda'].mockReturnValue(
+      of(deuda({ deuda: 90000, cuotas: 2, vencimiento1: '2026-03-22T00:00:00Z', importe1: 331000 })),
+    );
+    servicio['cuotasConPagos'].mockReturnValue(
+      of([
+        cuota({ chequeraCuotaId: 1, cuotaId: 1, mes: 3, vencimiento1: '2026-03-22T00:00:00Z', importe1: 331000, pagado: 1 }),
+        cuota({ chequeraCuotaId: 2, cuotaId: 2, mes: 8, vencimiento1: '2026-08-10T00:00:00Z', importe1: 45000 }),
+      ]),
+    );
     await abrir();
     const contenido = texto(fixture);
     expect(contenido).toContain('Deuda vencida');
     expect(contenido).toContain('$ 90.000,00');
-    expect(contenido).toContain('10/08/2026');
+    expect(contenido).toContain('10/08/2026 · $ 45.000,00');
+    expect(contenido).not.toContain('22/03/2026 · $ 331.000,00');
   });
 
   it('trata el centinela de deuda como no disponible', async () => {
@@ -142,14 +162,34 @@ describe('ChequeraDetalleModalComponent', () => {
   it('agrupa por producto con A pagar, fecha y referencia del pago, y subtotales', async () => {
     servicio['cuotasConPagos'].mockReturnValue(
       of([
-        cuota({ chequeraCuotaId: 1, cuotaId: 1, pagado: 1, importe1: 45000, chequeraPagos: [{ chequeraPagoId: 9, fecha: '2026-09-01T00:00:00Z', acreditacion: null, importe: 45000, archivo: 'D2026090101_305', tipoPagoId: 3, tipoPago: { tipoPagoId: 3, nombre: 'Banco' } }] }),
+        cuota({
+          chequeraCuotaId: 1,
+          cuotaId: 1,
+          pagado: 1,
+          importe1: 45000,
+          chequeraPagos: [
+            {
+              chequeraPagoId: 9,
+              fecha: '2026-09-01T00:00:00Z',
+              acreditacion: null,
+              importe: 45000,
+              archivo: 'D2026090101_305',
+              tipoPagoId: 3,
+              tipoPago: { tipoPagoId: 3, nombre: 'Banco' },
+            },
+          ],
+        }),
         cuota({ chequeraCuotaId: 2, cuotaId: 2, importe1: 50000 }),
       ]),
     );
     await abrir();
     const contenido = texto(fixture);
+    const columnas = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+    expect(columnas).toEqual(['Cuota', 'Período', 'A pagar', 'Fecha pago', 'Pagado']);
     expect(contenido).toContain('Producto: Arancel');
-    expect(contenido).toContain('Arancel: 1/2');
+    expect(contenido).toContain('1/2');
     expect(contenido).toContain('01/09/2026');
     expect(contenido).toContain('D2026090101_305');
     expect(contenido).toContain('Subtotal producto: $ 95.000,00');
@@ -165,42 +205,58 @@ describe('ChequeraDetalleModalComponent', () => {
     expect(cerrado).toHaveBeenCalled();
   });
 
-  it('muestra el mensaje del servidor si falla el PDF de la chequera', async () => {
-    servicio['descargarPdfChequera'].mockReturnValue(
-      throwError(() => new HttpErrorResponse({ status: 500, error: new Blob([JSON.stringify({ message: 'Sin formulario' })]) })),
+  it('en modo integrado muestra el reporte sin abrir ni cerrar un diálogo', async () => {
+    fixture.componentRef.setInput('inline', true);
+    await abrir();
+    const cerrado = vi.fn();
+    fixture.componentInstance.closed.subscribe(cerrado);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(texto(fixture)).toContain('Chequera 1/2/100');
+    expect(cerrado).not.toHaveBeenCalled();
+  });
+
+  it('muestra el mensaje del servidor si falla el PDF de estado', async () => {
+    servicio['descargarPdfEstado'].mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 500,
+            error: new Blob([JSON.stringify({ message: 'Sin formulario' })]),
+          }),
+      ),
     );
     await abrir();
-    fixture.componentInstance.descargarChequera(chequeraA);
-    await vi.waitFor(() => expect(fixture.componentInstance.pdfErrores()['chequera']).toBe('Sin formulario'));
+    fixture.componentInstance.descargarEstado(chequeraA);
+    await vi.waitFor(() =>
+      expect(fixture.componentInstance.pdfErrores()['estado']).toBe('Sin formulario'),
+    );
   });
 
   it('rechaza una respuesta que no es PDF', async () => {
-    servicio['descargarPdfChequera'].mockReturnValue(of(new Blob(['{}'], { type: 'application/json' })));
+    servicio['descargarPdfEstado'].mockReturnValue(
+      of(new Blob(['{}'], { type: 'application/json' })),
+    );
     await abrir();
-    fixture.componentInstance.descargarChequera(chequeraA);
-    expect(fixture.componentInstance.pdfErrores()['chequera']).toBe('No se pudo generar el PDF.');
+    fixture.componentInstance.descargarEstado(chequeraA);
+    expect(fixture.componentInstance.pdfErrores()['estado']).toBe('No se pudo generar el PDF.');
   });
 
   it('deshabilita el botón mientras se genera el PDF', async () => {
     const pdf = new Subject<Blob>();
-    servicio['descargarPdfChequera'].mockReturnValue(pdf);
+    servicio['descargarPdfEstado'].mockReturnValue(pdf);
     await abrir();
-    fixture.componentInstance.descargarChequera(chequeraA);
-    fixture.componentInstance.descargarChequera(chequeraA);
-    expect(servicio['descargarPdfChequera']).toHaveBeenCalledTimes(1);
-    expect(fixture.componentInstance.pdfPendiente().has('chequera')).toBe(true);
-  });
-
-  it('ofrece PDF sólo en cuotas no pagadas', async () => {
-    servicio['cuotasConPagos'].mockReturnValue(of([cuota({ chequeraCuotaId: 1 }), cuota({ chequeraCuotaId: 2, pagado: 1 })]));
-    await abrir();
-    const botonesPdf = Array.from(fixture.nativeElement.querySelectorAll('tbody button') as NodeListOf<HTMLButtonElement>)
-      .filter((b) => b.textContent?.trim() === 'PDF');
-    expect(botonesPdf.length).toBe(1);
+    fixture.componentInstance.descargarEstado(chequeraA);
+    fixture.componentInstance.descargarEstado(chequeraA);
+    expect(servicio['descargarPdfEstado']).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.pdfPendiente().has('estado')).toBe(true);
   });
 
   it('avisa si el PDF de estado todavía no existe en el servidor (404)', async () => {
-    servicio['descargarPdfEstado'].mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404, error: new Blob([]) })));
+    servicio['descargarPdfEstado'].mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 404, error: new Blob([]) })),
+    );
     await abrir();
     fixture.componentInstance.descargarEstado(chequeraA);
     await vi.waitFor(() =>
@@ -210,14 +266,13 @@ describe('ChequeraDetalleModalComponent', () => {
     );
   });
 
-  it('deshabilita los cupones de pago si no hay cuotas impagas con importe', async () => {
-    servicio['cuotasConPagos'].mockReturnValue(of([cuota({ pagado: 1 }), cuota({ chequeraCuotaId: 2, importe1: 0 })]));
+  it('sólo ofrece el botón "Estado (PDF)"', async () => {
     await abrir();
-    const cupones = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
-      .find((b) => b.textContent?.includes('Cupones de pago'));
-    const estado = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
-      .find((b) => b.textContent?.includes('Estado (PDF)'));
-    expect(cupones?.disabled).toBe(true);
-    expect(estado?.disabled).toBe(false);
+    const botones = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    )
+      .map((b) => b.textContent?.trim())
+      .filter((t) => t?.includes('PDF'));
+    expect(botones).toEqual(['Estado (PDF)']);
   });
 });

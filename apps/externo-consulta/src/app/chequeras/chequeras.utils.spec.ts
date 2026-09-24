@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChequeraEstado, CuotaConPagos } from './chequeras.models';
 import {
   agruparPorProducto,
+  contarAlfanumericos,
   esDeudaCentinela,
   esPdfValido,
   estadoCuota,
@@ -17,11 +18,9 @@ import {
   mensajeError,
   mensajeErrorPdf,
   nombreArchivoEstadoPdf,
-  nombreArchivoPdf,
   ordenarChequeras,
   ordenarCuotas,
   proximaCuota,
-  puedeDescargarPdfCuota,
   resumenDeuda,
   soloDigitos,
   totalElementos,
@@ -137,14 +136,6 @@ describe('estadoCuota', () => {
 });
 
 describe('cuotas', () => {
-  it('permite PDF sólo si no está pagada ni dada de baja y tiene importe', () => {
-    expect(puedeDescargarPdfCuota(cuota())).toBe(true);
-    expect(puedeDescargarPdfCuota(cuota({ vencimiento1: '2026-01-01' }))).toBe(true);
-    expect(puedeDescargarPdfCuota(cuota({ pagado: 1 }))).toBe(false);
-    expect(puedeDescargarPdfCuota(cuota({ baja: 1 }))).toBe(false);
-    expect(puedeDescargarPdfCuota(cuota({ importe1: 0 }))).toBe(false);
-  });
-
   it('ordena por primer vencimiento, producto y cuota', () => {
     const ordenadas = ordenarCuotas([
       cuota({ chequeraCuotaId: 3, vencimiento1: '2026-11-10' }),
@@ -203,11 +194,8 @@ describe('chequeras', () => {
     expect(esDeudaCentinela({ total: 0, deuda: 1000000, cuotas: 3, vencimiento1: null, importe1: null })).toBe(false);
   });
 
-  it('arma nombres de archivo de chequera y cuota', () => {
-    const c = chequera();
-    expect(nombreArchivoPdf(c)).toBe('chequera-1-2-100.pdf');
-    expect(nombreArchivoPdf(c, cuota({ productoId: 3, cuotaId: 4 }))).toBe('chequera-1-2-100-cuota-3-4.pdf');
-    expect(nombreArchivoEstadoPdf(c)).toBe('estado-chequera-1-2-100.pdf');
+  it('arma el nombre del PDF de estado', () => {
+    expect(nombreArchivoEstadoPdf(chequera())).toBe('estado-chequera-1-2-100.pdf');
   });
 });
 
@@ -291,6 +279,14 @@ describe('búsqueda por nombre y número', () => {
     expect(terminosBusqueda('Pérez,  Juan  M')).toEqual(['Pérez', 'Juan']);
     expect(terminosBusqueda(' a ')).toEqual([]);
     expect(terminosBusqueda('uno dos tres cuatro cinco')).toEqual(['uno', 'dos', 'tres', 'cuatro']);
+  });
+
+  it('cuenta sólo letras y dígitos Unicode, como el mínimo de sugerencias del core', () => {
+    expect(contarAlfanumericos('pe')).toBe(2);
+    expect(contarAlfanumericos("o'r")).toBe(2);
+    expect(contarAlfanumericos('Yañez')).toBe(5);
+    expect(contarAlfanumericos('Ñú 1')).toBe(3);
+    expect(contarAlfanumericos(" ,.' ")).toBe(0);
   });
 
   it('interpreta el número de chequera como facultad/tipo/serie o facultad/serie', () => {
