@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.23.0] - 2026-09-24
+
+### Added
+
+- feat(ui-auth): Nuevo `CambioClaveModalComponent` (`<lib-cambio-clave-modal>`) exportado desde `@tesoreria/ui-auth`: modal de cambio de clave autoatendido que precarga `login` y `nombre` de la sesión (si la sesión no tiene `login`, lo completa vía `AuthService.getUser`), valida campos de contraseña obligatorios y que `newPassword` coincida con `reClaveNueva`, rechaza cambios para cuentas cuyo `login` empieza con `admin`, muestra estado de carga, alertas de error (texto plano, `message` o genérico desde `HttpErrorResponse`) y de éxito ("Cambio REALIZADO") con autocierre; publica `closed` al cerrar por backdrop, botón X o "Salir" y resetea el formulario cada vez que se abre.
+- feat(shared-api): `AuthService.changePassword(data)` (`POST auth/change-password`) que fusiona la respuesta con la sesión existente (conserva el token si la respuesta no trae uno) y actualiza `currentUser` en el storage, `currentUser$` y `currentUserSignal`. Nuevo modelo `ChangePasswordRequest` y campo opcional `login` en `LoginResponse`.
+- feat(shared-api): `AuthService.getUser(userId)` (`GET auth/me/{userId}`) que refresca la sesión con los datos completos del usuario; el `login` de las credenciales se persiste en la sesión al hacer `login` cuando la respuesta no lo trae, y la rehidratación desde storage pide el perfil si el usuario guardado no tiene `login`.
+- feat(ui-layout): `ui-shell` suma el botón "Cambiar clave" junto a logout en el sidebar de escritorio y en el header móvil, y renderiza `lib-cambio-clave-modal` controlado por la señal `isCambioClaveOpen`. Para esto `@tesoreria/ui-layout` pasa a depender de `@tesoreria/ui-auth` (misma `type:ui`/`scope:shared`).
+- test: Specs de `cambio-clave-modal` (render condicionado a `isOpen`, precarga de datos, validación de coincidencia de claves, bloqueo de cuentas `admin`, éxito con mensaje y cierre, errores del backend y evento `closed`), de `auth.service` (`changePassword` actualiza sesión y storage) y de `ui-shell` (apertura y cierre del modal desde el sidebar).
+
+### Changed
+
+- chore(apps): Los `index.html` de las ocho aplicaciones estandarizan `lang="es"`, doctype en minúsculas y títulos legibles `"<Módulo> - Tesorería"`.
+- refactor(externo-consulta): La raíz deja de pasar `logoUrl="/logo.png"` al shell y usa la marca de texto "UM · Tesorería" como el resto de las apps.
+- docs: README y `docs/architecture.md` reflejan la dependencia `ui-layout → ui-auth` (modal de cambio de clave en el shell) y amplían los modelos de autenticación (`login` en `LoginResponse`, `getUser`/`changePassword` en `AuthService`, `ChangePasswordRequest`).
+
 ## [0.22.0] - 2026-09-24
 
 ### Added

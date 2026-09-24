@@ -6,12 +6,7 @@ import { ShellMenuItem, UiShellComponent } from '@tesoreria/ui-layout';
   imports: [UiShellComponent],
   selector: 'app-root',
   template: `
-    <ui-shell
-      moduleName="Externo Consulta"
-      menuSectionLabel="Consultas"
-      [menuItems]="menuItems"
-      logoUrl="/logo.png"
-    />
+    <ui-shell moduleName="Externo Consulta" menuSectionLabel="Consultas" [menuItems]="menuItems" />
   `,
 })
 export class AppComponent {

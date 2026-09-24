@@ -145,4 +145,32 @@ describe('UiShellComponent', () => {
     expect(fixture.nativeElement.querySelector('aside')).toBeNull();
     expect(fixture.nativeElement.querySelector('router-outlet')).toBeTruthy();
   });
+
+  it('opens and closes the change password modal from the sidebar', async () => {
+    const fixture = await createShell();
+    const component = fixture.componentInstance;
+
+    expect(component.isCambioClaveOpen()).toBe(false);
+    expect(fixture.nativeElement.querySelector('#modal-title')).toBeNull();
+
+    const changePasswordBtn = [...fixture.nativeElement.querySelectorAll('aside button')].find((b) =>
+      b.textContent?.includes('Cambiar clave'),
+    ) as HTMLButtonElement;
+    expect(changePasswordBtn).toBeTruthy();
+
+    changePasswordBtn.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.isCambioClaveOpen()).toBe(true);
+    expect(fixture.nativeElement.querySelector('#modal-title')?.textContent?.trim()).toBe('Cambiar Clave');
+
+    component.cerrarCambioClave();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.isCambioClaveOpen()).toBe(false);
+    expect(fixture.nativeElement.querySelector('#modal-title')).toBeNull();
+  });
 });
+
