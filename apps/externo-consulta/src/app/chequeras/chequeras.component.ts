@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ChequeraDetalleModalComponent } from './chequera-detalle-modal.component';
 import { ChequerasBusquedaStore } from './chequeras-busqueda.store';
@@ -8,7 +8,7 @@ import { numeroChequera, tieneDeuda } from './chequeras.utils';
 @Component({
   selector: 'app-chequeras',
   standalone: true,
-  imports: [CurrencyPipe, ChequeraDetalleModalComponent],
+  imports: [CurrencyPipe, DecimalPipe, ChequeraDetalleModalComponent],
   providers: [ChequerasBusquedaStore],
   templateUrl: './chequeras.component.html',
 })

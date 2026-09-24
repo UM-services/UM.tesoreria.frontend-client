@@ -55,6 +55,7 @@ export interface ChequeraEstado {
   lectivoId: number;
   geograficaId: number | null;
   alternativaId: number;
+  becaPorcentaje?: number | null;
   importeDeuda: number;
   cuotasDeuda: number;
   estadoDeuda: EstadoDeuda;

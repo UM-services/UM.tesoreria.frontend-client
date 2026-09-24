@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import {
   Component,
   computed,
@@ -50,7 +50,7 @@ type Carga<T> =
 @Component({
   selector: 'app-chequera-detalle-modal',
   standalone: true,
-  imports: [CurrencyPipe],
+  imports: [CurrencyPipe, DecimalPipe],
   host: { '(document:keydown)': 'alPresionarTecla($event)' },
   template: `
     @if (chequera(); as chequera) {
@@ -99,6 +99,14 @@ type Carga<T> =
               </h2>
               <p class="mt-1 text-sm text-um-muted">
                 {{ chequera.facultad }} · {{ inline() ? 'Detalle de cuotas' : chequera.titular }}
+              </p>
+              <p class="mt-1 text-sm text-um-muted">
+                Beca:
+                @if (chequera.becaPorcentaje !== null && chequera.becaPorcentaje !== undefined) {
+                  {{ chequera.becaPorcentaje * 100 | number: '1.0-2' }}%
+                } @else {
+                  -
+                }
               </p>
             </div>
             <div class="flex items-start gap-3">
@@ -367,9 +375,10 @@ type Carga<T> =
                                     <span class="block font-semibold text-um-ink">{{
                                       fila.pagado | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
                                     }}</span>
-                                    <span class="block break-all whitespace-normal text-xs text-um-muted">{{
-                                      fila.referencia
-                                    }}</span>
+                                    <span
+                                      class="block break-all whitespace-normal text-xs text-um-muted"
+                                      >{{ fila.referencia }}</span
+                                    >
                                   } @else {
                                     <span class="text-um-muted">—</span>
                                   }

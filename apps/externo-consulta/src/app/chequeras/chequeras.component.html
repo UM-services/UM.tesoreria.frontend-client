@@ -380,6 +380,16 @@
                     <span class="mt-1 block text-sm text-um-muted">{{
                       chequera.facultad || chequera.facultadId
                     }}</span>
+                    <span class="mt-1 block text-xs text-um-muted">
+                      Beca:
+                      @if (
+                        chequera.becaPorcentaje !== null && chequera.becaPorcentaje !== undefined
+                      ) {
+                        {{ chequera.becaPorcentaje * 100 | number: '1.0-2' }}%
+                      } @else {
+                        -
+                      }
+                    </span>
                     <span
                       class="mt-3 flex items-center justify-between gap-2 text-xs font-semibold"
                     >
