@@ -125,7 +125,7 @@ El filtro por facultad lo aplica el core con el `userId` que manda el frontend, 
 
     subgraph Libs["Librerías compartidas"]
         API["shared-api<br/>AuthService, guard e interceptores"]
-        AUTH["ui-auth<br/>Login lazy-loaded"]
+        AUTH["ui-auth<br/>Login y modal de cambio de clave"]
         LAYOUT["ui-layout<br/>Shell J2 y buscadores"]
         FPROV["feature-proveedores"]
         FGAST["feature-gastos"]
@@ -184,6 +184,7 @@ El filtro por facultad lo aplica el core con el `userId` que manda el frontend, 
     EC --> AUTH
     EC --> LAYOUT
 
+    LAYOUT --> AUTH
     API --> AUTH
 ```
 
@@ -246,7 +247,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.22.0**
+Versión actual: **0.23.0**
 
 ## Licencia
 
