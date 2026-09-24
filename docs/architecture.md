@@ -13,12 +13,13 @@
             Contable["Contable App<br/>:4205"]
             Contratados["Contratados App<br/>:4206"]
             Guarani["Guaraní App<br/>:4207"]
+            ExternoConsulta["Externo Consulta App<br/>:4208"]
         end
 
         subgraph "Libraries"
             SharedAPI["@tesoreria/shared-api<br/>AuthService, AuthGuard<br/>Auth y error interceptors<br/>Models"]
-            UIAuth["@tesoreria/ui-auth<br/>LoginComponent"]
-            UILayout["@tesoreria/ui-layout<br/>NavbarComponent<br/>SidebarComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent"]
+            UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
             FeatureOrdenCompra["@tesoreria/feature-orden-compra<br/>OcDashboardComponent<br/>OcCreateComponent<br/>OcDetailComponent"]
@@ -60,6 +61,12 @@
     Guarani --> UIAuth
     Guarani --> UILayout
 
+    ExternoConsulta --> SharedAPI
+    ExternoConsulta --> UIAuth
+    ExternoConsulta --> UILayout
+
+    UILayout -->|"modal cambio de clave"| UIAuth
+
     SharedAPI -->|"HTTP + Bearer"| BackendAPI["Backend API<br/>Tesorería"]
 ```
 
@@ -75,11 +82,13 @@ sequenceDiagram
     participant ErrorInterceptor as Error interceptor
     participant API as Backend API
 
+    participant Cambio as Modal Cambiar Clave
+
     User->>Login: Ingresar credenciales
     Login->>AuthService: login(login, password)
     AuthService->>AuthInterceptor: POST /auth/login
     AuthInterceptor->>API: Solicitud con token si existe
-    API-->>AuthService: LoginResponse {token, userId, nombre, sede}
+    API-->>AuthService: LoginResponse {token, userId, login, nombre, sede}
     AuthService-->>Login: Token almacenado
     Login->>AuthGuard: Navegar a ruta protegida
     AuthGuard->>AuthGuard: Verificar token
@@ -89,6 +98,17 @@ sequenceDiagram
     API-->>ErrorInterceptor: 401 o 403
     ErrorInterceptor->>AuthService: logout()
     ErrorInterceptor-->>User: Navegar a /login
+    User->>Cambio: Abrir Cambiar clave desde ui-shell
+    Cambio->>AuthService: getUser(userId) si la sesión no tiene login
+    AuthService->>API: GET /auth/me/{userId}
+    API-->>AuthService: LoginResponse con login
+    Cambio-->>User: Sesión completada con login
+    User->>Cambio: Completar clave anterior y clave nueva
+    Cambio->>AuthService: changePassword(ChangePasswordRequest)
+    AuthService->>API: POST /auth/change-password
+    API-->>AuthService: LoginResponse actualizado
+    AuthService-->>Cambio: Sesión y storage fusionados con la respuesta
+    Cambio-->>User: Mensaje de éxito y cierre automático
 ```
 
 ## Estructura de Módulos - Compras
@@ -211,16 +231,29 @@ classDiagram
     class LoginResponse {
         +string token
         +number userId
+        +string login
         +string nombre
         +string sede
         +number geograficaId
     }
 
+    class ChangePasswordRequest {
+        +number userId
+        +string login
+        +string currentPassword
+        +string newPassword
+        +string reClaveNueva
+        +string nombre
+    }
+
     class AuthService {
         +login(login, password)
         +logout()
+        +getUser(userId)
+        +changePassword(request)
     }
 
     LoginRequest --> AuthService: envía credenciales
+    ChangePasswordRequest --> AuthService: envía cambio de clave
     AuthService --> LoginResponse: retorna respuesta
 ```

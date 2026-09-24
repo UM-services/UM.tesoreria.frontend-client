@@ -1,6 +1,6 @@
 @if (isOpen) {
   <div class="relative z-[10005]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity"></div>
+    <div class="fixed inset-0 bg-um-sidebar/75 transition-opacity"></div>
     <div
       tabindex="-1"
       class="fixed inset-0 z-10 w-screen overflow-y-auto"
@@ -15,7 +15,7 @@
           class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-3xl flex flex-col max-h-[85vh]"
         >
           <!-- Header -->
-          <div class="bg-blue-600 px-4 py-4 sm:px-6 flex justify-between items-center shrink-0">
+          <div class="bg-um-primary px-4 py-4 sm:px-6 flex justify-between items-center shrink-0">
             <h3 class="text-lg font-bold text-white flex items-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -31,7 +31,7 @@
               </svg>
               Buscador de Cuentas Contables
             </h3>
-            <button type="button" (click)="cerrar()" class="text-white hover:text-gray-200">
+            <button type="button" (click)="cerrar()" class="text-white hover:text-um-border">
               <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
@@ -43,14 +43,14 @@
             </button>
           </div>
 
-          <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
-            <div class="p-4 border-b border-gray-200 bg-white shrink-0">
+          <div class="flex-1 flex flex-col overflow-hidden bg-um-surface">
+            <div class="p-4 border-b border-um-border bg-white shrink-0">
               <div class="relative flex items-center w-full">
                 <input
                   type="text"
                   [formControl]="searchQuery"
                   placeholder="Buscar por Nombre o Número de Cuenta..."
-                  class="block w-full pl-4 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
+                  class="block w-full pl-4 pr-4 py-2 border border-um-border-strong rounded shadow-sm focus:ring-um-primary focus:border-um-primary sm:text-sm text-um-ink"
                 />
               </div>
               @if (errorMessage) {
@@ -62,7 +62,7 @@
               @if (isLoading) {
                 <div class="flex justify-center items-center p-8">
                   <svg
-                    class="animate-spin h-8 w-8 text-blue-600"
+                    class="animate-spin h-8 w-8 text-um-primary"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -84,30 +84,33 @@
                 </div>
               }
               @if (!isLoading && cuentas.length === 0 && searchQuery.value) {
-                <div class="p-8 text-center text-gray-500">
+                <div class="p-8 text-center text-um-muted">
                   No se encontraron cuentas contables.
                 </div>
               }
               @if (!isLoading && cuentas.length > 0) {
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50 sticky top-0 shadow-sm z-10">
-                    <tr class="text-left text-xs font-bold text-gray-500 uppercase">
+                <table class="min-w-full divide-y divide-um-border">
+                  <thead class="bg-um-surface sticky top-0 shadow-sm z-10">
+                    <tr class="text-left text-xs font-bold text-um-muted uppercase">
                       <th class="px-6 py-3 w-1/4">Número</th>
                       <th class="px-6 py-3 w-1/2">Nombre</th>
                       <th class="px-6 py-3 text-right">Acción</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-100">
+                  <tbody class="divide-y divide-um-border">
                     @for (c of cuentas; track c) {
-                      <tr (dblclick)="seleccionar(c)" class="hover:bg-blue-50 cursor-pointer group">
-                        <td class="px-6 py-3 text-sm font-mono text-gray-600">
+                      <tr
+                        (dblclick)="seleccionar(c)"
+                        class="hover:bg-um-selected cursor-pointer group"
+                      >
+                        <td class="px-6 py-3 text-sm font-mono text-um-text">
                           {{ c.numeroCuenta }}
                         </td>
-                        <td class="px-6 py-3 text-sm font-bold text-gray-900">{{ c.nombre }}</td>
+                        <td class="px-6 py-3 text-sm font-bold text-um-ink">{{ c.nombre }}</td>
                         <td class="px-6 py-3 text-right">
                           <button
                             (click)="seleccionar(c)"
-                            class="text-blue-600 font-bold text-xs bg-blue-50 px-3 py-1 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors"
+                            class="text-um-primary font-bold text-xs bg-um-selected px-3 py-1 rounded-lg group-hover:bg-um-primary group-hover:text-white transition-colors"
                           >
                             Seleccionar
                           </button>
@@ -120,11 +123,11 @@
             </div>
           </div>
           <div
-            class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse border-t border-gray-200 shrink-0"
+            class="bg-um-surface px-4 py-3 sm:flex sm:flex-row-reverse border-t border-um-border shrink-0"
           >
             <button
               (click)="cerrar()"
-              class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-bold text-gray-700 hover:bg-gray-50"
+              class="px-4 py-2 bg-white border border-um-border-strong rounded text-sm font-bold text-um-text hover:bg-um-surface"
             >
               Cerrar
             </button>

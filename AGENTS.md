@@ -4,14 +4,14 @@
 
 - This is an Nx 22.7.1 monorepo using Angular 21, TypeScript 5.9, Vitest 4, and npm 11.6.2; use Node.js 20+.
 - Install from the lockfile with `npm ci` (the CI workflows currently use `npm install`); do not use another package manager.
-- Applications live under `apps/`: `compras`, `pagos`, `chequeras`, `administrador`, `contable`, `contratados`, and `guarani`.
+- Applications live under `apps/`: `compras`, `pagos`, `chequeras`, `administrador`, `contable`, `contratados`, `guarani`, and `externo-consulta`.
 - Shared libraries live under `libs/`: `shared-api`, `ui-auth/ui-auth`, `ui-layout`, `feature-proveedores`, `feature-gastos`, and `feature-orden-compra`.
 - Use the configured `@tesoreria/*` path aliases for shared libraries and import public symbols through each library's `src/index.ts`. Nx ESLint enforces module boundaries using project tags (`type:*` and `scope:*`) and dependency direction rules.
 - `apps/compras-e2e` and `apps/chequeras-e2e` are Playwright projects; their generated `e2e` targets start the corresponding app server.
 
 ## Commands
 
-- Run one app with `npx nx serve <app>`; configured ports are compras 4201, pagos 4202, chequeras 4203, administrador 4204, contable 4205, contratados 4206, and guarani 4207.
+- Run one app with `npx nx serve <app>`; configured ports are compras 4201, pagos 4202, chequeras 4203, administrador 4204, contable 4205, contratados 4206, guarani 4207, and externo-consulta 4208.
 - Run all local app servers with `npm run serve:all`.
 - Build one project with `npx nx build <project>` or all projects with `npx nx run-many -t build`.
 - Lint one project with `npx nx run <project>:lint` or all lint targets with `npx nx run-many -t lint`.
@@ -19,6 +19,7 @@
 - Run E2E with `npx nx e2e compras-e2e` or `npx nx e2e chequeras-e2e`; set `BASE_URL` to test an already deployed app.
 - Format uses Prettier with 100-column width, single quotes, and Angular parsing for HTML; repository indentation is two spaces.
 - Routes use standalone `loadComponent` lazy loading for shared login and feature components where configured; preserve this instead of reintroducing eager imports.
+- UI design follows the shared J2 theme: tokens and component utilities live in `libs/ui-layout/src/styles/tokens.css`, every app shell is `@tesoreria/ui-layout`'s `<ui-shell>`, and views use `um-*` classes (`.um-input`, `.um-btn-primary`, `.um-table`, ...) instead of ad-hoc palettes or one-off class strings.
 
 ## Verification And Deployment
 
