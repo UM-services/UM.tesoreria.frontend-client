@@ -1,0 +1,91 @@
+{
+  "name": "externo-consulta",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/externo-consulta/src",
+  "tags": ["type:app", "scope:externo-consulta"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/apps/externo-consulta",
+        "browser": "apps/externo-consulta/src/main.ts",
+        "tsConfig": "apps/externo-consulta/tsconfig.app.json",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/externo-consulta/public"
+          }
+        ],
+        "styles": [
+          "apps/externo-consulta/src/styles.css"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "fileReplacements": [
+            {
+              "replace": "apps/externo-consulta/src/environments/environment.ts",
+              "with": "apps/externo-consulta/src/environments/environment.development.ts"
+            }
+          ],
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "options": {
+        "port": 4208
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "externo-consulta:build:production"
+        },
+        "development": {
+          "buildTarget": "externo-consulta:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {}
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "externo-consulta:build",
+        "staticFilePath": "dist/apps/externo-consulta/browser",
+        "spa": true
+      }
+    }
+  }
+}

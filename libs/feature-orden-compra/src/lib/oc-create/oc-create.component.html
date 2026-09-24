@@ -1,30 +1,30 @@
-<div class="max-w-6xl mx-auto p-6 space-y-6 text-gray-800">
+<div class="max-w-6xl mx-auto p-6 space-y-6 text-um-ink">
   <!-- WIZARD PROGRESS (2 PASOS) -->
   <div class="flex items-center justify-center space-x-4 mb-8">
     <div class="flex items-center gap-2">
       <div
         class="w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors"
-        [ngClass]="step() >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'"
+        [ngClass]="step() >= 1 ? 'bg-um-primary text-white' : 'bg-um-border-strong text-um-muted'"
       >
         1
       </div>
       <span
         class="text-xs font-bold uppercase tracking-wider transition-colors"
-        [ngClass]="step() >= 1 ? 'text-blue-600' : 'text-gray-400'"
+        [ngClass]="step() >= 1 ? 'text-um-primary' : 'text-um-muted'"
         >Confección OC</span
       >
     </div>
-    <div class="w-16 h-0.5" [ngClass]="step() >= 2 ? 'bg-blue-600' : 'bg-gray-200'"></div>
+    <div class="w-16 h-0.5" [ngClass]="step() >= 2 ? 'bg-um-primary' : 'bg-um-border-strong'"></div>
     <div class="flex items-center gap-2">
       <div
         class="w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors"
-        [ngClass]="step() >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'"
+        [ngClass]="step() >= 2 ? 'bg-um-primary text-white' : 'bg-um-border-strong text-um-muted'"
       >
         2
       </div>
       <span
         class="text-xs font-bold uppercase tracking-wider transition-colors"
-        [ngClass]="step() >= 2 ? 'text-blue-600' : 'text-gray-400'"
+        [ngClass]="step() >= 2 ? 'text-um-primary' : 'text-um-muted'"
         >Imputación</span
       >
     </div>
@@ -34,13 +34,13 @@
   @if (step() === 1) {
     <div class="space-y-6 animate-fade-in">
       <!-- SUB-SECCIÓN: PRESUPUESTOS (OPCIONAL) -->
-      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div class="bg-white rounded-2xl border border-um-border shadow-sm p-6">
         <div class="flex justify-between items-center mb-4">
           <div>
-            <h3 class="text-sm font-black text-gray-800 uppercase tracking-widest">
+            <h3 class="text-sm font-black text-um-ink uppercase tracking-widest">
               1. Presupuestos (Opcional)
             </h3>
-            <p class="text-xs text-gray-500">
+            <p class="text-xs text-um-muted">
               Adjunte cotizaciones y use la IA para auto-completar los artículos.
             </p>
           </div>
@@ -54,14 +54,14 @@
             />
             <button
               (click)="fileInput.click()"
-              class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+              class="text-xs font-bold text-um-primary bg-um-selected px-3 py-1.5 rounded-lg hover:bg-um-selected transition-colors"
             >
               + ADJUNTAR PDF
             </button>
             @if (presupuestos().length > 0) {
               <button
                 (click)="aplicarIA()"
-                class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-black shadow hover:scale-105 transition-transform flex items-center gap-1"
+                class="bg-gradient-to-r from-um-sidebar to-um-primary text-white px-4 py-1.5 rounded-lg text-xs font-black shadow hover:scale-105 transition-transform flex items-center gap-1"
               >
                 ✨ SUGERIR IA
               </button>
@@ -79,13 +79,13 @@
                 class="shrink-0 w-64 p-3 border-2 rounded-xl cursor-pointer transition-all relative group"
                 [ngClass]="
                   p.isSeleccionado
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-100 hover:border-gray-300'
+                    ? 'border-um-primary bg-um-selected'
+                    : 'border-um-border hover:border-um-border-strong'
                 "
               >
                 @if (p.isSeleccionado) {
                   <div
-                    class="absolute -top-2.5 right-2 bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase"
+                    class="absolute -top-2.5 right-2 bg-um-primary text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase"
                   >
                     Seleccionado
                   </div>
@@ -93,7 +93,7 @@
                 <div class="flex items-center gap-3">
                   <div class="p-2 bg-red-100 text-red-600 rounded-lg text-xs font-bold">PDF</div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold text-gray-800 truncate">{{ p.adjuntoNombre }}</p>
+                    <p class="text-xs font-bold text-um-ink truncate">{{ p.adjuntoNombre }}</p>
                   </div>
                 </div>
               </div>
@@ -104,32 +104,34 @@
 
       <!-- SUB-SECCIÓN: DATOS DE LA ORDEN -->
       <div
-        class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col"
+        class="bg-white rounded-2xl border border-um-border shadow-sm overflow-hidden flex flex-col"
       >
-        <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+        <div
+          class="p-6 border-b border-um-border bg-um-surface/50 flex justify-between items-center"
+        >
           <div>
-            <h3 class="text-sm font-black text-gray-800 uppercase tracking-widest">
+            <h3 class="text-sm font-black text-um-ink uppercase tracking-widest">
               2. Datos de la Orden de Compra
             </h3>
-            <p class="text-[10px] text-blue-600 font-bold mt-1 uppercase tracking-wider">
+            <p class="text-[10px] text-um-primary font-bold mt-1 uppercase tracking-wider">
               Todos los importes incluyen IVA
             </p>
           </div>
         </div>
 
-        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 border-b border-gray-100">
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 border-b border-um-border">
           <div class="relative">
-            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest"
+            <label class="block text-[10px] font-black text-um-muted uppercase mb-2 tracking-widest"
               >Proveedor (*)</label
             >
             @if (proveedorId()) {
               <div
-                class="w-full pl-4 pr-10 py-3 border border-blue-600 bg-blue-50 rounded-xl flex items-center justify-between shadow-sm"
+                class="w-full pl-4 pr-10 py-3 border border-um-primary bg-um-selected rounded-xl flex items-center justify-between shadow-sm"
               >
-                <span class="font-bold text-blue-900 text-sm">{{ proveedorNombre() }}</span
+                <span class="font-bold text-um-primary text-sm">{{ proveedorNombre() }}</span
                 ><button
                   (click)="onProveedorSelected(null)"
-                  class="text-blue-500 font-bold px-2 rounded hover:bg-white transition-colors"
+                  class="text-um-primary font-bold px-2 rounded hover:bg-white transition-colors"
                 >
                   X
                 </button>
@@ -149,8 +151,8 @@
               ><input
                 type="checkbox"
                 [(ngModel)]="controlCantidad"
-                class="rounded text-blue-600 w-5 h-5 border-gray-300 focus:ring-blue-500"
-              /><span class="text-xs font-bold text-gray-700 uppercase tracking-wider"
+                class="rounded text-um-primary w-5 h-5 border-um-border-strong focus:ring-um-primary"
+              /><span class="text-xs font-bold text-um-text uppercase tracking-wider"
                 >Controlar Cantidad en Facturación</span
               ></label
             >
@@ -158,8 +160,8 @@
               ><input
                 type="checkbox"
                 [(ngModel)]="controlImporte"
-                class="rounded text-blue-600 w-5 h-5 border-gray-300 focus:ring-blue-500"
-              /><span class="text-xs font-bold text-gray-700 uppercase tracking-wider"
+                class="rounded text-um-primary w-5 h-5 border-um-border-strong focus:ring-um-primary"
+              /><span class="text-xs font-bold text-um-text uppercase tracking-wider"
                 >Controlar Importe Max. en Facturación</span
               ></label
             >
@@ -167,41 +169,43 @@
         </div>
 
         <!-- ARTICULOS TABLE -->
-        <div class="p-6 border-b border-gray-100 overflow-x-auto">
+        <div class="p-6 border-b border-um-border overflow-x-auto">
           <div class="flex justify-between mb-4">
-            <h4 class="text-xs font-black text-gray-800 uppercase tracking-widest">
+            <h4 class="text-xs font-black text-um-ink uppercase tracking-widest">
               3. Detalle Solicitado
             </h4>
             <button
               (click)="addArticulo()"
-              class="text-[10px] font-black bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors"
+              class="text-[10px] font-black bg-um-surface text-um-text px-3 py-1.5 rounded-lg hover:bg-um-border-strong transition-colors"
             >
               + AGREGAR LÍNEA
             </button>
           </div>
-          <table class="min-w-full divide-y divide-gray-200">
+          <table class="min-w-full divide-y divide-um-border">
             <thead>
               <tr
-                class="text-[10px] font-black text-gray-400 uppercase text-left tracking-widest bg-gray-50"
+                class="text-[10px] font-black text-um-muted uppercase text-left tracking-widest bg-um-surface"
               >
                 <th class="py-3 px-2 w-8 rounded-tl-lg"></th>
                 <th class="py-3 px-2">Detalle</th>
-                <th class="py-3 px-2 text-center w-20 border-l border-gray-200">Cantidad</th>
-                <th class="py-3 px-2 text-center w-24 border-l border-gray-200">Unid. Medida</th>
+                <th class="py-3 px-2 text-center w-20 border-l border-um-border">Cantidad</th>
+                <th class="py-3 px-2 text-center w-24 border-l border-um-border">Unid. Medida</th>
                 <th
-                  class="py-3 px-2 text-center w-16 border-l border-gray-200"
+                  class="py-3 px-2 text-center w-16 border-l border-um-border"
                   title="Inventariable"
                 >
                   Inv.
                 </th>
-                <th class="py-3 px-2 text-right w-32 border-l border-gray-200">Precio unitario</th>
-                <th class="py-3 px-2 text-right w-36 border-l border-gray-200">Precio Total</th>
+                <th class="py-3 px-2 text-right w-32 border-l border-um-border">Precio unitario</th>
+                <th class="py-3 px-2 text-right w-36 border-l border-um-border">Precio Total</th>
                 <th class="py-3 px-2 w-8 rounded-tr-lg"></th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-um-border">
               @for (a of articulos(); track a; let i = $index) {
-                <tr class="border-b border-gray-50 group hover:bg-gray-50/50 transition-colors">
+                <tr
+                  class="border-b border-um-border group hover:bg-um-surface/50 transition-colors"
+                >
                   <td class="py-2 px-2 text-center">
                     @if (a.articuloId) {
                       <div
@@ -215,23 +219,23 @@
                       type="text"
                       [ngModel]="articuloInput()[i]"
                       (ngModelChange)="onArticuloSearch(i, $event)"
-                      class="w-full bg-white border border-gray-200 text-sm font-medium focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-md py-1.5 px-2"
+                      class="w-full bg-white border border-um-border text-sm font-medium focus:ring-1 focus:ring-um-primary focus:border-um-primary rounded py-1.5 px-2"
                       placeholder="Describir insumo o buscar..."
                     />
                     @if (showDropdownArticulo()[i]) {
                       <div
-                        class="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 max-h-48 overflow-y-auto"
+                        class="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-um-border max-h-48 overflow-y-auto"
                       >
                         <ul class="p-1">
                           @if (isSearchingArticulo()[i]) {
-                            <li class="px-3 py-2 text-xs italic text-gray-500">Buscando...</li>
+                            <li class="px-3 py-2 text-xs italic text-um-muted">Buscando...</li>
                           }
                           @for (r of resultadosArticulo()[i]; track r) {
                             <li
                               tabindex="0"
                               (click)="seleccionarArticulo(i, r)"
                               (keydown.enter)="seleccionarArticulo(i, r)"
-                              class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-xs rounded"
+                              class="px-3 py-2 hover:bg-um-selected cursor-pointer text-xs rounded"
                             >
                               {{ r.nombre }}
                             </li>
@@ -240,49 +244,49 @@
                       </div>
                     }
                   </td>
-                  <td class="py-2 px-2 border-l border-gray-100">
+                  <td class="py-2 px-2 border-l border-um-border">
                     <input
                       type="number"
                       [(ngModel)]="a.cantidad"
                       (ngModelChange)="updateSubtotal(i)"
                       min="1"
-                      class="w-full text-center bg-white border border-gray-200 rounded-md text-sm font-mono focus:ring-1 focus:ring-blue-500 py-1.5 px-1"
+                      class="w-full text-center bg-white border border-um-border rounded text-sm font-mono focus:ring-1 focus:ring-um-primary py-1.5 px-1"
                     />
                   </td>
-                  <td class="py-2 px-2 border-l border-gray-100">
+                  <td class="py-2 px-2 border-l border-um-border">
                     <input
                       type="text"
                       [(ngModel)]="a.unidadMedida"
-                      class="w-full text-center bg-white border border-gray-200 rounded-md text-xs font-bold focus:ring-1 focus:ring-blue-500 py-1.5 px-1"
+                      class="w-full text-center bg-white border border-um-border rounded text-xs font-bold focus:ring-1 focus:ring-um-primary py-1.5 px-1"
                       placeholder="Ej. Un."
                     />
                   </td>
-                  <td class="py-2 px-2 border-l border-gray-100 text-center">
+                  <td class="py-2 px-2 border-l border-um-border text-center">
                     <input
                       type="checkbox"
                       [(ngModel)]="a.inventariable"
-                      class="rounded text-blue-600 w-4 h-4 border-gray-300 focus:ring-blue-500"
+                      class="rounded text-um-primary w-4 h-4 border-um-border-strong focus:ring-um-primary"
                     />
                   </td>
-                  <td class="py-2 px-2 border-l border-gray-100 relative">
-                    <span class="absolute left-3 top-3.5 text-gray-400 text-xs">$</span>
+                  <td class="py-2 px-2 border-l border-um-border relative">
+                    <span class="absolute left-3 top-3.5 text-um-muted text-xs">$</span>
                     <input
                       type="number"
                       [(ngModel)]="a.precioUnitario"
                       (ngModelChange)="updateSubtotal(i)"
                       min="0"
-                      class="w-full text-right bg-white border border-gray-200 rounded-md text-sm font-mono focus:ring-1 focus:ring-blue-500 py-1.5 pl-6 pr-2"
+                      class="w-full text-right bg-white border border-um-border rounded text-sm font-mono focus:ring-1 focus:ring-um-primary py-1.5 pl-6 pr-2"
                     />
                   </td>
                   <td
-                    class="py-2 px-2 border-l border-gray-100 text-right font-bold text-gray-800 text-sm font-mono bg-gray-50/50"
+                    class="py-2 px-2 border-l border-um-border text-right font-bold text-um-ink text-sm font-mono bg-um-surface/50"
                   >
                     {{ a.subtotal | currency: 'USD' }}
                   </td>
                   <td class="py-2 px-2 text-center">
                     <button
                       (click)="removeArticulo(i)"
-                      class="text-gray-300 hover:text-red-500 font-bold px-1 rounded transition-colors"
+                      class="text-um-border-strong hover:text-red-500 font-bold px-1 rounded transition-colors"
                       title="Eliminar fila"
                     >
                       X
@@ -296,11 +300,11 @@
           <!-- TOTALS AREA -->
           <div class="mt-6 flex justify-end">
             <div class="w-80 space-y-2">
-              <div class="flex justify-between items-center px-4 py-2 bg-gray-50 rounded-lg">
-                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest"
+              <div class="flex justify-between items-center px-4 py-2 bg-um-surface rounded-lg">
+                <span class="text-xs font-bold text-um-muted uppercase tracking-widest"
                   >Subtotal</span
                 >
-                <span class="text-sm font-bold font-mono text-gray-700">{{
+                <span class="text-sm font-bold font-mono text-um-text">{{
                   subtotalArticulos() | currency: 'USD'
                 }}</span>
               </div>
@@ -322,7 +326,7 @@
               </div>
 
               <div
-                class="flex justify-between items-center px-4 py-3 bg-gray-800 text-white rounded-xl shadow-md"
+                class="flex justify-between items-center px-4 py-3 bg-um-sidebar text-white rounded-xl shadow-md"
               >
                 <span class="text-xs font-black uppercase tracking-widest">Monto Total</span>
                 <span class="text-lg font-black font-mono">{{
@@ -334,51 +338,51 @@
         </div>
 
         <!-- FOOTER (CONDICIONES, REFERENCIAS Y FACTURA) -->
-        <div class="p-6 bg-gray-50/50">
-          <h4 class="text-xs font-black text-gray-800 uppercase tracking-widest mb-4">
+        <div class="p-6 bg-um-surface/50">
+          <h4 class="text-xs font-black text-um-ink uppercase tracking-widest mb-4">
             4. Condiciones Comerciales y Referencias
           </h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1"
+              <label class="block text-[10px] font-bold text-um-muted uppercase tracking-wider mb-1"
                 >Ref. Presupuesto Nº</label
               >
               <input
                 type="text"
                 [(ngModel)]="refPresupuesto"
-                class="w-full bg-white border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-blue-500"
+                class="w-full bg-white border border-um-border-strong rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-um-primary"
                 placeholder="Ej. 0346"
               />
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1"
+              <label class="block text-[10px] font-bold text-um-muted uppercase tracking-wider mb-1"
                 >Nº de Factura de la presente compra</label
               >
               <input
                 type="text"
                 [(ngModel)]="nroFacturaAsociada"
-                class="w-full bg-white border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-blue-500"
+                class="w-full bg-white border border-um-border-strong rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-um-primary"
                 placeholder="(Opcional) Ej. FC 01-0191"
               />
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1"
+              <label class="block text-[10px] font-bold text-um-muted uppercase tracking-wider mb-1"
                 >Plazo de Entrega</label
               >
               <input
                 type="text"
                 [(ngModel)]="plazoEntrega"
-                class="w-full bg-white border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-blue-500"
+                class="w-full bg-white border border-um-border-strong rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-um-primary"
                 placeholder="Ej. 10 días hábiles"
               />
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1"
+              <label class="block text-[10px] font-bold text-um-muted uppercase tracking-wider mb-1"
                 >Condiciones de pago</label
               >
               <select
                 [(ngModel)]="condicionPago"
-                class="w-full bg-white border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-blue-500"
+                class="w-full bg-white border border-um-border-strong rounded-lg text-sm py-2 px-3 focus:ring-1 focus:ring-um-primary"
               >
                 <option value="TRANSFERENCIA">Transferencia</option>
                 <option value="CHEQUE">Cheque</option>
@@ -389,13 +393,13 @@
             </div>
           </div>
 
-          <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1"
+          <label class="block text-[10px] font-bold text-um-muted uppercase tracking-wider mb-1"
             >Observaciones</label
           >
           <textarea
             [(ngModel)]="observaciones"
             rows="2"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all sm:text-sm shadow-sm bg-white"
+            class="w-full px-4 py-3 border border-um-border-strong rounded-xl focus:ring-2 focus:ring-um-primary focus:border-um-primary transition-all sm:text-sm shadow-sm bg-white"
             placeholder="Opcional. Motivo de la compra, lugar de entrega exacto..."
           ></textarea>
         </div>
@@ -405,14 +409,14 @@
       <div class="flex justify-between">
         <button
           routerLink="/orden-compra"
-          class="px-8 py-3 text-gray-500 font-bold hover:text-gray-800 transition-colors"
+          class="px-8 py-3 text-um-muted font-bold hover:text-um-ink transition-colors"
         >
           Cancelar
         </button>
         <button
           (click)="step.set(2)"
           [disabled]="!isValidStep1()"
-          class="bg-blue-600 text-white px-10 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-md disabled:bg-gray-300 transition-all"
+          class="bg-um-primary text-white px-10 py-3 rounded-xl font-bold hover:bg-um-primary-hover shadow-md disabled:bg-um-border-strong transition-all"
         >
           Siguiente: Imputación Contable
         </button>
@@ -423,22 +427,22 @@
   <!-- STEP 2: IMPUTACIÓN (MANTENIDO IGUAL) -->
   @if (step() === 2) {
     <div
-      class="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 space-y-8 animate-fade-in"
+      class="bg-white rounded-2xl border border-um-border shadow-sm p-8 space-y-8 animate-fade-in"
     >
       <div>
-        <h2 class="text-2xl font-black text-gray-800 tracking-tight">Imputación Contable</h2>
-        <p class="text-sm text-gray-500">
+        <h2 class="text-2xl font-black text-um-ink tracking-tight">Imputación Contable</h2>
+        <p class="text-sm text-um-muted">
           Defina el Centro de Costo y las Cuentas de Gastos asociadas a cada artículo.
         </p>
       </div>
 
-      <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
-        <label class="block text-[10px] font-black text-indigo-900 uppercase tracking-widest mb-2"
+      <div class="bg-um-selected p-6 rounded-2xl border border-um-border">
+        <label class="block text-[10px] font-black text-um-primary uppercase tracking-widest mb-2"
           >Centro de Costo</label
         >
         <select
           [(ngModel)]="centroCostoId"
-          class="w-full md:w-1/2 p-3 border border-indigo-200 rounded-xl bg-white text-sm font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          class="w-full md:w-1/2 p-3 border border-um-border rounded-xl bg-white text-sm font-bold text-um-primary outline-none focus:ring-2 focus:ring-um-primary shadow-sm"
         >
           <option [ngValue]="null">Seleccione Centro de Costo...</option>
           @for (cc of centrosCosto(); track cc) {
@@ -449,17 +453,17 @@
 
       <div class="space-y-4">
         <h4
-          class="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2"
+          class="text-xs font-black text-um-muted uppercase tracking-widest border-b border-um-border pb-2"
         >
           Distribución por Artículo
         </h4>
         @for (art of articulos(); track art; let i = $index) {
           <div
-            class="flex flex-col md:flex-row items-center gap-6 p-4 border border-gray-100 rounded-2xl bg-gray-50"
+            class="flex flex-col md:flex-row items-center gap-6 p-4 border border-um-border rounded-2xl bg-um-surface"
           >
             <div class="flex-1">
-              <p class="text-sm font-black text-gray-800">{{ art.descripcion }}</p>
-              <p class="text-xs text-gray-500 font-medium mt-1">
+              <p class="text-sm font-black text-um-ink">{{ art.descripcion }}</p>
+              <p class="text-xs text-um-muted font-medium mt-1">
                 {{ art.cantidad }} {{ art.unidadMedida }} • Total:
                 {{ art.subtotal | currency: 'USD' }}
               </p>
@@ -481,7 +485,7 @@
               @if (!art.cuentaContableId) {
                 <button
                   (click)="activeBuscadorCuenta = i"
-                  class="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-xs font-bold hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-colors"
+                  class="w-full p-3 border-2 border-dashed border-um-border-strong rounded-xl text-um-muted text-xs font-bold hover:bg-white hover:border-um-border hover:text-um-primary transition-colors"
                 >
                   + Asignar Cuenta Contable
                 </button>
@@ -496,17 +500,17 @@
         }
       </div>
 
-      <div class="flex justify-between pt-6 border-t border-gray-100">
+      <div class="flex justify-between pt-6 border-t border-um-border">
         <button
           (click)="step.set(1)"
-          class="px-8 py-3 text-gray-500 font-bold hover:text-gray-800 transition-colors"
+          class="px-8 py-3 text-um-muted font-bold hover:text-um-ink transition-colors"
         >
           Atrás: Modificar Artículos
         </button>
         <button
           (click)="guardar()"
           [disabled]="isSubmitting()"
-          class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-lg hover:bg-blue-700 shadow-xl shadow-blue-200 flex items-center gap-3 transition-all disabled:bg-gray-400 disabled:shadow-none"
+          class="bg-um-primary text-white px-10 py-4 rounded-2xl font-black text-lg hover:bg-um-primary-hover shadow-xl shadow-blue-200 flex items-center gap-3 transition-all disabled:bg-um-border-strong disabled:shadow-none"
         >
           @if (isSubmitting()) {
             <div

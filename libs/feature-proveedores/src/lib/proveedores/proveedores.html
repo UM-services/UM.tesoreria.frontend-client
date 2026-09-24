@@ -1,16 +1,17 @@
 <div class="space-y-6" [class.cursor-wait]="isDownloadingSheet">
   <!-- Page Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div class="um-page-header">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Proveedores</h1>
-      <p class="mt-1 text-sm text-gray-500">Gestión del padrón de proveedores.</p>
+      <p class="um-eyebrow">Gestión / Proveedores</p>
+      <h1 class="um-page-title">Proveedores</h1>
+      <p class="um-page-desc">Gestión del padrón de proveedores.</p>
     </div>
     <div class="flex items-center gap-3">
       <button
         type="button"
         (click)="descargarPlanilla()"
         [disabled]="isDownloadingSheet"
-        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors disabled:opacity-75 disabled:cursor-wait"
+        class="um-btn-secondary inline-flex items-center"
       >
         @if (!isDownloadingSheet) {
           <svg
@@ -52,11 +53,7 @@
         }
         {{ isDownloadingSheet ? 'Generando Excel...' : 'Descargar Planilla' }}
       </button>
-      <button
-        type="button"
-        (click)="abrirModal()"
-        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors"
-      >
+      <button type="button" (click)="abrirModal()" class="um-btn-primary inline-flex items-center">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="mr-2 h-4 w-4"
@@ -78,7 +75,7 @@
 
   <!-- Messages -->
   @if (errorMessage) {
-    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
+    <div class="um-alert um-alert-error">
       <div class="flex">
         <div class="flex-shrink-0">
           <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -97,7 +94,7 @@
   }
 
   @if (successMessage) {
-    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-sm">
+    <div class="um-alert um-alert-success">
       <div class="flex">
         <div class="flex-shrink-0">
           <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -116,14 +113,14 @@
   }
 
   <!-- Search and Table Container -->
-  <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+  <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden flex flex-col">
     <!-- Toolbar (Search) -->
-    <div class="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+    <div class="p-4 border-b border-um-border bg-um-surface flex items-center justify-between">
       <div class="relative w-full max-w-md flex items-center gap-2">
         <div class="relative w-full">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
-              class="h-5 w-5 text-gray-400"
+              class="h-5 w-5 text-um-muted"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -139,12 +136,12 @@
           <input
             type="text"
             [formControl]="searchQuery"
-            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
+            class="um-input pl-10 pr-3"
             placeholder="Buscar proveedores (escribe para buscar)..."
           />
         </div>
         @if (isSearching || searchQuery.value) {
-          <button (click)="limpiarBusqueda()" class="text-gray-400 hover:text-gray-500">
+          <button (click)="limpiarBusqueda()" class="text-um-muted hover:text-um-muted">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="h-5 w-5"
@@ -162,9 +159,9 @@
       </div>
 
       <!-- Pagination Controls (Top) -->
-      <div class="flex items-center space-x-2 text-sm text-gray-600">
+      <div class="flex items-center space-x-2 text-sm text-um-text">
         @if (isSearching) {
-          <span class="text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded"
+          <span class="text-um-primary font-medium bg-um-selected px-2 py-1 rounded"
             >Resultados de búsqueda</span
           >
         }
@@ -172,7 +169,7 @@
           <button
             (click)="prevPage()"
             [disabled]="currentPage === 0 || isLoading"
-            class="p-1 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="p-1 rounded text-um-muted hover:text-um-primary hover:bg-um-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -187,13 +184,13 @@
               />
             </svg>
           </button>
-          <span class="font-medium px-2 py-1 bg-white border border-gray-200 rounded shadow-sm"
+          <span class="font-medium px-2 py-1 bg-white border border-um-border rounded shadow-sm"
             >Pág {{ currentPage + 1 }} de {{ totalPages === 0 ? 1 : totalPages }}</span
           >
           <button
             (click)="nextPage()"
             [disabled]="currentPage >= totalPages - 1 || isLoading"
-            class="p-1 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="p-1 rounded text-um-muted hover:text-um-primary hover:bg-um-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -214,42 +211,22 @@
 
     <!-- Data Table -->
     <div class="overflow-x-auto min-h-[400px]">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="um-table">
+        <thead>
           <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-            >
-              CUIT
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-            >
-              Razón Social / Fantasía
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-            >
-              Contacto
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
-            >
-              Acciones
-            </th>
+            <th scope="col">CUIT</th>
+            <th scope="col">Razón Social / Fantasía</th>
+            <th scope="col">Contacto</th>
+            <th scope="col" class="text-right">Acciones</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody>
           <!-- Loading State -->
           @if (isLoading && proveedores.length === 0) {
             <tr>
               <td colspan="4" class="px-6 py-12 text-center">
                 <svg
-                  class="animate-spin h-8 w-8 text-blue-600 mx-auto"
+                  class="animate-spin h-8 w-8 text-um-primary mx-auto"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -268,7 +245,7 @@
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                <p class="mt-2 text-sm text-gray-500">Cargando proveedores...</p>
+                <p class="mt-2 text-sm text-um-muted">Cargando proveedores...</p>
               </td>
             </tr>
           }
@@ -276,10 +253,10 @@
           <!-- Empty State -->
           @if (!isLoading && proveedores.length === 0) {
             <tr>
-              <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+              <td colspan="4" class="px-6 py-12 text-center text-um-muted">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  class="h-12 w-12 mx-auto text-gray-300 mb-3"
+                  class="h-12 w-12 mx-auto text-um-border-strong mb-3"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -298,30 +275,30 @@
 
           <!-- Data Rows -->
           @for (p of proveedores; track p) {
-            <tr class="hover:bg-blue-50/50 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+            <tr>
+              <td class="font-medium text-um-ink tabular-nums whitespace-nowrap">
                 {{ p.cuit }}
               </td>
-              <td class="px-6 py-4">
-                <div class="text-sm font-semibold text-gray-900">{{ p.razonSocial }}</div>
-                <div class="text-sm text-gray-500">{{ p.nombreFantasia || '-' }}</div>
+              <td>
+                <div class="text-sm font-semibold text-um-ink">{{ p.razonSocial }}</div>
+                <div class="text-sm text-um-muted">{{ p.nombreFantasia || '-' }}</div>
               </td>
-              <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">{{ p.email || 'Sin correo' }}</div>
-                <div class="text-xs text-gray-500">
+              <td>
+                <div class="text-sm text-um-ink">{{ p.email || 'Sin correo' }}</div>
+                <div class="text-xs text-um-muted">
                   {{ p.telefono || p.celular || 'Sin teléfono' }}
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td class="text-right whitespace-nowrap">
                 <button
                   (click)="abrirModal(p)"
-                  class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors mr-2"
+                  class="rounded border border-um-btn-border bg-white px-3 py-1 text-xs font-semibold text-um-primary hover:bg-um-selected focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary mr-2"
                 >
                   Editar
                 </button>
                 <button
                   (click)="eliminar(p)"
-                  class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors"
+                  class="rounded border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 >
                   Eliminar
                 </button>
@@ -338,7 +315,7 @@
 @if (isModalOpen) {
   <div class="relative z-[9999]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <!-- Background backdrop -->
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+    <div class="fixed inset-0 bg-gray-900/50 transition-opacity"></div>
 
     <!-- Modal Wrapper -->
     <div
@@ -357,15 +334,15 @@
         >
           <!-- Header -->
           <div
-            class="bg-white px-4 py-4 sm:px-6 border-b border-gray-200 flex justify-between items-center shrink-0"
+            class="bg-white px-4 py-4 sm:px-6 border-b border-um-border flex justify-between items-center shrink-0"
           >
-            <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
+            <h3 class="text-lg leading-6 font-bold text-um-ink" id="modal-title">
               {{ selectedProveedor ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
             </h3>
             <button
               type="button"
               (click)="cerrarModal()"
-              class="text-gray-400 hover:text-gray-500 focus:outline-none"
+              class="text-um-muted hover:text-um-muted focus:outline-none"
             >
               <span class="sr-only">Cerrar</span>
               <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -388,17 +365,15 @@
             >
               <!-- CUIT -->
               <div class="md:col-span-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1"
-                  >CUIT <span class="text-red-500">*</span></label
-                >
+                <label class="um-label">CUIT <span class="text-red-500">*</span></label>
                 <input
                   type="text"
                   formControlName="cuit"
                   (blur)="formatCuit()"
                   placeholder="XX-XXXXXXXX-X"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
+                  class="um-input"
                   [ngClass]="{
-                    'border-red-300 ring-1 ring-red-300':
+                    'um-input-invalid':
                       proveedorForm.get('cuit')?.invalid && proveedorForm.get('cuit')?.touched,
                   }"
                 />
@@ -409,17 +384,15 @@
 
               <!-- Cuenta Contable -->
               <div class="md:col-span-8">
-                <label class="block text-sm font-medium text-gray-700 mb-1"
-                  >Cuenta Contable <span class="text-red-500">*</span></label
-                >
+                <label class="um-label">Cuenta Contable <span class="text-red-500">*</span></label>
                 <div class="flex gap-2">
                   <div class="relative flex items-center w-2/5">
                     <input
                       type="number"
                       formControlName="numeroCuenta"
-                      class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border pr-8"
+                      class="um-input pr-8"
                       [ngClass]="{
-                        'border-red-300 ring-1 ring-red-300':
+                        'um-input-invalid':
                           proveedorForm.get('numeroCuenta')?.invalid &&
                           proveedorForm.get('numeroCuenta')?.touched,
                       }"
@@ -428,7 +401,7 @@
                   <input
                     type="text"
                     formControlName="nombreCuenta"
-                    class="block w-3/5 border-gray-200 bg-gray-100 rounded-md shadow-sm sm:text-sm py-2 px-3 border text-gray-600 truncate cursor-not-allowed"
+                    class="um-input w-3/5 bg-um-surface text-um-text truncate cursor-not-allowed"
                     placeholder="Nombre de la cuenta..."
                   />
                 </div>
@@ -436,15 +409,13 @@
 
               <!-- Razón Social -->
               <div class="md:col-span-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1"
-                  >Razón Social <span class="text-red-500">*</span></label
-                >
+                <label class="um-label">Razón Social <span class="text-red-500">*</span></label>
                 <input
                   type="text"
                   formControlName="razonSocial"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
+                  class="um-input"
                   [ngClass]="{
-                    'border-red-300 ring-1 ring-red-300':
+                    'um-input-invalid':
                       proveedorForm.get('razonSocial')?.invalid &&
                       proveedorForm.get('razonSocial')?.touched,
                   }"
@@ -453,63 +424,43 @@
 
               <!-- Nombre Fantasía -->
               <div class="md:col-span-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre Fantasía</label>
-                <input
-                  type="text"
-                  formControlName="nombreFantasia"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
-                />
+                <label class="um-label">Nombre Fantasía</label>
+                <input type="text" formControlName="nombreFantasia" class="um-input" />
               </div>
 
               <!-- Domicilio -->
               <div class="md:col-span-12">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Domicilio</label>
-                <input
-                  type="text"
-                  formControlName="domicilio"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
-                />
+                <label class="um-label">Domicilio</label>
+                <input type="text" formControlName="domicilio" class="um-input" />
               </div>
 
               <!-- Teléfono -->
               <div class="md:col-span-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                <input
-                  type="text"
-                  formControlName="telefono"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
-                />
+                <label class="um-label">Teléfono</label>
+                <input type="text" formControlName="telefono" class="um-input" />
               </div>
 
               <!-- Celular -->
               <div class="md:col-span-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Celular</label>
-                <input
-                  type="text"
-                  formControlName="celular"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
-                />
+                <label class="um-label">Celular</label>
+                <input type="text" formControlName="celular" class="um-input" />
               </div>
 
               <!-- Fax -->
               <div class="md:col-span-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Fax</label>
-                <input
-                  type="text"
-                  formControlName="fax"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
-                />
+                <label class="um-label">Fax</label>
+                <input type="text" formControlName="fax" class="um-input" />
               </div>
 
               <!-- E-mail -->
               <div class="md:col-span-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                <label class="um-label">E-mail</label>
                 <input
                   type="email"
                   formControlName="email"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
+                  class="um-input"
                   [ngClass]="{
-                    'border-red-300 ring-1 ring-red-300':
+                    'um-input-invalid':
                       proveedorForm.get('email')?.invalid && proveedorForm.get('email')?.touched,
                   }"
                 />
@@ -517,35 +468,27 @@
 
               <!-- Orden Cheque -->
               <div class="md:col-span-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Orden Cheque</label>
-                <input
-                  type="text"
-                  formControlName="ordenCheque"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
-                />
+                <label class="um-label">Orden Cheque</label>
+                <input type="text" formControlName="ordenCheque" class="um-input" />
               </div>
 
               <!-- CBU -->
               <div class="md:col-span-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">CBU</label>
-                <input
-                  type="text"
-                  formControlName="cbu"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm py-2 px-3 border"
-                />
+                <label class="um-label">CBU</label>
+                <input type="text" formControlName="cbu" class="um-input" />
               </div>
             </form>
           </div>
 
           <!-- Footer -->
           <div
-            class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200 shrink-0"
+            class="bg-um-surface px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-um-border shrink-0"
           >
             <button
               type="button"
               (click)="guardar()"
               [disabled]="isLoading"
-              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition-colors disabled:opacity-50"
+              class="um-btn-primary inline-flex w-full items-center justify-center sm:ml-3 sm:w-auto"
             >
               @if (isLoading) {
                 <svg
@@ -575,7 +518,7 @@
               type="button"
               (click)="cerrarModal()"
               [disabled]="isLoading"
-              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+              class="um-btn-secondary mt-3 inline-flex w-full items-center justify-center sm:mt-0 sm:ml-3 sm:w-auto"
             >
               Cancelar
             </button>
