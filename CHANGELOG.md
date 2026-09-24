@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.22.0] - 2026-09-24
+
+### Added
+
+- feat(ui-layout): Nuevo `UiShellComponent` (`<ui-shell>`), shell J2 de todas las aplicaciones que reemplaza la composición navbar + sidebar: sidebar oscuro con marca (texto "UM · Tesorería" o logo institucional vía `logoUrl`) y nombre del módulo, menú (`ShellMenuItem[]` con `label` y `path`, resaltado del ítem activo y `exact` en la raíz), badge de entorno con color por ambiente y tooltip con la versión, usuario con sede y logout que limpia la sesión y navega a `/login`. En pantallas chicas muestra un header compacto y pestañas de navegación horizontales; sin sesión solo renderiza el `router-outlet`.
+- feat(ui-layout): Utilidades de componentes del tema J2 en `tokens.css`: nuevos tokens `--color-um-primary-hover` y `--color-um-btn-border`, base del `body` con tipografía y color de tinta UM, y clases en `@layer components` para los patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-page-desc`, `.um-section`, `.um-label`, `.um-input` (con `.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error`/`-warn`/`-success`), `.um-card`, `.um-badge` y `.um-table` (encabezado, celdas y hover de filas). Las vistas usan estas clases en lugar de cadenas largas de utilities, y la paleta `um-*` es la única fuente de colores.
+- test(ui-layout): Spec de `ui-shell` que cubre la marca con y sin `logoUrl`, el menú del sidebar con su etiqueta de sección, el badge de entorno (etiqueta, tooltip con versión, rojo para entornos desconocidos y ausencia sin `APP_ENV_INFO`), el usuario y su sede, el logout que limpia la sesión y navega, y el `router-outlet` pelado cuando no hay sesión.
+
+### Changed
+
+- refactor: Las raíces de las ocho aplicaciones (administrador, chequeras, compras, contable, contratados, guarani, pagos y externo-consulta) ahora solo renderizan `<ui-shell>` con su marca, nombre de módulo y menú; se eliminan las composiciones inline duplicadas y los `app.css` vacíos. Externo-consulta migra su sidebar piloto (con `/logo.png`) al shell compartido.
+- refactor(ui-layout): Eliminados `NavbarComponent`, `SidebarComponent` y `UiLayoutComponent` con sus templates, CSS vacíos y specs; el badge de entorno pasa del navbar a `ui-shell` con estilo de anillo y color por ambiente. El `index.ts` exporta ahora el shell y los dos buscadores (`buscador-cuenta-contable`, `buscador-proveedor`).
+- design: Migración a J2 del login (`ui-auth`) y de las vistas de las librerías de features (proveedores, gastos, orden de compra en sus tres vistas, buscador de cuenta, buscador contable y buscador de proveedor) y de las vistas de las apps (dependencias, facturas pendientes, welcome de chequeras, beneficios/ubicaciones/datos personales y pendientes pre-guaraní de guarani, chequeras y su modal de detalle en externo-consulta): se reemplazan colores sueltos (azules/grises) y cadenas largas de utilities por tokens y clases `um-*`, con formateo Prettier de los templates.
+- docs: README documenta el sistema de diseño J2 (tokens, shell, utilidades y la vista de chequeras de externo-consulta como referencia viva) y actualiza el diagrama de arquitectura; `docs/architecture.md` reemplaza `NavbarComponent`/`SidebarComponent` por `UiShellComponent` en el nodo de `ui-layout`; AGENTS.md añade la convención de diseño UI (tema J2, `tokens.css`, `<ui-shell>`, clases `um-*`).
+
 ## [0.21.0] - 2026-09-24
 
 ### Added
