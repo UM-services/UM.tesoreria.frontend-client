@@ -15,7 +15,12 @@ import { APP_ENV_INFO, AuthService, getEnvDisplay } from '@tesoreria/shared-api'
           aria-label="Navegación principal"
         >
           <div class="border-b border-white/20 px-3 pb-6">
-            <p class="text-lg font-bold leading-6">UM · Tesorería</p>
+            <img
+              src="/logo.png"
+              alt="Universidad de Mendoza"
+              class="h-[74px] w-[148px] object-contain"
+              style="filter: grayscale(1) contrast(100); mix-blend-mode: screen"
+            />
             <p class="mt-1 text-sm text-[#C0CFDE]">Externo Consulta</p>
           </div>
           <nav class="pt-7" aria-label="Consultas">
@@ -59,8 +64,12 @@ import { APP_ENV_INFO, AuthService, getEnvDisplay } from '@tesoreria/shared-api'
           <header
             class="flex items-center justify-between border-b border-um-border px-4 py-4 md:hidden"
           >
-            <span class="flex items-center gap-2 font-bold text-um-sidebar">
-              UM · Tesorería
+            <span class="flex min-w-0 items-center gap-2">
+              <img
+                src="/logo.png"
+                alt="Universidad de Mendoza"
+                class="h-12 w-24 shrink-0 object-contain"
+              />
               @if (envInfo) {
                 <span
                   class="rounded-full border border-[#B9C8D7] px-2 py-0.5 text-[10px] font-bold tracking-wide"

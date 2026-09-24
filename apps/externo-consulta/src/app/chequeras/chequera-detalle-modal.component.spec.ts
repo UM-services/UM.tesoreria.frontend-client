@@ -159,7 +159,7 @@ describe('ChequeraDetalleModalComponent', () => {
     expect(texto(fixture)).not.toContain('De A');
   });
 
-  it('agrupa por producto con A pagar, fecha y referencia del pago, y subtotales', async () => {
+  it('agrupa por producto con primer vencimiento, importes, pagos y subtotales', async () => {
     servicio['cuotasConPagos'].mockReturnValue(
       of([
         cuota({
@@ -187,7 +187,16 @@ describe('ChequeraDetalleModalComponent', () => {
     const columnas = Array.from(
       fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
     ).map((th) => th.textContent?.trim());
-    expect(columnas).toEqual(['Cuota', 'Período', 'A pagar', 'Fecha pago', 'Pagado']);
+    expect(columnas).toEqual([
+      'Cuota',
+      'Período',
+      'Primer vencimiento',
+      'A pagar',
+      'Fecha pago',
+      'Pagado',
+    ]);
+    const primeraFila = fixture.nativeElement.querySelector('tbody tr') as HTMLTableRowElement;
+    expect(primeraFila.cells[2].textContent?.trim()).toBe('10/10/2026');
     expect(contenido).toContain('Producto: Arancel');
     expect(contenido).toContain('1/2');
     expect(contenido).toContain('01/09/2026');
