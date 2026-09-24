@@ -281,42 +281,42 @@ type Carga<T> =
                         role="region"
                         [attr.aria-label]="'Cuotas de ' + producto.nombre"
                       >
-                        <table class="w-full min-w-[800px] border-collapse text-sm">
+                        <table class="w-full min-w-[760px] table-fixed border-collapse text-sm">
                           <thead class="bg-[#F2F6F9]">
                             <tr>
                               <th
                                 scope="col"
-                                class="w-[14%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[12%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Cuota
                               </th>
                               <th
                                 scope="col"
-                                class="w-[13%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[12%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Período
                               </th>
                               <th
                                 scope="col"
-                                class="w-[16%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[17%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Primer vencimiento
                               </th>
                               <th
                                 scope="col"
-                                class="w-[16%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[15%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 A pagar
                               </th>
                               <th
                                 scope="col"
-                                class="w-[16%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[15%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Fecha pago
                               </th>
                               <th
                                 scope="col"
-                                class="w-[25%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[29%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Pagado
                               </th>
@@ -367,7 +367,7 @@ type Carga<T> =
                                     <span class="block font-semibold text-um-ink">{{
                                       fila.pagado | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
                                     }}</span>
-                                    <span class="block text-xs text-um-muted">{{
+                                    <span class="block break-all whitespace-normal text-xs text-um-muted">{{
                                       fila.referencia
                                     }}</span>
                                   } @else {
