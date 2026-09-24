@@ -19,7 +19,7 @@
         subgraph "Libraries"
             SharedAPI["@tesoreria/shared-api<br/>AuthService, AuthGuard<br/>Auth y error interceptors<br/>Models"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent"]
-            UILayout["@tesoreria/ui-layout<br/>NavbarComponent<br/>SidebarComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
             FeatureOrdenCompra["@tesoreria/feature-orden-compra<br/>OcDashboardComponent<br/>OcCreateComponent<br/>OcDetailComponent"]

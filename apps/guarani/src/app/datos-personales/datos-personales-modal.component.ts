@@ -21,31 +21,34 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
   template: `
     @if (documento !== null || persona !== null) {
       <div
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="datos-personales-title"
       >
         <div
-          class="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-200"
+          class="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl border border-um-border bg-white text-um-ink shadow-2xl"
         >
-          <div class="flex items-start justify-between gap-4 p-6 border-b border-gray-100">
+          <div class="flex items-start justify-between gap-4 p-6 border-b border-um-border">
             <div>
-              <h2 id="datos-personales-title" class="text-xl font-semibold text-gray-900">
+              <p class="mb-1 text-xs font-bold uppercase tracking-[0.12em] text-um-muted">
+                Guaraní
+              </p>
+              <h2 id="datos-personales-title" class="text-xl font-bold text-um-ink">
                 Datos Personales
               </h2>
               @if (alumno; as persona) {
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm text-um-muted">
                   {{ persona.apellido }}, {{ persona.nombres }}
                 </p>
               } @else {
-                <p class="mt-1 text-sm text-gray-500">Documento: {{ documento }}</p>
+                <p class="mt-1 text-sm text-um-muted">Documento: {{ documento }}</p>
               }
             </div>
             <button
               type="button"
               (click)="cerrar()"
-              class="text-2xl leading-none text-gray-400 hover:text-gray-700"
+              class="text-2xl leading-none text-um-muted hover:text-um-text"
               aria-label="Cerrar datos personales"
             >
               &times;
@@ -63,7 +66,9 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
               <p class="mr-auto text-sm text-amber-700" role="status">{{ captureWarning }}</p>
             }
             @if (preuniversitarioMessage) {
-              <p class="mr-auto text-sm text-green-700" role="status">{{ preuniversitarioMessage }}</p>
+              <p class="mr-auto text-sm text-green-700" role="status">
+                {{ preuniversitarioMessage }}
+              </p>
             }
             @if (preuniversitarioError) {
               <p class="mr-auto text-sm text-red-600" role="alert">{{ preuniversitarioError }}</p>
@@ -72,64 +77,67 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
               type="button"
               (click)="capturar()"
               [disabled]="isLoading || isCapturing || isCreatingPreuniversitario"
-              class="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold shadow-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="rounded bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {{ isCapturing ? 'Capturando...' : 'Captura' }}
             </button>
             <button
               type="button"
               (click)="crearPreuniversitario()"
-              [disabled]="!preuniversitarioHabilitado || isLoading || isCapturing || isCreatingPreuniversitario"
-              class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              [disabled]="
+                !preuniversitarioHabilitado ||
+                isLoading ||
+                isCapturing ||
+                isCreatingPreuniversitario
+              "
+              class="um-btn-primary"
             >
               {{ isCreatingPreuniversitario ? 'Creando...' : 'Crear Preuniversitario' }}
             </button>
           </div>
 
           @if (isLoading) {
-            <div class="p-10 text-center text-gray-500">Cargando datos personales...</div>
+            <p class="um-alert m-6" role="status">Cargando datos personales...</p>
           } @else if (errorMessage) {
-            <div class="m-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {{ errorMessage }}
-            </div>
+            <div class="um-alert um-alert-error m-6" role="alert">{{ errorMessage }}</div>
           } @else if (alumno; as persona) {
             <div class="p-6 space-y-6">
               <section>
-                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
+                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-um-muted">
                   Información personal
                 </h3>
                 <div
-                  class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg text-sm"
+                  class="grid grid-cols-1 gap-4 rounded border border-um-border bg-um-surface p-4 text-sm sm:grid-cols-2"
                 >
                   <p>
-                    <span class="font-semibold text-gray-700">Apellido:</span>
+                    <span class="font-semibold text-um-text">Apellido:</span>
                     {{ persona.apellido || '-' }}
                   </p>
                   <p>
-                    <span class="font-semibold text-gray-700">Nombres:</span>
+                    <span class="font-semibold text-um-text">Nombres:</span>
                     {{ persona.nombres || '-' }}
                   </p>
                   @if (persona.apellidoElegido || persona.nombresElegido) {
                     <p>
-                      <span class="font-semibold text-gray-700">Nombre elegido:</span>
+                      <span class="font-semibold text-um-text">Nombre elegido:</span>
                       {{ persona.apellidoElegido || '' }} {{ persona.nombresElegido || '' }}
                     </p>
                   }
                   <p>
-                    <span class="font-semibold text-gray-700">Documento:</span>
+                    <span class="font-semibold text-um-text">Documento:</span>
                     {{ tipoDocumentoEtiqueta(persona) }}
                     {{ persona.documentoPrincipalRel?.nroDocumento || '-' }}
                   </p>
                   <p>
-                    <span class="font-semibold text-gray-700">Fecha de nacimiento:</span>
+                    <span class="font-semibold text-um-text">Fecha de nacimiento:</span>
                     {{ (persona.fechaNacimiento | date: 'dd/MM/yyyy') || '-' }}
                   </p>
                   <p>
-                    <span class="font-semibold text-gray-700">Sexo:</span> {{ persona.sexo || '-' }}
+                    <span class="font-semibold text-um-text">Sexo:</span> {{ persona.sexo || '-' }}
                   </p>
                   @if (persona.identidadGenero || persona.identidadGeneroOtro) {
                     <p>
-                      <span class="font-semibold text-gray-700">Identidad de género:</span>
+                      <span class="font-semibold text-um-text">Identidad de género:</span>
                       {{ persona.identidadGenero || persona.identidadGeneroOtro }}
                     </p>
                   }
@@ -137,22 +145,22 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
               </section>
 
               <section>
-                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
+                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-um-muted">
                   Contacto
                 </h3>
                 @if (persona.contactos?.length) {
                   <div class="space-y-2">
                     @for (contacto of persona.contactos; track $index) {
-                      <div class="p-4 border border-gray-200 rounded-lg text-sm">
+                      <div class="rounded border border-um-border p-4 text-sm">
                         @if (contacto.email) {
                           <p>
-                            <span class="font-semibold text-gray-700">Correo:</span>
+                            <span class="font-semibold text-um-text">Correo:</span>
                             {{ contacto.email }}
                           </p>
                         }
                         @if (contacto.telefonoNumero) {
                           <p>
-                            <span class="font-semibold text-gray-700">Teléfono:</span>
+                            <span class="font-semibold text-um-text">Teléfono:</span>
                             {{
                               contacto.telefonoCodigoArea
                                 ? '(' + contacto.telefonoCodigoArea + ') '
@@ -164,48 +172,34 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
                     }
                   </div>
                 } @else {
-                  <p class="text-sm text-gray-500">No hay contactos registrados.</p>
+                  <p class="text-sm text-um-muted">No hay contactos registrados.</p>
                 }
               </section>
 
               <section>
-                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
+                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-um-muted">
                   Requisitos presentados
                 </h3>
                 @if (persona.requisitosPresentados?.length) {
-                  <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                      <thead class="bg-gray-50">
+                  <div class="overflow-x-auto rounded border border-um-border">
+                    <table class="um-table text-sm">
+                      <thead>
                         <tr>
-                          <th class="px-4 py-3 text-left font-semibold text-gray-600">Requisito</th>
-                          <th class="px-4 py-3 text-left font-semibold text-gray-600">
-                            Presentación
-                          </th>
-                          <th class="px-4 py-3 text-left font-semibold text-gray-600">
-                            Vencimiento
-                          </th>
-                          <th class="px-4 py-3 text-left font-semibold text-gray-600">
-                            Observaciones
-                          </th>
-                          <th class="px-4 py-3 text-left font-semibold text-gray-600">Beneficio</th>
+                          <th scope="col">Requisito</th>
+                          <th scope="col">Presentación</th>
+                          <th scope="col">Vencimiento</th>
+                          <th scope="col">Observaciones</th>
+                          <th scope="col">Beneficio</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-gray-200">
+                      <tbody>
                         @for (requisito of persona.requisitosPresentados; track $index) {
                           <tr>
-                            <td class="px-4 py-3 text-gray-900">
-                              {{ requisito.requisitoRel?.nombre || '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-700">
-                              {{ (requisito.fechaPresentacion | date: 'dd/MM/yyyy') || '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-700">
-                              {{ (requisito.fechaVencimiento | date: 'dd/MM/yyyy') || '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-700">
-                              {{ requisito.observaciones || '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                            <td class="text-um-ink">{{ requisito.requisitoRel?.nombre || '-' }}</td>
+                            <td>{{ (requisito.fechaPresentacion | date: 'dd/MM/yyyy') || '-' }}</td>
+                            <td>{{ (requisito.fechaVencimiento | date: 'dd/MM/yyyy') || '-' }}</td>
+                            <td>{{ requisito.observaciones || '-' }}</td>
+                            <td class="whitespace-nowrap tabular-nums">
                               @if (beneficioDe(requisito.requisito); as beneficio) {
                                 {{ porcentajeMostrado(beneficio.porcentajeBeneficio) }}%
                               } @else {
@@ -218,7 +212,7 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
                     </table>
                   </div>
                 } @else {
-                  <p class="text-sm text-gray-500">No hay requisitos presentados.</p>
+                  <p class="text-sm text-um-muted">No hay requisitos presentados.</p>
                 }
               </section>
             </div>
@@ -253,7 +247,10 @@ export class DatosPersonalesModalComponent implements OnChanges {
   public errorMessage = '';
 
   ngOnChanges(changes: SimpleChanges) {
-    if ((changes['documento'] || changes['persona']) && (this.documento !== null || this.persona !== null)) {
+    if (
+      (changes['documento'] || changes['persona']) &&
+      (this.documento !== null || this.persona !== null)
+    ) {
       this.consultar();
     }
   }
@@ -460,7 +457,7 @@ export class DatosPersonalesModalComponent implements OnChanges {
       return undefined;
     }
 
-    return this.beneficios.find(beneficio => beneficio.requisito === requisito);
+    return this.beneficios.find((beneficio) => beneficio.requisito === requisito);
   }
 
   tipoDocumentoEtiqueta(persona: DatosPersonalesAlumno): string {

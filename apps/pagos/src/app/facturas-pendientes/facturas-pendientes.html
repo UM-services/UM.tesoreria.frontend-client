@@ -1,9 +1,10 @@
 <div class="max-w-3xl mx-auto space-y-6 mt-8">
   <!-- Page Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div class="um-page-header">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Facturas Pendientes</h1>
-      <p class="mt-1 text-sm text-gray-500">
+      <p class="um-eyebrow">Pagos / Facturas</p>
+      <h1 class="um-page-title">Facturas Pendientes</h1>
+      <p class="mt-1 text-sm text-um-muted">
         Reporte de facturas de proveedores pendientes de pago.
       </p>
     </div>
@@ -11,7 +12,7 @@
 
   <!-- Messages -->
   @if (errorMessage) {
-    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
+    <div class="um-alert um-alert-error">
       <div class="flex">
         <div class="flex-shrink-0">
           <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -30,7 +31,7 @@
   }
 
   @if (successMessage) {
-    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-sm">
+    <div class="um-alert um-alert-success">
       <div class="flex">
         <div class="flex-shrink-0">
           <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -49,12 +50,12 @@
   }
 
   <!-- Form Container -->
-  <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
+  <div class="bg-white shadow-sm ring-1 ring-um-ink/5 sm:rounded-xl md:col-span-2">
     <form [formGroup]="reporteForm" (ngSubmit)="descargarPlanilla()" class="px-4 py-6 sm:p-8">
       <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 items-end">
         <!-- Fecha Desde -->
         <div class="sm:col-span-2">
-          <label for="desde" class="block text-sm font-medium leading-6 text-gray-900"
+          <label for="desde" class="block text-sm font-medium leading-6 text-um-ink"
             >Desde <span class="text-red-500">*</span></label
           >
           <div class="mt-2">
@@ -62,7 +63,7 @@
               type="date"
               formControlName="desde"
               id="desde"
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+              class="block w-full rounded border-0 py-1.5 text-um-ink shadow-sm ring-1 ring-inset ring-um-border-strong focus:ring-2 focus:ring-inset focus:ring-um-primary sm:text-sm sm:leading-6"
             />
           </div>
         </div>
@@ -73,11 +74,11 @@
             type="button"
             (click)="duplicarFecha()"
             title="Copiar fecha al campo Hasta"
-            class="inline-flex items-center justify-center rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 mb-1"
+            class="inline-flex items-center justify-center rounded bg-white px-2.5 py-1.5 text-sm font-semibold text-um-ink shadow-sm ring-1 ring-inset ring-um-border-strong hover:bg-um-surface mb-1"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 text-gray-500"
+              class="h-4 w-4 text-um-muted"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -94,7 +95,7 @@
 
         <!-- Fecha Hasta -->
         <div class="sm:col-span-2">
-          <label for="hasta" class="block text-sm font-medium leading-6 text-gray-900"
+          <label for="hasta" class="block text-sm font-medium leading-6 text-um-ink"
             >Hasta <span class="text-red-500">*</span></label
           >
           <div class="mt-2">
@@ -102,25 +103,25 @@
               type="date"
               formControlName="hasta"
               id="hasta"
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+              class="block w-full rounded border-0 py-1.5 text-um-ink shadow-sm ring-1 ring-inset ring-um-border-strong focus:ring-2 focus:ring-inset focus:ring-um-primary sm:text-sm sm:leading-6"
             />
           </div>
         </div>
       </div>
 
       <!-- Form Actions -->
-      <div class="mt-8 flex items-center justify-end gap-x-4 border-t border-gray-900/10 pt-6">
+      <div class="mt-8 flex items-center justify-end gap-x-4 border-t border-um-border pt-6">
         <button
           type="button"
           [disabled]="isLoading"
-          class="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600 transition-colors"
+          class="text-sm font-semibold leading-6 text-um-ink hover:text-um-primary transition-colors"
         >
           Cancelar
         </button>
         <button
           type="submit"
           [disabled]="isLoading || reporteForm.invalid"
-          class="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 transition-colors flex items-center"
+          class="rounded bg-um-primary px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-um-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 transition-colors flex items-center"
         >
           @if (isLoading) {
             <svg

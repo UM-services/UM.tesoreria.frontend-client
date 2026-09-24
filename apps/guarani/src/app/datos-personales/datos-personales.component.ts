@@ -8,52 +8,50 @@ import { DatosPersonalesModalComponent } from './datos-personales-modal.componen
   standalone: true,
   imports: [CommonModule, FormsModule, DatosPersonalesModalComponent],
   template: `
-    <div class="space-y-6">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <div class="flex items-center space-x-3">
-          <div class="p-3 bg-blue-50 rounded-lg text-blue-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">Datos Personales</h1>
-            <p class="text-sm text-gray-500">Consulte los datos personales de un alumno por número de documento.</p>
-          </div>
+    <div class="text-um-ink">
+      <div class="um-page-header">
+        <div>
+          <p class="um-eyebrow">Guaraní / Datos personales</p>
+          <h1 class="um-page-title">Datos Personales</h1>
+          <p class="um-page-desc">
+            Consulte los datos personales de un alumno por número de documento.
+          </p>
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <div class="max-w-xl space-y-2">
-          <label for="documentoAlumno" class="block text-sm font-semibold text-gray-700">Número de documento</label>
-          <div class="flex flex-col sm:flex-row gap-3">
+      <section class="um-section" aria-labelledby="documento-titulo">
+        <div class="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="documento-titulo" class="text-lg font-bold">Consulta por documento</h2>
+          <p class="text-sm text-um-muted">Letras y números</p>
+        </div>
+
+        <div class="max-w-xl">
+          <label for="documentoAlumno" class="um-label">Número de documento</label>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
             <input
               id="documentoAlumno"
               type="text"
               [(ngModel)]="documento"
               (keyup.enter)="consultar()"
               placeholder="Ingrese el documento"
-              class="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white"
+              class="um-input flex-1"
             />
             <button
               type="button"
               (click)="consultar()"
               [disabled]="!documento.trim()"
-              class="inline-flex items-center justify-center px-5 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="um-btn-primary h-[42px] whitespace-nowrap"
             >
               Consultar
             </button>
           </div>
           @if (validationMessage) {
-            <p class="text-sm text-red-600">{{ validationMessage }}</p>
+            <p class="mt-2 text-sm text-red-700" role="alert">{{ validationMessage }}</p>
           }
         </div>
-      </div>
+      </section>
 
-      <app-datos-personales-modal
-        [documento]="documentoConsultado"
-        (closed)="cerrarModal()"
-      />
+      <app-datos-personales-modal [documento]="documentoConsultado" (closed)="cerrarModal()" />
     </div>
   `,
 })

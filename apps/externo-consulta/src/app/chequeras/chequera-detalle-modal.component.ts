@@ -67,7 +67,7 @@ type Carga<T> =
           [class]="
             inline()
               ? 'w-full min-w-0 bg-white'
-              : 'w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-2xl'
+              : 'w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl border border-um-border bg-white shadow-2xl'
           "
           [attr.role]="inline() ? null : 'dialog'"
           [attr.aria-modal]="inline() ? null : 'true'"
@@ -76,8 +76,8 @@ type Carga<T> =
           <div
             [class]="
               inline()
-                ? 'flex flex-wrap items-start justify-between gap-4 border-b border-[#D5DFE8] pb-5'
-                : 'flex items-start justify-between gap-4 border-b border-gray-100 p-6'
+                ? 'flex flex-wrap items-start justify-between gap-4 border-b border-um-border pb-5'
+                : 'flex items-start justify-between gap-4 border-b border-um-border p-6'
             "
           >
             <div>
@@ -117,7 +117,7 @@ type Carga<T> =
                     (click)="descargarEstado(chequera)"
                     [disabled]="pdfPendiente().has('estado')"
                     title="Estado completo de la chequera en PDF"
-                    class="inline-flex min-w-32 items-center justify-center rounded border border-[#AFC7DD] bg-white px-3 py-2 text-sm font-semibold text-um-primary hover:bg-um-selected focus:outline-none focus:ring-2 focus:ring-um-primary disabled:cursor-not-allowed disabled:opacity-50"
+                    class="inline-flex min-w-32 items-center justify-center rounded border border-um-btn-border bg-white px-3 py-2 text-sm font-semibold text-um-primary hover:bg-um-selected focus:outline-none focus:ring-2 focus:ring-um-primary disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {{ pdfPendiente().has('estado') ? 'Generando...' : 'Estado (PDF)' }}
                   </button>
@@ -130,7 +130,7 @@ type Carga<T> =
                 <button
                   type="button"
                   (click)="cerrar()"
-                  class="text-2xl leading-none text-gray-400 hover:text-gray-700"
+                  class="text-2xl leading-none text-um-muted hover:text-um-ink"
                   aria-label="Cerrar detalle de chequera"
                 >
                   &times;
@@ -144,7 +144,7 @@ type Carga<T> =
             @switch (deuda().tipo) {
               @case ('cargando') {
                 <div
-                  class="h-24 rounded-lg bg-gray-100 animate-pulse"
+                  class="h-24 rounded-lg bg-um-surface animate-pulse"
                   aria-label="Cargando deuda"
                 ></div>
               }
@@ -160,7 +160,9 @@ type Carga<T> =
                 </div>
               }
               @case ('vacio') {
-                <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
+                <div
+                  class="p-4 bg-um-surface border border-um-border rounded-lg text-um-text text-sm"
+                >
                   Deuda no disponible para esta chequera.
                 </div>
               }
@@ -170,7 +172,7 @@ type Carga<T> =
                     <div
                       [class]="
                         inline()
-                          ? 'grid grid-cols-2 gap-4 border-b border-[#D5DFE8] py-4 text-amber-900'
+                          ? 'grid grid-cols-2 gap-4 border-b border-um-border py-4 text-amber-900'
                           : 'grid grid-cols-1 gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4 sm:grid-cols-4'
                       "
                     >
@@ -212,7 +214,7 @@ type Carga<T> =
                     <div
                       [class]="
                         inline()
-                          ? 'flex flex-wrap items-center justify-between gap-3 border-b border-[#D5DFE8] py-4'
+                          ? 'flex flex-wrap items-center justify-between gap-3 border-b border-um-border py-4'
                           : 'flex flex-wrap items-center justify-between gap-4 rounded-lg border border-green-200 bg-green-50 p-4'
                       "
                     >
@@ -232,7 +234,7 @@ type Carga<T> =
               @case ('cargando') {
                 <div class="space-y-2" aria-label="Cargando cuotas">
                   @for (fila of [1, 2, 3]; track fila) {
-                    <div class="h-10 rounded bg-gray-100 animate-pulse"></div>
+                    <div class="h-10 rounded bg-um-surface animate-pulse"></div>
                   }
                 </div>
               }
@@ -248,7 +250,9 @@ type Carga<T> =
                 </div>
               }
               @case ('vacio') {
-                <p class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
+                <p
+                  class="p-4 bg-um-surface border border-um-border rounded-lg text-um-text text-sm"
+                >
                   Esta chequera no tiene cuotas.
                 </p>
               }
@@ -262,7 +266,7 @@ type Carga<T> =
                   @for (producto of productos(); track producto.productoId) {
                     <section
                       [class]="
-                        inline() ? 'min-w-0' : 'overflow-hidden rounded-lg border border-gray-200'
+                        inline() ? 'min-w-0' : 'overflow-hidden rounded-lg border border-um-border'
                       "
                       [attr.aria-label]="'Producto ' + producto.nombre"
                     >
@@ -270,7 +274,7 @@ type Carga<T> =
                         [class]="
                           inline()
                             ? 'flex flex-wrap items-baseline justify-between gap-2 pb-3'
-                            : 'flex flex-wrap items-baseline justify-between gap-2 bg-gray-50 px-4 py-3'
+                            : 'flex flex-wrap items-baseline justify-between gap-2 bg-um-surface px-4 py-3'
                         "
                       >
                         <h3 class="text-sm font-bold text-um-ink">
@@ -290,7 +294,7 @@ type Carga<T> =
                         [attr.aria-label]="'Cuotas de ' + producto.nombre"
                       >
                         <table class="w-full min-w-[760px] table-fixed border-collapse text-sm">
-                          <thead class="bg-[#F2F6F9]">
+                          <thead class="bg-um-surface">
                             <tr>
                               <th
                                 scope="col"
@@ -345,12 +349,12 @@ type Carga<T> =
                                   }
                                 </td>
                                 <td
-                                  class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-[#40556C]"
+                                  class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-um-text"
                                 >
                                   {{ periodo(fila.cuota) }}
                                 </td>
                                 <td
-                                  class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-[#40556C]"
+                                  class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-um-text"
                                 >
                                   {{ fecha(fila.cuota.vencimiento1) }}
                                 </td>
@@ -364,7 +368,7 @@ type Carga<T> =
                                   }}
                                 </td>
                                 <td
-                                  class="whitespace-nowrap px-2 py-3 text-right align-top tabular-nums text-[#40556C]"
+                                  class="whitespace-nowrap px-2 py-3 text-right align-top tabular-nums text-um-text"
                                 >
                                   {{ fila.fechaPago ? fecha(fila.fechaPago) : '—' }}
                                 </td>
@@ -391,8 +395,8 @@ type Carga<T> =
                       <div
                         [class]="
                           inline()
-                            ? 'flex flex-wrap justify-end gap-x-5 gap-y-1 border-t border-[#E0E6EC] pt-3 text-sm tabular-nums text-um-muted'
-                            : 'flex flex-col items-end gap-0.5 border-t border-gray-200 px-4 py-2.5 text-sm tabular-nums text-gray-600'
+                            ? 'flex flex-wrap justify-end gap-x-5 gap-y-1 border-t border-um-border pt-3 text-sm tabular-nums text-um-muted'
+                            : 'flex flex-col items-end gap-0.5 border-t border-um-border px-4 py-2.5 text-sm tabular-nums text-um-text'
                         "
                       >
                         <p>
