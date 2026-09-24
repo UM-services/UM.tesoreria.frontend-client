@@ -21,7 +21,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - `@tesoreria/shared-api` - Servicios API, autenticación y modelos compartidos
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Componentes de layout (navbar, sidebar, buscador-cuenta-contable, buscador-proveedor)
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y buscadores (buscador-cuenta-contable, buscador-proveedor)
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-orden-compra` - Módulo de órdenes de compra con dashboard, creación multi-paso y flujo de aprobación (integrado en compras)
@@ -126,7 +126,7 @@ El filtro por facultad lo aplica el core con el `userId` que manda el frontend, 
     subgraph Libs["Librerías compartidas"]
         API["shared-api<br/>AuthService, guard e interceptores"]
         AUTH["ui-auth<br/>Login lazy-loaded"]
-        LAYOUT["ui-layout<br/>Navbar, sidebar y buscadores"]
+        LAYOUT["ui-layout<br/>Shell J2 y buscadores"]
         FPROV["feature-proveedores"]
         FGAST["feature-gastos"]
         ORDCOMPRA["feature-orden-compra"]
@@ -187,16 +187,26 @@ El filtro por facultad lo aplica el core con el `userId` que manda el frontend, 
     API --> AUTH
 ```
 
+## Sistema de Diseño (J2)
+
+Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido en
+`libs/ui-layout/src/styles/tokens.css` e importado por cada `apps/<app>/src/styles.css`:
+
+- **Tokens**: paleta `um-*` (p. ej. `bg-um-sidebar`, `text-um-ink`, `border-um-border`), tipografía, espaciados y radios. Es la única fuente de colores: no agregar hex sueltos en templates.
+- **Shell**: `<ui-shell moduleName="..." [menuItems]="...">` (`@tesoreria/ui-layout`) aporta sidebar oscuro, badge de entorno con color por ambiente, usuario, logout y layout responsive. Las apps solo definen marca y menú.
+- **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`.
+- **Referencia viva**: la vista `apps/externo-consulta/src/app/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
+
 ## Tecnologías
 
-| Tecnología   | Versión                                    |
-| ------------ | ------------------------------------------ |
-| Angular      | 21.2.0                                     |
-| Nx           | 22.7.1                                     |
-| Tailwind CSS | 4.2.4                                      |
-| TypeScript   | 5.9.2                                      |
-| Vitest       | 4.0.8                                      |
-| Docker       | nginx:alpine (runtime)                     |
+| Tecnología   | Versión                |
+| ------------ | ---------------------- |
+| Angular      | 21.2.0                 |
+| Nx           | 22.7.1                 |
+| Tailwind CSS | 4.2.4                  |
+| TypeScript   | 5.9.2                  |
+| Vitest       | 4.0.8                  |
+| Docker       | nginx:alpine (runtime) |
 
 ## Despliegue con Docker
 

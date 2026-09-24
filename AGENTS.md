@@ -19,6 +19,7 @@
 - Run E2E with `npx nx e2e compras-e2e` or `npx nx e2e chequeras-e2e`; set `BASE_URL` to test an already deployed app.
 - Format uses Prettier with 100-column width, single quotes, and Angular parsing for HTML; repository indentation is two spaces.
 - Routes use standalone `loadComponent` lazy loading for shared login and feature components where configured; preserve this instead of reintroducing eager imports.
+- UI design follows the shared J2 theme: tokens and component utilities live in `libs/ui-layout/src/styles/tokens.css`, every app shell is `@tesoreria/ui-layout`'s `<ui-shell>`, and views use `um-*` classes (`.um-input`, `.um-btn-primary`, `.um-table`, ...) instead of ad-hoc palettes or one-off class strings.
 
 ## Verification And Deployment
 
