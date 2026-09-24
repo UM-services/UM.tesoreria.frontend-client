@@ -25,6 +25,7 @@ const chequeras: ChequeraEstado[] = [
     lectivoId: 30,
     geograficaId: 1,
     alternativaId: 1,
+    becaPorcentaje: 0.5,
     importeDeuda: 245300,
     cuotasDeuda: 3,
     estadoDeuda: 'CON_DEUDA_VENCIDA',
@@ -119,6 +120,7 @@ describe('ChequerasComponent', () => {
     ) as HTMLElement;
     expect(lista.querySelectorAll('button').length).toBe(1);
     expect(lista.textContent).toContain('1/2/100');
+    expect(lista.textContent?.replace(/\s+/g, ' ')).toContain('Beca: 50%');
   });
 
   it('muestra las cuotas en contexto al elegir la chequera', async () => {
@@ -134,6 +136,7 @@ describe('ChequerasComponent', () => {
 
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-chequera-detalle-modal')).not.toBeNull();
+    expect(texto(fixture)).toContain('Beca: 50%');
     expect(boton?.getAttribute('aria-pressed')).toBe('true');
     expect(servicio['cuotasConPagos']).toHaveBeenCalledWith(chequeras[0]);
   });

@@ -20,6 +20,7 @@ const chequeraA = {
   tipoChequera: 'Grado',
   facultad: 'Ingeniería',
   titular: 'PEREZ, Juan',
+  becaPorcentaje: 0.5,
 } as ChequeraEstado;
 const chequeraB = { ...chequeraA, chequeraId: 2, chequeraSerieId: 200 } as ChequeraEstado;
 
@@ -96,6 +97,7 @@ describe('ChequeraDetalleModalComponent', () => {
     await abrir();
     const contenido = texto(fixture);
     expect(contenido).toContain('Grado N° 100');
+    expect(contenido).toContain('Beca: 50%');
     expect(contenido).toContain('Sin deuda vencida');
     expect(contenido).toContain('$ 540.000,00');
     expect(contenido).toContain('1/1');
@@ -103,16 +105,39 @@ describe('ChequeraDetalleModalComponent', () => {
     expect(contenido).toContain('Próxima');
   });
 
+  it('muestra beca cero y un dato ausente sin confundirlos', async () => {
+    await abrir({ ...chequeraA, becaPorcentaje: 0 });
+    expect(texto(fixture)).toContain('Beca: 0%');
+
+    await abrir({ ...chequeraA, becaPorcentaje: null });
+    expect(texto(fixture)).toContain('Beca: -');
+  });
+
   it('muestra la tarjeta de deuda vencida', async () => {
     // vencimiento1/importe1 de la deuda son de la primera cuota de la chequera (aunque esté pagada):
     // el primer vencimiento adeudado sale de las cuotas.
     servicio['deuda'].mockReturnValue(
-      of(deuda({ deuda: 90000, cuotas: 2, vencimiento1: '2026-03-22T00:00:00Z', importe1: 331000 })),
+      of(
+        deuda({ deuda: 90000, cuotas: 2, vencimiento1: '2026-03-22T00:00:00Z', importe1: 331000 }),
+      ),
     );
     servicio['cuotasConPagos'].mockReturnValue(
       of([
-        cuota({ chequeraCuotaId: 1, cuotaId: 1, mes: 3, vencimiento1: '2026-03-22T00:00:00Z', importe1: 331000, pagado: 1 }),
-        cuota({ chequeraCuotaId: 2, cuotaId: 2, mes: 8, vencimiento1: '2026-08-10T00:00:00Z', importe1: 45000 }),
+        cuota({
+          chequeraCuotaId: 1,
+          cuotaId: 1,
+          mes: 3,
+          vencimiento1: '2026-03-22T00:00:00Z',
+          importe1: 331000,
+          pagado: 1,
+        }),
+        cuota({
+          chequeraCuotaId: 2,
+          cuotaId: 2,
+          mes: 8,
+          vencimiento1: '2026-08-10T00:00:00Z',
+          importe1: 45000,
+        }),
       ]),
     );
     await abrir();
