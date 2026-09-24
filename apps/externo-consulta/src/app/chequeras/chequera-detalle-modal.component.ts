@@ -248,7 +248,7 @@ type Carga<T> =
                 <div class="space-y-6">
                   @if (inline()) {
                     <p class="text-xs text-um-muted sm:hidden">
-                      Deslice cada tabla hacia la derecha para ver Fecha pago y Pagado →
+                      Deslice cada tabla hacia la derecha para ver los vencimientos y pagos →
                     </p>
                   }
                   @for (producto of productos(); track producto.productoId) {
@@ -281,36 +281,42 @@ type Carga<T> =
                         role="region"
                         [attr.aria-label]="'Cuotas de ' + producto.nombre"
                       >
-                        <table class="w-full min-w-[690px] border-collapse text-sm">
+                        <table class="w-full min-w-[800px] border-collapse text-sm">
                           <thead class="bg-[#F2F6F9]">
                             <tr>
                               <th
                                 scope="col"
-                                class="w-[16%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[14%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Cuota
                               </th>
                               <th
                                 scope="col"
-                                class="w-[14%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[13%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Período
                               </th>
                               <th
                                 scope="col"
-                                class="w-[18%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[16%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
+                              >
+                                Primer vencimiento
+                              </th>
+                              <th
+                                scope="col"
+                                class="w-[16%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 A pagar
                               </th>
                               <th
                                 scope="col"
-                                class="w-[18%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[16%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Fecha pago
                               </th>
                               <th
                                 scope="col"
-                                class="w-[34%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[25%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Pagado
                               </th>
@@ -334,6 +340,11 @@ type Carga<T> =
                                   class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-[#40556C]"
                                 >
                                   {{ periodo(fila.cuota) }}
+                                </td>
+                                <td
+                                  class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-[#40556C]"
+                                >
+                                  {{ fecha(fila.cuota.vencimiento1) }}
                                 </td>
                                 <td
                                   class="whitespace-nowrap px-2 py-3 text-right align-top font-semibold tabular-nums text-um-ink"
