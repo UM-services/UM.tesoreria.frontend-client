@@ -1,0 +1,37 @@
+/* Tema UM extraído de la dirección J2. Las apps pueden usar clases como bg-um-sidebar y text-um-ink. */
+@theme static {
+  --color-um-canvas: #ffffff;
+  --color-um-ink: #162538;
+  --color-um-text: #344a62;
+  --color-um-muted: #53687d;
+  --color-um-border: #dbe2e8;
+  --color-um-border-strong: #bcc9d7;
+  --color-um-surface: #f1f5f9;
+  --color-um-selected: #eff5fb;
+  --color-um-sidebar: #172b43;
+  --color-um-sidebar-active: #35516e;
+  --color-um-sidebar-text: #dae3ed;
+  --color-um-sidebar-muted: #aabbcf;
+  --color-um-primary: #184c83;
+  --color-um-success: #176744;
+
+  --font-um: system-ui, sans-serif;
+  --text-um-label: 11px;
+  --text-um-body: 14px;
+  --text-um-title: 30px;
+  --font-weight-um-regular: 400;
+  --font-weight-um-bold: 700;
+  --tracking-um-label: 0.11em;
+  --leading-um-label: 14px;
+  --leading-um-body: 18px;
+  --leading-um-title: 36px;
+
+  --opacity-um-subtle: 60%;
+  --breakpoint-um-desktop: 768px;
+  --container-um-sidebar: 224px;
+  --container-um-main: 1116px;
+  --spacing-um-2: 8px;
+  --spacing-um-4: 16px;
+  --spacing-um-7: 28px;
+  --radius-um-control: 5px;
+}

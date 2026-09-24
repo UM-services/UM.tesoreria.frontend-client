@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.21.0] - 2026-09-24
+
+### Added
+
+- feat(externo-consulta): Nueva vista `/chequeras` ("Estado de Chequeras") para personal administrativo: consulta de chequeras de alumnos de las facultades asignadas al usuario, con el lenguaje visual de guarani y el orden de la pantalla "Estado de Chequera" del sistema de escritorio. Se busca por número y tipo de documento, por apellido y nombre con sugerencias mientras se escribe (a partir de 3 letras o dígitos sin contar signos, como exige el core; ordenadas por relevancia y navegables con teclado; si el core igual responde 400, la lista queda vacía en lugar de mostrar un error), o por número de chequera (`facultad/tipo/serie` o `facultad/serie`, sólo de facultades asignadas). El lectivo por defecto es el vigente según sus fechas (`lectivo/last` devuelve el próximo). Consume `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}`, que devuelve sólo las chequeras de las facultades asignadas al usuario en `usuario_chequera_facultad`. Muestra titular, deuda vencida total, filtro local por unidad académica, tarjetas "Todas" / "Con deuda vencida", número de chequera como `facultad/tipo/serie` y paginación con "Ver más".
+- feat(externo-consulta): Modal de detalle de chequera con tarjeta de deuda (`chequeraCuota/deuda`; el centinela de chequera inexistente se muestra como "Deuda no disponible") y cuotas con los campos del reporte "Estado de Chequera": agrupadas por producto, con Cuota n/total, Período, A pagar, Fecha de pago, Pagado con referencia (archivo o tipo de pago) y subtotales de producto, pagado y deuda (la deuda es el saldo de cada cuota impaga, así un recargo pagado en una cuota no descuenta deuda de otras). El "Primer vencimiento adeudado" sale de la primera cuota vencida e impaga, porque `vencimiento1`/`importe1` de `chequeraCuota/deuda` son de la primera cuota de la chequera aunque esté pagada. Cada cuota muestra su estado (Pagada, Pendiente, Vencida desde el primer vencimiento, Baja, Compensada y "A definir" para cuotas impagas con importe 0, como el arancel de diciembre a febrero antes de fijarse su importe) y se resalta la próxima. La única descarga es "Estado (PDF)" (`chequera/generateEstadoPdf/.../{debitoTipoId}` con débito directo por CBU, `debitoTipoId = 2`); es un endpoint nuevo del core que hasta publicarse responde 404, y la vista lo informa. Se cierra con Esc o con click en el fondo, mantiene el foco adentro y lo devuelve al botón que lo abrió.
+- feat(externo-consulta): Formato `es-AR` (`LOCALE_ID`) para montos en pesos. Las fechas se muestran por día calendario para que un vencimiento en UTC no se corra un día.
+- test(externo-consulta): Specs de utilidades de fechas y estados, focus trap, servicio (URLs, parámetros y blob del PDF de estado), store de búsqueda (cancelación, errores que no cortan búsquedas siguientes, paginación, filtro local, sugerencias por nombre con demora, mínimo de 3 letras o dígitos ("pe j", "o'r") y 400 como lista vacía, y búsqueda por número de chequera), componente (combobox navegable con teclado), modal (respuestas tardías de otra chequera, PDF inválido o con error) y rutas.
+
+### Changed
+
+- refactor(externo-consulta): La raíz y las rutas desconocidas redirigen a `/chequeras` (carga diferida con `authGuard`). Se eliminan el ítem "Inicio" y `BlankComponent`.
+- design: La vista de chequeras usa la dirección J2 y los tokens compartidos de color, tipografía y espaciado, disponibles para las ocho aplicaciones.
+- docs: README documenta la vista, cómo probarla localmente y la limitación de seguridad; la versión del README se actualiza a 0.21.0.
+
+### Fixed
+
+- fix(auth): El login muestra un error legible ante credenciales incorrectas, conserva la ruta de regreso y redirige a usuarios con sesión activa; los errores de otras solicitudes mantienen el `returnUrl` al volver al login.
+- fix(externo-consulta): Una búsqueda por documento limpia el error anterior de búsqueda por número de chequera; los textos de ayuda mantienen el tratamiento de usted.
+
+### Requisitos
+
+- La vista requiere un core que incluya el commit `43ada0cb` (rama `feat/chequeras-por-usuario-y-sugerencias`, todavía sin mergear en `develop`), que agrega `chequeraSerie/usuario/{userId}/lectivo/{lectivoId}` y `persona/sugerencias/usuario/{userId}`. Con un core anterior, la búsqueda y las sugerencias responden 404.
+- "Estado (PDF)" depende de `chequera/generateEstadoPdf/...`, que el core todavía no publicó. Hasta entonces el botón informa que el PDF no está disponible.
+
+### Security
+
+- El filtro por facultad depende del `userId` que envía el frontend y que hoy nadie verifica contra la sesión. No exponer la vista a usuarios externos reales hasta que el gateway vincule el `userId` a la sesión.
+- Las sugerencias por nombre usan `GET persona/sugerencias/usuario/{userId}`, acotado en el core a las facultades del usuario y con campos mínimos. Hereda la misma limitación: el `userId` no se verifica contra la sesión.
+
 ## [0.20.0] - 2026-09-22
 
 ### Added
