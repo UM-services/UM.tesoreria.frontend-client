@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.24.0] - 2026-09-26
+
+### Added
+
+- feat(shared-api): `LoginResponse` incorpora los flags del perfil devueltos por el backend (`administrador`, `usuarioExterno`, `activo`, `imprimeChequera`, `numeroOpManual`, `habilitaOpEliminacion`, `eliminaChequera`, `modificaChequera`, `lastLog`, `googleMail`), todos opcionales para tolerar sesiones guardadas antes del deploy. Nuevos helpers `esFlagActiva`, `esAdministrador` y `esUsuarioExterno` en `auth.flags.ts` (un único punto de parseo del contrato 1/0).
+- feat(shared-api): Guards de acceso por módulo en `module-access.guard.ts`: `administradorGuard` habilita el app **administrador** sólo con `administrador = 1`, y `usuarioInternoGuard` bloquea los apps internos cuando `usuarioExterno = 1` (esos usuarios sólo operan **externo-consulta**). Si la sesión en storage aún no trae el flag (sesión previa al deploy o `/login` que devuelve sólo el token), la guardia **espera a `GET /me/:userId`** antes de decidir, en vez de evaluar datos viejos y bloquear la primera navegación; `administradorGuard` falla cerrado ante error de perfil y `usuarioInternoGuard` mantiene el comportamiento histórico. Ambas redirigen a la ruta pública `sin-acceso` y, sin sesión, a `/login` con `returnUrl`. Se exporta `SIN_ACCESO_RUTA` para registrar la ruta en cada app sin duplicar literales.
+- fix(shared-api): `AuthService.getUser` deduplica la solicitud en curso (`shareReplay`) para que constructor, post-login y guards compartan un único `GET /me/:userId`, amplía la condición de persistencia del merge a respuestas con `userId` aunque no traigan `login`, y **excluye el `token` de `/me`** de la sesión: si el backend responde con un JWT de placeholder (p. ej. `dummy-jwt-token-replace-later`) no invalida el token real emitido por `/login`.
+- feat(ui-layout): Nuevo `NoAccesoComponent` (`<ui-no-acceso>`), pantalla pública de "acceso restringido" con botón de cierre de sesión, registrada en las rutas `sin-acceso` de administrador, compras, pagos, chequeras, contable, contratados y guarani antes del wildcard (evita el bucle `/login ↔ ruta protegida` porque `LoginComponent` re-navega si hay sesión).
+- feat(administrador): Nueva pantalla "Asignaciones" (`AsignacionUsuariosComponent`, ruta perezosa `/asignaciones` protegida con `[authGuard, usuarioInternoGuard, administradorGuard]` e ítem en el menú del shell) para asignar/desasignar sedes geográficas, clases de chequera y facultades a un usuario: búsqueda de usuarios vía `GET /usuario/search?q=` (mínimo 2 caracteres, `debounce` 300 ms) y checkboxes que aplican cada cambio de inmediato sobre los slices `usuarioChequeraGeografica` / `usuarioChequeraClaseChequera` / `usuarioChequeraFacultad` (GET/POST/DELETE) mediante el nuevo `UsuarioChequeraService`, con mensajes de éxito/error que se ocultan automáticamente a los 5 s.
+
+### Changed
+
+- feat(shared-api): La sesión se revalida contra `GET /auth/me/{userId}` al hidratar `localStorage` y también después de un `login` exitoso: el backend es la fuente de verdad de los flags de acceso y un `currentUser` alterado a mano se sobreescribe al arrancar la app (la defensa real sigue siendo la autorización 401/403 en el gateway, ya cubierta por `errorInterceptor`).
+- feat(administrador): `dependencias`, `proveedores` y `gastos` exigen ahora `[authGuard, usuarioInternoGuard, administradorGuard]`.
+- feat(apps): `compras`, `pagos`, `chequeras`, `contable`, `contratados` y `guarani` encadenan `usuarioInternoGuard` a sus rutas protegidas, preservando `guaraniSedePrincipalGuard` en su orden. `externo-consulta` permanece sin cambios.
+- docs: `docs/architecture.md` actualiza el diagrama de secuencia de autenticación, el modelo `LoginResponse` y documenta las guards de acceso por módulo.
+- test: Specs de `auth.flags`, `administradorGuard`/`usuarioInternoGuard` (permitido, bloqueado, flag ausente y sesión nula), de revalidación de sesión (flags adulterados en storage se sobreescriben con `/me` y `/login` hidrata flags), y de `NoAccesoComponent`.
+
 ## [0.23.0] - 2026-09-24
 
 ### Added
