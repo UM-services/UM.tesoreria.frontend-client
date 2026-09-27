@@ -64,18 +64,6 @@ describe('ChequerasService', () => {
     http.expectOne((r) => r.url.endsWith('/core/chequeraCuota/deuda/1/2/300')).flush({});
   });
 
-  it('pide sugerencias acotadas al usuario y conserva sólo los campos que se muestran', () => {
-    let resultado: unknown;
-    service.sugerirPersonas(7, 'perez juan', 8).subscribe((valor) => (resultado = valor));
-
-    const req = http.expectOne((r) => r.url.endsWith('/core/persona/sugerencias/usuario/7'));
-    expect(req.request.params.get('q')).toBe('perez juan');
-    expect(req.request.params.get('limite')).toBe('8');
-    req.flush([{ personaId: 30123456, documentoId: 1, documento: 'DNI', apellido: 'PEREZ', nombre: 'Juan' }]);
-
-    expect(resultado).toEqual([{ personaId: '30123456', documentoId: 1, apellido: 'PEREZ', nombre: 'Juan' }]);
-  });
-
   it('busca chequeras por número completo o por facultad y serie', () => {
     service.chequeraPorNumero(1, 2, 14160).subscribe();
     service.chequerasPorSerie(1, 14160).subscribe();
@@ -86,7 +74,9 @@ describe('ChequerasService', () => {
 
   it('pide el PDF de estado con débito directo por CBU por defecto', () => {
     service.descargarPdfEstado(chequera).subscribe();
-    const req = http.expectOne((r) => r.url.endsWith('/core/chequera/generateEstadoPdf/1/2/300/4/2'));
+    const req = http.expectOne((r) =>
+      r.url.endsWith('/core/chequera/generateEstadoPdf/1/2/300/4/2'),
+    );
     expect(req.request.responseType).toBe('blob');
     req.flush(new Blob(['%PDF']));
   });

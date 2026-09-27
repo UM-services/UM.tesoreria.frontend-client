@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LOCALE_ID, signal } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NEVER, of } from 'rxjs';
 import { AuthService } from '@tesoreria/shared-api';
@@ -52,12 +54,6 @@ describe('ChequerasComponent', () => {
       documentos: vi.fn().mockReturnValue(of([{ documentoId: 1, nombre: 'DNI' }])),
       lectivos: vi.fn().mockReturnValue(of([{ lectivoId: 30, nombre: '2026' }])),
       chequerasPorUsuario: vi.fn().mockReturnValue(of({ content: chequeras, totalElements: 1 })),
-      sugerirPersonas: vi.fn().mockReturnValue(
-        of([
-          { personaId: '30123456', documentoId: 1, apellido: 'PEREZ', nombre: 'Juan' },
-          { personaId: '28999111', documentoId: 1, apellido: 'PEREYRA', nombre: 'Ana' },
-        ]),
-      ),
       chequeraPorNumero: vi.fn(),
       chequerasPorSerie: vi.fn(),
       cuotasConPagos: vi.fn().mockReturnValue(NEVER),
@@ -66,6 +62,8 @@ describe('ChequerasComponent', () => {
     TestBed.configureTestingModule({
       imports: [ChequerasComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: ChequerasService, useValue: servicio },
         { provide: AuthService, useValue: { currentUserSignal: signal({ userId: 7 }) } },
         { provide: LOCALE_ID, useValue: 'es-AR' },
@@ -177,27 +175,49 @@ describe('ChequerasComponent', () => {
     expect(texto(fixture)).toContain('1/2/100');
   });
 
-  it('sugiere personas al escribir el apellido y elige con el teclado', async () => {
+  it('busca personas por palabras con el buscador compartido y elige con el teclado', async () => {
     await crear();
+    const http = TestBed.inject(HttpTestingController);
     const input = fixture.nativeElement.querySelector('#personaNombre') as HTMLInputElement;
     input.value = 'pere';
     input.dispatchEvent(new Event('input'));
-    await vi.waitFor(() => expect(servicio['sugerirPersonas']).toHaveBeenCalledWith(7, 'pere', 8), {
-      timeout: 2000,
-    });
+    await fixture.whenStable();
+
+    let respondida = false;
+    await vi.waitFor(
+      () => {
+        if (respondida) {
+          return;
+        }
+        const peticiones = http.match((r) => r.url.endsWith('/persona/search'));
+        expect(peticiones.length).toBe(1);
+        // Como en el VB6: la cadena se parte en palabras y se envía como array.
+        expect(peticiones[0].request.method).toBe('POST');
+        expect(peticiones[0].request.body).toEqual(['pere']);
+        peticiones[0].flush([
+          { uniqueId: 12, personaId: 30123456, documentoId: 1, apellido: 'PEREZ', nombre: 'Juan' },
+          { uniqueId: 13, personaId: 28999111, documentoId: 1, apellido: 'PEREYRA', nombre: 'Ana' },
+        ]);
+        respondida = true;
+      },
+      { timeout: 3000 },
+    );
     await fixture.whenStable();
 
     expect(input.getAttribute('aria-expanded')).toBe('true');
-    expect(fixture.nativeElement.querySelectorAll('[role="option"]').length).toBe(2);
+    expect(
+      fixture.nativeElement.querySelectorAll('[role="option"]:not([aria-disabled])').length,
+    ).toBe(2);
 
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
-    await fixture.whenStable();
-    expect(input.getAttribute('aria-activedescendant')).toBe('sugerencia-1');
+    fixture.detectChanges();
+    expect(input.getAttribute('aria-activedescendant')).toBe('personaNombre-opcion-1');
 
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
     await fixture.whenStable();
 
+    // fillPersona + buscar: el store recibe la persona elegida del buscador.
     expect(servicio['chequerasPorUsuario']).toHaveBeenCalledWith(7, 30, '30123456', 1, 0);
     expect(fixture.nativeElement.querySelector('[role="listbox"]')).toBeNull();
   });

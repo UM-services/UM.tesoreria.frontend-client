@@ -19,7 +19,7 @@
         subgraph "Libraries"
             SharedAPI["@tesoreria/shared-api<br/>AuthService, AuthGuard<br/>Auth y error interceptors<br/>Models"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent<br/>BuscadorPersonaComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
             FeatureOrdenCompra["@tesoreria/feature-orden-compra<br/>OcDashboardComponent<br/>OcCreateComponent<br/>OcDetailComponent"]
@@ -233,6 +233,7 @@ flowchart TD
     Datos --> GuaraniAPI
     Datos --> Beneficios
     Datos --> Captura["Captura de datos personales"]
+    Datos --> BuscadorPersona["BuscadorPersona Component<br/>@tesoreria/ui-layout"]
 ```
 
 ## Modelos de Datos - Autenticación

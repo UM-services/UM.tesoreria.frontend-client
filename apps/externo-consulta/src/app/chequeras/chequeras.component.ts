@@ -1,14 +1,15 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { BuscadorPersonaComponent } from '@tesoreria/ui-layout';
 import { ChequeraDetalleModalComponent } from './chequera-detalle-modal.component';
 import { ChequerasBusquedaStore } from './chequeras-busqueda.store';
-import { ChequeraEstado, FacultadAsignada, PersonaSugerida } from './chequeras.models';
+import { ChequeraEstado, FacultadAsignada } from './chequeras.models';
 import { numeroChequera, tieneDeuda } from './chequeras.utils';
 
 @Component({
   selector: 'app-chequeras',
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, ChequeraDetalleModalComponent],
+  imports: [CurrencyPipe, DecimalPipe, ChequeraDetalleModalComponent, BuscadorPersonaComponent],
   providers: [ChequerasBusquedaStore],
   templateUrl: './chequeras.component.html',
 })
@@ -24,14 +25,6 @@ export class ChequerasComponent implements OnInit {
       null
     );
   });
-  /** Índice de la sugerencia resaltada con el teclado (-1: ninguna). */
-  readonly activa = signal(-1);
-
-  readonly personasSugeridas = computed<PersonaSugerida[]>(() => {
-    const estado = this.store.sugerencias();
-    return estado.tipo === 'listo' ? estado.personas : [];
-  });
-  readonly listaAbierta = computed(() => this.store.sugerencias().tipo === 'listo');
 
   ngOnInit(): void {
     this.store.cargarCatalogos();
@@ -43,57 +36,9 @@ export class ChequerasComponent implements OnInit {
     input.value = this.store.dni();
   }
 
-  alEscribirNombre(evento: Event): void {
-    this.activa.set(-1);
-    this.store.escribirNombre((evento.target as HTMLInputElement).value);
-  }
-
   alEscribirNumero(evento: Event): void {
     this.store.numeroChequera.set((evento.target as HTMLInputElement).value);
     this.store.errorNumero.set('');
-  }
-
-  alPresionarEnNombre(evento: KeyboardEvent): void {
-    const personas = this.personasSugeridas();
-    if (!this.listaAbierta()) {
-      return;
-    }
-    switch (evento.key) {
-      case 'ArrowDown':
-        evento.preventDefault();
-        this.activa.set(personas.length ? (this.activa() + 1) % personas.length : -1);
-        break;
-      case 'ArrowUp':
-        evento.preventDefault();
-        this.activa.set(
-          personas.length ? (this.activa() - 1 + personas.length) % personas.length : -1,
-        );
-        break;
-      case 'Enter': {
-        const persona = personas[this.activa()];
-        if (persona) {
-          evento.preventDefault();
-          this.elegir(persona);
-        }
-        break;
-      }
-      case 'Escape':
-        evento.preventDefault();
-        this.store.cerrarSugerencias();
-        break;
-    }
-  }
-
-  elegir(persona: PersonaSugerida): void {
-    this.activa.set(-1);
-    this.store.elegirPersona(persona);
-  }
-
-  tipoDocumento(documentoId: number): string {
-    return (
-      this.store.documentos().find((documento) => documento.documentoId === documentoId)?.nombre ??
-      ''
-    );
   }
 
   numero(evento: Event): number | null {
