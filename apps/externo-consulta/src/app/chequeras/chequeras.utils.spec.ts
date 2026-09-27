@@ -3,7 +3,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChequeraEstado, CuotaConPagos } from './chequeras.models';
 import {
   agruparPorProducto,
-  contarAlfanumericos,
   esDeudaCentinela,
   esPdfValido,
   estadoCuota,
@@ -11,9 +10,7 @@ import {
   formatearFecha,
   formatearInstante,
   numeroChequera,
-  ordenarSugerencias,
   parsearNumeroChequera,
-  terminosBusqueda,
   lectivoVigente,
   mensajeError,
   mensajeErrorPdf,
@@ -127,7 +124,12 @@ describe('estadoCuota', () => {
 
   it('la próxima cuota ignora las que están "A definir"', () => {
     const conImporte = cuota({ chequeraCuotaId: 2, vencimiento1: '2026-11-10' });
-    expect(proximaCuota([cuota({ chequeraCuotaId: 1, vencimiento1: '2026-10-10', importe1: 0 }), conImporte], hoy)).toBe(conImporte);
+    expect(
+      proximaCuota(
+        [cuota({ chequeraCuotaId: 1, vencimiento1: '2026-10-10', importe1: 0 }), conImporte],
+        hoy,
+      ),
+    ).toBe(conImporte);
   });
 
   it('pendiente si no tiene vencimiento', () => {
@@ -185,13 +187,28 @@ describe('chequeras', () => {
 
   it('lee el total de la página en la raíz o dentro de page', () => {
     expect(totalElementos({ content: [], totalElements: 7 })).toBe(7);
-    expect(totalElementos({ content: [], page: { size: 100, number: 0, totalElements: 9, totalPages: 1 } })).toBe(9);
+    expect(
+      totalElementos({
+        content: [],
+        page: { size: 100, number: 0, totalElements: 9, totalPages: 1 },
+      }),
+    ).toBe(9);
     expect(totalElementos({ content: [chequera()] })).toBe(1);
   });
 
   it('detecta el centinela de deuda de chequera inexistente', () => {
-    expect(esDeudaCentinela({ total: 0, deuda: 1000000, cuotas: 1000, vencimiento1: null, importe1: null })).toBe(true);
-    expect(esDeudaCentinela({ total: 0, deuda: 1000000, cuotas: 3, vencimiento1: null, importe1: null })).toBe(false);
+    expect(
+      esDeudaCentinela({
+        total: 0,
+        deuda: 1000000,
+        cuotas: 1000,
+        vencimiento1: null,
+        importe1: null,
+      }),
+    ).toBe(true);
+    expect(
+      esDeudaCentinela({ total: 0, deuda: 1000000, cuotas: 3, vencimiento1: null, importe1: null }),
+    ).toBe(false);
   });
 
   it('arma el nombre del PDF de estado', () => {
@@ -218,7 +235,9 @@ describe('entradas y errores', () => {
   it('lee el mensaje del servidor dentro del Blob de error del PDF', async () => {
     const json = new HttpErrorResponse({
       status: 500,
-      error: new Blob([JSON.stringify({ message: 'Chequera sin cuotas' })], { type: 'application/json' }),
+      error: new Blob([JSON.stringify({ message: 'Chequera sin cuotas' })], {
+        type: 'application/json',
+      }),
     });
     const vacio = new HttpErrorResponse({ status: 500, error: new Blob([]) });
     const sinBlob = new HttpErrorResponse({ status: 500, error: null });
@@ -238,9 +257,24 @@ describe('entradas y errores', () => {
 
 describe('lectivoVigente', () => {
   const lectivos = [
-    { lectivoId: 38, nombre: '2027 - 2028', fechaInicio: '2027-03-15T00:00:00Z', fechaFinal: '2028-03-14T00:00:00Z' },
-    { lectivoId: 37, nombre: '2026 - 2027', fechaInicio: '2026-03-15T00:00:00Z', fechaFinal: '2027-03-14T00:00:00Z' },
-    { lectivoId: 36, nombre: '2025 - 2026', fechaInicio: '2025-03-15T00:00:00Z', fechaFinal: '2026-03-14T00:00:00Z' },
+    {
+      lectivoId: 38,
+      nombre: '2027 - 2028',
+      fechaInicio: '2027-03-15T00:00:00Z',
+      fechaFinal: '2028-03-14T00:00:00Z',
+    },
+    {
+      lectivoId: 37,
+      nombre: '2026 - 2027',
+      fechaInicio: '2026-03-15T00:00:00Z',
+      fechaFinal: '2027-03-14T00:00:00Z',
+    },
+    {
+      lectivoId: 36,
+      nombre: '2025 - 2026',
+      fechaInicio: '2025-03-15T00:00:00Z',
+      fechaFinal: '2026-03-14T00:00:00Z',
+    },
   ];
 
   it('elige el lectivo que contiene hoy aunque exista uno futuro', () => {
@@ -274,25 +308,23 @@ describe('formatearInstante', () => {
   });
 });
 
-describe('búsqueda por nombre y número', () => {
-  it('arma los términos a partir de "apellido, nombre"', () => {
-    expect(terminosBusqueda('Pérez,  Juan  M')).toEqual(['Pérez', 'Juan']);
-    expect(terminosBusqueda(' a ')).toEqual([]);
-    expect(terminosBusqueda('uno dos tres cuatro cinco')).toEqual(['uno', 'dos', 'tres', 'cuatro']);
-  });
-
-  it('cuenta sólo letras y dígitos Unicode, como el mínimo de sugerencias del core', () => {
-    expect(contarAlfanumericos('pe')).toBe(2);
-    expect(contarAlfanumericos("o'r")).toBe(2);
-    expect(contarAlfanumericos('Yañez')).toBe(5);
-    expect(contarAlfanumericos('Ñú 1')).toBe(3);
-    expect(contarAlfanumericos(" ,.' ")).toBe(0);
-  });
-
+describe('número de chequera', () => {
   it('interpreta el número de chequera como facultad/tipo/serie o facultad/serie', () => {
-    expect(parsearNumeroChequera('1/2/14160')).toEqual({ facultadId: 1, tipoChequeraId: 2, chequeraSerieId: 14160 });
-    expect(parsearNumeroChequera(' 15 / 1509 ')).toEqual({ facultadId: 15, tipoChequeraId: null, chequeraSerieId: 1509 });
-    expect(parsearNumeroChequera('1-2-3')).toEqual({ facultadId: 1, tipoChequeraId: 2, chequeraSerieId: 3 });
+    expect(parsearNumeroChequera('1/2/14160')).toEqual({
+      facultadId: 1,
+      tipoChequeraId: 2,
+      chequeraSerieId: 14160,
+    });
+    expect(parsearNumeroChequera(' 15 / 1509 ')).toEqual({
+      facultadId: 15,
+      tipoChequeraId: null,
+      chequeraSerieId: 1509,
+    });
+    expect(parsearNumeroChequera('1-2-3')).toEqual({
+      facultadId: 1,
+      tipoChequeraId: 2,
+      chequeraSerieId: 3,
+    });
     expect(parsearNumeroChequera('14160')).toBeNull();
     expect(parsearNumeroChequera('1/a/3')).toBeNull();
   });
@@ -302,38 +334,50 @@ describe('búsqueda por nombre y número', () => {
   });
 });
 
-describe('ordenarSugerencias', () => {
-  const persona = (apellido: string, nombre: string) => ({ personaId: apellido, documentoId: 1, apellido, nombre });
-
-  it('prioriza apellidos que empiezan con el primer término, sin importar tildes', () => {
-    const ordenadas = ordenarSugerencias(
-      [persona('AGOSTINI', 'Martín Josué'), persona('DE MARTINO', 'Federico José'), persona('MARTÍNEZ', 'José Luis')],
-      ['marti', 'jos'],
-    );
-    expect(ordenadas.map((p) => p.apellido)).toEqual(['MARTÍNEZ', 'DE MARTINO', 'AGOSTINI']);
-  });
-
-  it('desempata con los demás términos contra el nombre', () => {
-    const ordenadas = ordenarSugerencias(
-      [persona('PEREZ', 'Ana'), persona('PEREZ', 'Juan'), persona('PEREZ', 'Maria Juana')],
-      ['perez', 'juan'],
-    );
-    expect(ordenadas.map((p) => p.nombre)).toEqual(['Juan', 'Maria Juana', 'Ana']);
-  });
-});
-
 describe('agruparPorProducto', () => {
   it('ordena productos por id y suma subtotales como el PDF de estado', () => {
     const productos = agruparPorProducto([
-      cuota({ chequeraCuotaId: 3, productoId: 3, cuotaId: 2, importe1: 386000, producto: { productoId: 3, nombre: 'Arancel' } }),
-      cuota({ chequeraCuotaId: 2, productoId: 3, cuotaId: 1, importe1: 331000, pagado: 1, chequeraPagos: [{ chequeraPagoId: 1, fecha: '2026-03-19T00:00:00Z', acreditacion: null, importe: 331000, tipoPagoId: 18, tipoPago: { tipoPagoId: 18, nombre: 'MercadoPago' } }] }),
+      cuota({
+        chequeraCuotaId: 3,
+        productoId: 3,
+        cuotaId: 2,
+        importe1: 386000,
+        producto: { productoId: 3, nombre: 'Arancel' },
+      }),
+      cuota({
+        chequeraCuotaId: 2,
+        productoId: 3,
+        cuotaId: 1,
+        importe1: 331000,
+        pagado: 1,
+        chequeraPagos: [
+          {
+            chequeraPagoId: 1,
+            fecha: '2026-03-19T00:00:00Z',
+            acreditacion: null,
+            importe: 331000,
+            tipoPagoId: 18,
+            tipoPago: { tipoPagoId: 18, nombre: 'MercadoPago' },
+          },
+        ],
+      }),
       cuota({ chequeraCuotaId: 4, productoId: 3, cuotaId: 3, importe1: 99, baja: 1 }),
-      cuota({ chequeraCuotaId: 1, productoId: 2, cuotaId: 1, importe1: 182000, producto: { productoId: 2, nombre: 'Matrícula' } }),
+      cuota({
+        chequeraCuotaId: 1,
+        productoId: 2,
+        cuotaId: 1,
+        importe1: 182000,
+        producto: { productoId: 2, nombre: 'Matrícula' },
+      }),
     ]);
     expect(productos.map((p) => p.nombre)).toEqual(['Matrícula', 'Arancel']);
     const arancel = productos[1];
     expect(arancel.cuotas.map((c) => c.numero)).toEqual(['1/3', '2/3', '3/3']);
     expect(arancel.cuotas[0]).toMatchObject({ pagado: 331000, referencia: 'MercadoPago' });
-    expect(arancel).toMatchObject({ subtotalProducto: 717000, subtotalPagado: 331000, subtotalDeuda: 386000 });
+    expect(arancel).toMatchObject({
+      subtotalProducto: 717000,
+      subtotalPagado: 331000,
+      subtotalDeuda: 386000,
+    });
   });
 });

@@ -6,7 +6,6 @@ import {
   EstadoCuota,
   Lectivo,
   Pagina,
-  PersonaSugerida,
 } from './chequeras.models';
 
 export const MENSAJE_SOPORTE = 'Si persiste, contacte a Tesorería.';
@@ -224,20 +223,6 @@ export function descargarBlob(blob: Blob, nombre: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** "apellido, nombre" → términos de búsqueda (sin comas, mínimo 2 letras, máximo 4). */
-export function terminosBusqueda(texto: string): string[] {
-  return texto
-    .split(/[\s,]+/)
-    .map((termino) => termino.trim())
-    .filter((termino) => termino.length >= 2)
-    .slice(0, 4);
-}
-
-/** Letras y dígitos Unicode: el core rechaza con 400 las consultas de sugerencias con menos de 3. */
-export function contarAlfanumericos(texto: string): number {
-  return texto.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
-}
-
 export interface NumeroChequera {
   facultadId: number;
   tipoChequeraId: number | null;
@@ -266,45 +251,6 @@ export function numeroChequera(chequera: {
   chequeraSerieId: number;
 }): string {
   return `${chequera.facultadId}/${chequera.tipoChequeraId}/${chequera.chequeraSerieId}`;
-}
-
-function normalizar(texto: string): string {
-  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-}
-
-function puntajeCampo(campo: string, termino: string): number {
-  if (campo.startsWith(termino)) {
-    return 0;
-  }
-  if (campo.split(/\s+/).some((palabra) => palabra.startsWith(termino))) {
-    return 1;
-  }
-  return campo.includes(termino) ? 2 : 3;
-}
-
-/**
- * Reordena las sugerencias por relevancia, por si el backend devuelve orden alfabético.
- * Primero van los apellidos que empiezan con el primer término, después los que tienen una
- * palabra que empieza así; los demás términos desempatan contra el nombre. Ignora tildes.
- */
-export function ordenarSugerencias(personas: PersonaSugerida[], terminos: string[]): PersonaSugerida[] {
-  const [primero = '', ...resto] = terminos.map(normalizar);
-  const puntaje = (persona: PersonaSugerida) => {
-    const apellido = normalizar(persona.apellido);
-    const nombre = normalizar(persona.nombre);
-    const principal = puntajeCampo(apellido, primero);
-    const secundario = resto.reduce((total, termino) => total + Math.min(puntajeCampo(nombre, termino), puntajeCampo(apellido, termino)), 0);
-    return principal * 100 + secundario;
-  };
-  return personas
-    .map((persona) => ({ persona, valor: puntaje(persona) }))
-    .sort(
-      (a, b) =>
-        a.valor - b.valor ||
-        a.persona.apellido.localeCompare(b.persona.apellido) ||
-        a.persona.nombre.localeCompare(b.persona.nombre),
-    )
-    .map(({ persona }) => persona);
 }
 
 export interface CuotaDelEstado {
@@ -363,7 +309,9 @@ export function agruparPorProducto(cuotas: CuotaConPagos[]): ProductoDelEstado[]
         .reduce((total, fila) => total + Math.max(fila.aPagar - fila.pagado, 0), 0);
       return {
         productoId,
-        nombre: ordenadas.find((cuota) => cuota.producto?.nombre)?.producto?.nombre ?? `Producto ${productoId}`,
+        nombre:
+          ordenadas.find((cuota) => cuota.producto?.nombre)?.producto?.nombre ??
+          `Producto ${productoId}`,
         cuotas: filas,
         subtotalProducto,
         subtotalPagado,
