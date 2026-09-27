@@ -21,12 +21,12 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - `@tesoreria/shared-api` - Servicios API, autenticación y modelos compartidos
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y buscadores (buscador-cuenta-contable, buscador-proveedor)
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona)
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-orden-compra` - Módulo de órdenes de compra con dashboard, creación multi-paso y flujo de aprobación (integrado en compras)
 
-La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos por documento.
+La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
 
 ## Requisitos
 
@@ -247,7 +247,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.23.0**
+Versión actual: **0.25.0**
 
 ## Licencia
 

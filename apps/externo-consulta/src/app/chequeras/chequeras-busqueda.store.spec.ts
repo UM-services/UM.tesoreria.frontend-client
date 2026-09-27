@@ -29,7 +29,10 @@ function chequera(parcial: Partial<ChequeraEstado> = {}): ChequeraEstado {
   };
 }
 
-const pagina = (content: ChequeraEstado[], totalElements = content.length): Pagina<ChequeraEstado> => ({
+const pagina = (
+  content: ChequeraEstado[],
+  totalElements = content.length,
+): Pagina<ChequeraEstado> => ({
   content,
   totalElements,
 });
@@ -41,7 +44,6 @@ describe('ChequerasBusquedaStore', () => {
     documentos: ReturnType<typeof vi.fn>;
     lectivos: ReturnType<typeof vi.fn>;
     chequerasPorUsuario: ReturnType<typeof vi.fn>;
-    sugerirPersonas: ReturnType<typeof vi.fn>;
     chequeraPorNumero: ReturnType<typeof vi.fn>;
     chequerasPorSerie: ReturnType<typeof vi.fn>;
   };
@@ -65,21 +67,51 @@ describe('ChequerasBusquedaStore', () => {
       ),
       lectivos: vi.fn().mockReturnValue(
         of([
-          { lectivoId: 31, nombre: '2027 - 2028', fechaInicio: '2027-03-15T00:00:00Z', fechaFinal: '2028-03-14T00:00:00Z' },
-          { lectivoId: 30, nombre: '2026 - 2027', fechaInicio: '2026-03-15T00:00:00Z', fechaFinal: '2027-03-14T00:00:00Z' },
+          {
+            lectivoId: 31,
+            nombre: '2027 - 2028',
+            fechaInicio: '2027-03-15T00:00:00Z',
+            fechaFinal: '2028-03-14T00:00:00Z',
+          },
+          {
+            lectivoId: 30,
+            nombre: '2026 - 2027',
+            fechaInicio: '2026-03-15T00:00:00Z',
+            fechaFinal: '2027-03-14T00:00:00Z',
+          },
         ]),
       ),
       chequerasPorUsuario: vi.fn().mockReturnValue(of(pagina([chequera()]))),
-      sugerirPersonas: vi.fn().mockReturnValue(
-        of([{ personaId: '28999111', documentoId: 5, apellido: 'PEREYRA', nombre: 'Ana' }]),
-      ),
-      chequeraPorNumero: vi.fn().mockReturnValue(
-        of({ facultadId: 1, tipoChequeraId: 2, chequeraSerieId: 100, personaId: 30123456, documentoId: 1, lectivoId: 31 }),
-      ),
+      chequeraPorNumero: vi
+        .fn()
+        .mockReturnValue(
+          of({
+            facultadId: 1,
+            tipoChequeraId: 2,
+            chequeraSerieId: 100,
+            personaId: 30123456,
+            documentoId: 1,
+            lectivoId: 31,
+          }),
+        ),
       chequerasPorSerie: vi.fn().mockReturnValue(
         of([
-          { facultadId: 1, tipoChequeraId: 2, chequeraSerieId: 100, personaId: 111, documentoId: 1, lectivoId: 30 },
-          { facultadId: 1, tipoChequeraId: 3, chequeraSerieId: 100, personaId: 222, documentoId: 1, lectivoId: 31 },
+          {
+            facultadId: 1,
+            tipoChequeraId: 2,
+            chequeraSerieId: 100,
+            personaId: 111,
+            documentoId: 1,
+            lectivoId: 30,
+          },
+          {
+            facultadId: 1,
+            tipoChequeraId: 3,
+            chequeraSerieId: 100,
+            personaId: 222,
+            documentoId: 1,
+            lectivoId: 31,
+          },
         ]),
       ),
     };
@@ -130,7 +162,9 @@ describe('ChequerasBusquedaStore', () => {
     });
 
     it('un error de carga muestra el status y no se trata como cero facultades', () => {
-      servicio.facultadesUsuario.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+      servicio.facultadesUsuario.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 500 })),
+      );
       store.cargarCatalogos();
       expect(store.catalogos()).toEqual({
         tipo: 'error',
@@ -239,7 +273,12 @@ describe('ChequerasBusquedaStore', () => {
       servicio.chequerasPorUsuario.mockReturnValue(
         of(
           pagina([
-            chequera({ chequeraId: 1, facultadId: 1, importeDeuda: 500, estadoDeuda: 'CON_DEUDA_VENCIDA' }),
+            chequera({
+              chequeraId: 1,
+              facultadId: 1,
+              importeDeuda: 500,
+              estadoDeuda: 'CON_DEUDA_VENCIDA',
+            }),
             chequera({ chequeraId: 2, facultadId: 2, facultad: 'Derecho' }),
           ]),
         ),
@@ -284,7 +323,9 @@ describe('ChequerasBusquedaStore', () => {
 
       const estado = store.busqueda();
       expect(servicio.chequerasPorUsuario).toHaveBeenLastCalledWith(7, 30, '30123456', 1, 1);
-      expect(estado.tipo === 'resultados' && estado.chequeras.map((c) => c.chequeraId)).toEqual([1, 2]);
+      expect(estado.tipo === 'resultados' && estado.chequeras.map((c) => c.chequeraId)).toEqual([
+        1, 2,
+      ]);
     });
 
     it('un error en "ver más" conserva los resultados ya cargados', () => {
@@ -304,77 +345,36 @@ describe('ChequerasBusquedaStore', () => {
     });
   });
 
-  describe('sugerencias por nombre', () => {
-    beforeEach(() => vi.useFakeTimers());
-    afterEach(() => vi.useRealTimers());
-
-    it('espera a que se deje de escribir y pide con los términos del nombre', () => {
-      store.cargarCatalogos();
-      store.escribirNombre('per');
-      store.escribirNombre('pereyra, an');
-      expect(servicio.sugerirPersonas).not.toHaveBeenCalled();
-
-      vi.advanceTimersByTime(300);
-
-      expect(servicio.sugerirPersonas).toHaveBeenCalledTimes(1);
-      expect(servicio.sugerirPersonas).toHaveBeenCalledWith(7, 'pereyra an', 8);
-      expect(store.sugerencias()).toEqual({
-        tipo: 'listo',
-        personas: [{ personaId: '28999111', documentoId: 5, apellido: 'PEREYRA', nombre: 'Ana' }],
-      });
-    });
-
-    it('no pide sugerencias con menos de 3 letras', () => {
-      store.escribirNombre('pe');
-      vi.advanceTimersByTime(300);
-      expect(servicio.sugerirPersonas).not.toHaveBeenCalled();
-      expect(store.sugerencias()).toEqual({ tipo: 'inactivo' });
-    });
-
-    it('no pide sugerencias si los términos que quedan tienen menos de 3 letras ("pe j")', () => {
-      store.escribirNombre('pe j');
-      vi.advanceTimersByTime(300);
-      expect(servicio.sugerirPersonas).not.toHaveBeenCalled();
-      expect(store.sugerencias()).toEqual({ tipo: 'inactivo' });
-    });
-
-    it('no cuenta apóstrofos ni signos para el mínimo ("o\'r")', () => {
-      store.escribirNombre("o'r");
-      vi.advanceTimersByTime(300);
-      expect(servicio.sugerirPersonas).not.toHaveBeenCalled();
-      expect(store.sugerencias()).toEqual({ tipo: 'inactivo' });
-    });
-
-    it('pide sugerencias con 3 letras aunque haya signos ("o\'ro")', () => {
-      store.escribirNombre("o'ro");
-      vi.advanceTimersByTime(300);
-      expect(servicio.sugerirPersonas).toHaveBeenCalledWith(7, "o'ro", 8);
-    });
-
-    it('un 400 del core en sugerencias muestra la lista vacía, no un error', () => {
-      servicio.sugerirPersonas.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400 })));
-      store.escribirNombre('perez');
-      vi.advanceTimersByTime(300);
-      expect(store.sugerencias()).toEqual({ tipo: 'listo', personas: [] });
-    });
-
-    it('un error en sugerencias no bloquea la búsqueda por documento', () => {
-      servicio.sugerirPersonas.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
-      store.escribirNombre('perez');
-      vi.advanceTimersByTime(300);
-      expect(store.sugerencias()).toEqual({ tipo: 'error' });
-    });
-
+  describe('selección de persona (ui-buscador-persona → fillPersona)', () => {
     it('elegir una persona completa documento y tipo y busca', () => {
       servicio.chequerasPorUsuario.mockReturnValue(new Subject<Pagina<ChequeraEstado>>());
       store.cargarCatalogos();
-      store.elegirPersona({ personaId: '28999111', documentoId: 5, apellido: 'PEREYRA', nombre: 'Ana' });
+      store.elegirPersona({
+        uniqueId: 12,
+        personaId: '28999111',
+        documentoId: 5,
+        apellido: 'PEREYRA',
+        nombre: 'Ana',
+      });
 
       expect(store.dni()).toBe('28999111');
       expect(store.documentoId()).toBe(5);
       expect(store.nombre()).toBe('PEREYRA, Ana');
-      expect(store.sugerencias()).toEqual({ tipo: 'inactivo' });
       expect(servicio.chequerasPorUsuario).toHaveBeenCalledWith(7, 30, '28999111', 5, 0);
+    });
+
+    it('elegir una persona con un tipo desconocido conserva el tipo del catálogo', () => {
+      store.cargarCatalogos();
+      servicio.chequerasPorUsuario.mockReturnValue(new Subject<Pagina<ChequeraEstado>>());
+      store.elegirPersona({
+        uniqueId: 13,
+        personaId: '27111222',
+        documentoId: 99,
+        apellido: 'GOMEZ',
+        nombre: 'Luis',
+      });
+
+      expect(store.documentoId()).toBe(1);
     });
 
     it('al llegar resultados muestra el titular en el campo de nombre', () => {
@@ -414,7 +414,9 @@ describe('ChequerasBusquedaStore', () => {
     it('rechaza facultades no asignadas sin consultar al backend', () => {
       store.numeroChequera.set('9/2/100');
       store.buscarPorNumero();
-      expect(store.errorNumero()).toBe('La chequera no pertenece a las facultades asignadas a su usuario.');
+      expect(store.errorNumero()).toBe(
+        'La chequera no pertenece a las facultades asignadas a su usuario.',
+      );
       expect(servicio.chequeraPorNumero).not.toHaveBeenCalled();
     });
 
@@ -425,7 +427,9 @@ describe('ChequerasBusquedaStore', () => {
     });
 
     it('un 400 del backend significa que la chequera no existe', () => {
-      servicio.chequeraPorNumero.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400 })));
+      servicio.chequeraPorNumero.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 400 })),
+      );
       store.numeroChequera.set('1/2/999');
       store.buscarPorNumero();
       expect(store.errorNumero()).toBe('No existe una chequera con ese número.');
@@ -433,7 +437,9 @@ describe('ChequerasBusquedaStore', () => {
     });
 
     it('limpia el error de número al buscar por documento', () => {
-      servicio.chequeraPorNumero.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400 })));
+      servicio.chequeraPorNumero.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 400 })),
+      );
       store.numeroChequera.set('1/2/999');
       store.buscarPorNumero();
       expect(store.errorNumero()).toBe('No existe una chequera con ese número.');
