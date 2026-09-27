@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, finalize, shareReplay, tap } from 'rxjs';
 import { LoginRequest, LoginResponse, ChangePasswordRequest } from './auth.models';
 import { API_URL } from './tokens';
 
@@ -14,6 +14,9 @@ export class AuthService {
   private readonly currentUserSubject = new BehaviorSubject<LoginResponse | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
+  private pendingUserRequest$: Observable<LoginResponse> | null = null;
+  private pendingUserId: number | null = null;
+
   public readonly currentUserSignal = signal<LoginResponse | null>(null);
   public readonly isLoggedInSignal = computed(() => !!this.currentUserSignal());
 
@@ -25,7 +28,10 @@ export class AuthService {
         const parsed = JSON.parse(storedUser);
         this.currentUserSubject.next(parsed);
         this.currentUserSignal.set(parsed);
-        if (!parsed.login && parsed.userId) {
+        if (parsed.userId) {
+          // El localStorage es editable por el usuario: la sesión se revalida
+          // siempre contra /me/:userId y los flags de acceso (administrador,
+          // usuarioExterno, ...) quedan determinados por el backend.
           this.getUser(parsed.userId).subscribe({ error: () => undefined });
         }
       } catch (e) {
@@ -44,19 +50,38 @@ export class AuthService {
   }
 
   public getUser(userId: number): Observable<LoginResponse> {
-    return this.http.get<LoginResponse>(`${this.apiUrl}/me/${userId}`).pipe(
-      tap((fullUser) => {
-        if (fullUser?.login) {
-          const current = this.currentUserValue;
-          const merged: LoginResponse = current
-            ? { ...current, ...fullUser }
-            : fullUser;
-          this.storage?.setItem('currentUser', JSON.stringify(merged));
-          this.currentUserSubject.next(merged);
-          this.currentUserSignal.set(merged);
-        }
-      }),
-    );
+    // Reutiliza la solicitud en curso: el constructor, el post-login y las
+    // guards de acceso deciden con una sola llamada a /me/:userId.
+    if (this.pendingUserRequest$ && this.pendingUserId === userId) {
+      return this.pendingUserRequest$;
+    }
+    const request$ = this.http
+      .get<LoginResponse>(`${this.apiUrl}/me/${userId}`)
+      .pipe(
+        tap((fullUser) => {
+          if (fullUser && (fullUser.login != null || fullUser.userId != null)) {
+            // /me no es emisor de tokens: algunos entornos devuelven un JWT de
+            // placeholder que invalidaría la sesión. El token real sólo lo fija
+            // el flujo de login/changePassword.
+            const { token: _omitToken, ...profile } = fullUser;
+            const current = this.currentUserValue;
+            const merged: LoginResponse = current
+              ? { ...current, ...profile }
+              : fullUser;
+            this.storage?.setItem('currentUser', JSON.stringify(merged));
+            this.currentUserSubject.next(merged);
+            this.currentUserSignal.set(merged);
+          }
+        }),
+        finalize(() => {
+          this.pendingUserRequest$ = null;
+          this.pendingUserId = null;
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    this.pendingUserRequest$ = request$;
+    this.pendingUserId = userId;
+    return request$;
   }
 
   public login(credentials: LoginRequest): Observable<LoginResponse> {
@@ -70,6 +95,11 @@ export class AuthService {
           this.storage?.setItem('currentUser', JSON.stringify(userWithLogin));
           this.currentUserSubject.next(userWithLogin);
           this.currentUserSignal.set(userWithLogin);
+          if (userWithLogin.userId != null) {
+            // Garantiza que los flags de acceso del perfil (/me/:userId)
+            // completen la sesión aunque /login devuelva sólo el token.
+            this.getUser(userWithLogin.userId).subscribe({ error: () => undefined });
+          }
         }
       }),
     );
