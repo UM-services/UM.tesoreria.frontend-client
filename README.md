@@ -247,7 +247,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.23.0**
+Versión actual: **0.24.0**
 
 ## Licencia
 

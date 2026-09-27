@@ -14,5 +14,6 @@ export class AppComponent {
     { label: 'Gastos', path: '/gastos' },
     { label: 'Proveedores', path: '/proveedores' },
     { label: 'Dependencias', path: '/dependencias' },
+    { label: 'Asignaciones', path: '/asignaciones' },
   ];
 }

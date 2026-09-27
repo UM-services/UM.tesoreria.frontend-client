@@ -88,8 +88,9 @@ sequenceDiagram
     Login->>AuthService: login(login, password)
     AuthService->>AuthInterceptor: POST /auth/login
     AuthInterceptor->>API: Solicitud con token si existe
-    API-->>AuthService: LoginResponse {token, userId, login, nombre, sede}
-    AuthService-->>Login: Token almacenado
+    API-->>AuthService: LoginResponse {token, userId, login, nombre, sede, administrador, usuarioExterno, ...}
+    AuthService->>API: GET /auth/me/{userId} (revalidar flags de acceso)
+    AuthService-->>Login: Sesión almacenada con flags del backend
     Login->>AuthGuard: Navegar a ruta protegida
     AuthGuard->>AuthGuard: Verificar token
     AuthGuard-->>User: Acceso permitido
@@ -99,7 +100,7 @@ sequenceDiagram
     ErrorInterceptor->>AuthService: logout()
     ErrorInterceptor-->>User: Navegar a /login
     User->>Cambio: Abrir Cambiar clave desde ui-shell
-    Cambio->>AuthService: getUser(userId) si la sesión no tiene login
+    Cambio->>AuthService: getUser(userId) para completar la sesión
     AuthService->>API: GET /auth/me/{userId}
     API-->>AuthService: LoginResponse con login
     Cambio-->>User: Sesión completada con login
@@ -110,6 +111,21 @@ sequenceDiagram
     AuthService-->>Cambio: Sesión y storage fusionados con la respuesta
     Cambio-->>User: Mensaje de éxito y cierre automático
 ```
+
+### Guards de acceso por módulo
+
+`@tesoreria/shared-api` exporta, además de `authGuard` (sólo sesión), guards que leen
+los flags de `LoginResponse` (`esAdministrador` / `esUsuarioExterno` en `auth.flags.ts`):
+
+- `administradorGuard`: habilita las rutas del app **administrador** sólo con `administrador = 1`.
+- `usuarioInternoGuard`: bloquea los módulos internos cuando `usuarioExterno = 1`,
+  que sólo debe operar en **externo-consulta**.
+
+Ambas redirigen a la ruta pública `sin-acceso` (`NoAccesoComponent` de `@tesoreria/ui-layout`),
+que cada app registra antes del wildcard para evitar bucles con `/login`. Como el `localStorage`
+es editable por el usuario, la sesión se revalida contra `GET /auth/me/{userId}` al arrancar la
+app y tras el login: el backend es la fuente de verdad y debe denegar 401/403 en las APIs que
+correspondan (`errorInterceptor` expulsa la sesión en ese caso).
 
 ## Estructura de Módulos - Compras
 
@@ -235,6 +251,16 @@ classDiagram
         +string nombre
         +string sede
         +number geograficaId
+        +number administrador
+        +number usuarioExterno
+        +number activo
+        +number imprimeChequera
+        +number numeroOpManual
+        +number habilitaOpEliminacion
+        +number eliminaChequera
+        +number modificaChequera
+        +string lastLog
+        +string googleMail
     }
 
     class ChangePasswordRequest {
