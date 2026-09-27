@@ -3,8 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   catchError,
-  debounceTime,
-  distinctUntilChanged,
   forkJoin,
   map,
   Observable,
@@ -15,6 +13,7 @@ import {
   throwError,
 } from 'rxjs';
 import { AuthService } from '@tesoreria/shared-api';
+import { PersonaBusqueda } from '@tesoreria/ui-layout';
 import { environment } from '../../environments/environment';
 import {
   ChequeraEstado,
@@ -22,27 +21,18 @@ import {
   Documento,
   FacultadAsignada,
   Lectivo,
-  PersonaSugerida,
 } from './chequeras.models';
 import { ChequerasService } from './chequeras.service';
 import {
-  contarAlfanumericos,
   lectivoVigente,
   mensajeError,
   ordenarChequeras,
-  ordenarSugerencias,
   parsearNumeroChequera,
   resumenDeuda,
   soloDigitos,
-  terminosBusqueda,
   tieneDeuda,
   totalElementos,
 } from './chequeras.utils';
-
-/** Mínimo de letras o dígitos del nombre antes de pedir sugerencias (el core responde 400 con menos). */
-export const MINIMO_SUGERENCIA = 3;
-const DEMORA_SUGERENCIA_MS = 300;
-const MAXIMO_SUGERENCIAS = 8;
 
 /*
  * Estado de la vista:
@@ -56,6 +46,9 @@ const MAXIMO_SUGERENCIAS = 8;
  *                                       └──error──> error
  *   Cada búsqueda nueva cancela la anterior (switchMap) y los errores se convierten en estado
  *   dentro del flujo interno, así el flujo externo nunca muere.
+ *
+ *   La búsqueda de personas por palabras vive en `ui-buscador-persona` (@tesoreria/ui-layout);
+ *   el store sólo consume la persona elegida vía `elegirPersona`.
  */
 
 export type EstadoCatalogos =
@@ -80,12 +73,6 @@ export type EstadoBusqueda =
     };
 
 export type VistaResultados = 'todas' | 'conDeuda';
-
-export type EstadoSugerencias =
-  | { tipo: 'inactivo' }
-  | { tipo: 'cargando' }
-  | { tipo: 'listo'; personas: PersonaSugerida[] }
-  | { tipo: 'error' };
 
 interface Criterio {
   dni: string;
@@ -123,8 +110,6 @@ export class ChequerasBusquedaStore {
   readonly busqueda = signal<EstadoBusqueda>({ tipo: 'inicial' });
 
   readonly nombre = signal('');
-  readonly sugerencias = signal<EstadoSugerencias>({ tipo: 'inactivo' });
-  private readonly textoNombre$ = new Subject<string>();
 
   readonly numeroChequera = signal('');
   readonly buscandoNumero = signal(false);
@@ -150,9 +135,10 @@ export class ChequerasBusquedaStore {
       return [];
     }
     const facultadId = this.facultadFiltro();
-    const lista = facultadId === null
-      ? estado.chequeras
-      : estado.chequeras.filter((chequera) => chequera.facultadId === facultadId);
+    const lista =
+      facultadId === null
+        ? estado.chequeras
+        : estado.chequeras.filter((chequera) => chequera.facultadId === facultadId);
     return ordenarChequeras(lista);
   });
 
@@ -191,16 +177,6 @@ export class ChequerasBusquedaStore {
           }
         }
       });
-
-    this.textoNombre$
-      .pipe(
-        debounceTime(DEMORA_SUGERENCIA_MS),
-        map((texto) => texto.trim()),
-        distinctUntilChanged(),
-        switchMap((texto) => this.sugerir(texto)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((estado) => this.sugerencias.set(estado));
   }
 
   cargarCatalogos(): void {
@@ -219,7 +195,9 @@ export class ChequerasBusquedaStore {
         .pipe(catchError((error: unknown) => fallarCatalogo(error, 'cargar sus facultades'))),
       documentos: this.service
         .documentos()
-        .pipe(catchError((error: unknown) => fallarCatalogo(error, 'cargar los tipos de documento'))),
+        .pipe(
+          catchError((error: unknown) => fallarCatalogo(error, 'cargar los tipos de documento')),
+        ),
       lectivos: this.service
         .lectivos()
         .pipe(catchError((error: unknown) => fallarCatalogo(error, 'cargar los lectivos'))),
@@ -240,7 +218,10 @@ export class ChequerasBusquedaStore {
         error: (error: unknown) => {
           this.catalogos.set({
             tipo: 'error',
-            mensaje: error instanceof ErrorDeCatalogo ? error.message : mensajeError(error, 'cargar la consulta'),
+            mensaje:
+              error instanceof ErrorDeCatalogo
+                ? error.message
+                : mensajeError(error, 'cargar la consulta'),
           });
         },
       });
@@ -254,25 +235,16 @@ export class ChequerasBusquedaStore {
     this.dni.set(dni);
   }
 
-  escribirNombre(texto: string): void {
-    this.nombre.set(texto);
-    if (contarAlfanumericos(terminosBusqueda(texto).join(' ')) < MINIMO_SUGERENCIA) {
-      this.sugerencias.set({ tipo: 'inactivo' });
-    }
-    this.textoNombre$.next(texto);
-  }
-
-  cerrarSugerencias(): void {
-    this.sugerencias.set({ tipo: 'inactivo' });
-  }
-
-  elegirPersona(persona: PersonaSugerida): void {
+  /**
+   * Equivalente al `fillPersona` del VB6: completa documento, tipo y nombre a partir de la
+   * persona devuelta por `ui-buscador-persona` y lanza la consulta.
+   */
+  elegirPersona(persona: PersonaBusqueda): void {
     this.dni.set(soloDigitos(persona.personaId));
     if (this.documentos().some((documento) => documento.documentoId === persona.documentoId)) {
       this.documentoId.set(persona.documentoId);
     }
     this.nombre.set([persona.apellido, persona.nombre].filter(Boolean).join(', '));
-    this.cerrarSugerencias();
     this.buscar();
   }
 
@@ -292,7 +264,11 @@ export class ChequerasBusquedaStore {
         ? this.service
             .chequerasPorSerie(numero.facultadId, numero.chequeraSerieId)
             .pipe(map((lista) => [...lista].sort((a, b) => b.lectivoId - a.lectivoId)[0]))
-        : this.service.chequeraPorNumero(numero.facultadId, numero.tipoChequeraId, numero.chequeraSerieId);
+        : this.service.chequeraPorNumero(
+            numero.facultadId,
+            numero.tipoChequeraId,
+            numero.chequeraSerieId,
+          );
     this.buscandoNumero.set(true);
     pedido$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (chequera) => {
@@ -324,30 +300,6 @@ export class ChequerasBusquedaStore {
         );
       },
     });
-  }
-
-  private sugerir(texto: string): Observable<EstadoSugerencias> {
-    const terminos = terminosBusqueda(texto);
-    const consulta = terminos.join(' ');
-    const userId = this.authService.currentUserSignal()?.userId;
-    if (contarAlfanumericos(consulta) < MINIMO_SUGERENCIA || userId == null) {
-      return of({ tipo: 'inactivo' });
-    }
-    return this.service.sugerirPersonas(userId, consulta, MAXIMO_SUGERENCIAS).pipe(
-      map((personas): EstadoSugerencias => ({
-        tipo: 'listo',
-        personas: ordenarSugerencias(personas, terminos).slice(0, MAXIMO_SUGERENCIAS),
-      })),
-      catchError((error: unknown) => {
-        registrarError('persona/sugerencias/usuario/:userId', error);
-        // 400: la consulta no alcanza el mínimo del core; se trata como "sin coincidencias".
-        if (error instanceof HttpErrorResponse && error.status === 400) {
-          return of<EstadoSugerencias>({ tipo: 'listo', personas: [] });
-        }
-        return of<EstadoSugerencias>({ tipo: 'error' });
-      }),
-      startWith<EstadoSugerencias>({ tipo: 'cargando' }),
-    );
   }
 
   buscar(): void {
@@ -385,7 +337,10 @@ export class ChequerasBusquedaStore {
   private ejecutar(pedido: Pedido): Observable<EstadoBusqueda> {
     const userId = this.authService.currentUserSignal()?.userId;
     if (userId == null) {
-      return of({ tipo: 'error', mensaje: 'No se pudo identificar su usuario. Vuelva a iniciar sesión.' });
+      return of({
+        tipo: 'error',
+        mensaje: 'No se pudo identificar su usuario. Vuelva a iniciar sesión.',
+      });
     }
     const { dni, documentoId, lectivoId } = pedido.criterio;
     const pedido$ = this.service
@@ -421,7 +376,11 @@ export class ChequerasBusquedaStore {
     }
     const estado = this.busqueda();
     if (pedido.pagina > 0 && estado.tipo === 'resultados') {
-      return { ...estado, cargandoMas: false, errorMas: mensajeError(error, 'cargar más chequeras') };
+      return {
+        ...estado,
+        cargandoMas: false,
+        errorMas: mensajeError(error, 'cargar más chequeras'),
+      };
     }
     return { tipo: 'error', mensaje: mensajeError(error, 'consultar las chequeras') };
   }

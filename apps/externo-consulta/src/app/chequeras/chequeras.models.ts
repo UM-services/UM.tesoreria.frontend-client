@@ -21,14 +21,6 @@ export interface Lectivo {
   fechaFinal?: string | null;
 }
 
-/** Sugerencia de persona para el autocompletado (sólo los campos que se muestran). */
-export interface PersonaSugerida {
-  personaId: string;
-  documentoId: number;
-  apellido: string;
-  nombre: string;
-}
-
 /** Campos usados de `chequeraSerie/unique/...` y `chequeraSerie/bynumber/...`. */
 export interface ChequeraPorNumero {
   facultadId: number;

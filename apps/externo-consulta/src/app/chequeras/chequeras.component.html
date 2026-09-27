@@ -84,76 +84,12 @@
                 }
               </select>
             </div>
-            <div>
-              <label for="personaNombre" class="mb-1.5 block text-xs font-bold text-um-text"
-                >Apellido y nombre</label
-              >
-              <div class="relative">
-                <input
-                  id="personaNombre"
-                  type="text"
-                  role="combobox"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-controls="sugerencias-personas"
-                  [attr.aria-expanded]="listaAbierta()"
-                  [attr.aria-activedescendant]="activa() >= 0 ? 'sugerencia-' + activa() : null"
-                  placeholder="Escriba al menos 3 letras del apellido"
-                  [value]="store.nombre()"
-                  (input)="alEscribirNombre($event)"
-                  (keydown)="alPresionarEnNombre($event)"
-                  (blur)="store.cerrarSugerencias()"
-                  class="w-full rounded border border-um-border-strong bg-white px-3 py-2.5 text-sm focus:border-um-primary focus:outline-none focus:ring-2 focus:ring-um-primary/20"
-                />
-                @if (store.sugerencias().tipo === 'cargando') {
-                  <span class="absolute right-3 top-3 text-xs text-um-muted">Buscando...</span>
-                }
-                @if (listaAbierta()) {
-                  <ul
-                    id="sugerencias-personas"
-                    role="listbox"
-                    aria-label="Personas sugeridas"
-                    class="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded border border-um-border-strong bg-white py-1 shadow-lg"
-                  >
-                    @for (
-                      persona of personasSugeridas();
-                      track persona.personaId + '-' + persona.documentoId;
-                      let i = $index
-                    ) {
-                      <li
-                        [id]="'sugerencia-' + i"
-                        role="option"
-                        [attr.aria-selected]="i === activa()"
-                        (mousedown)="$event.preventDefault(); elegir(persona)"
-                        [class.bg-um-selected]="i === activa()"
-                        class="flex cursor-pointer items-center justify-between gap-4 px-3 py-2 text-sm hover:bg-um-selected"
-                      >
-                        <span class="font-medium"
-                          >{{ persona.apellido }}, {{ persona.nombre }}</span
-                        >
-                        <span class="whitespace-nowrap text-xs tabular-nums text-um-muted"
-                          >{{ tipoDocumento(persona.documentoId) }} {{ persona.personaId }}</span
-                        >
-                      </li>
-                    } @empty {
-                      <li
-                        role="option"
-                        aria-disabled="true"
-                        aria-selected="false"
-                        class="px-3 py-2 text-sm text-um-muted"
-                      >
-                        Sin coincidencias
-                      </li>
-                    }
-                  </ul>
-                }
-                @if (store.sugerencias().tipo === 'error') {
-                  <p class="mt-1 text-xs text-red-700" role="alert">
-                    No se pudieron cargar sugerencias. Busque por número de documento.
-                  </p>
-                }
-              </div>
-            </div>
+            <ui-buscador-persona
+              label="Apellido y nombre"
+              inputId="personaNombre"
+              [(texto)]="store.nombre"
+              (seleccionada)="store.elegirPersona($event)"
+            />
             <button
               type="submit"
               [disabled]="!store.puedeBuscar()"

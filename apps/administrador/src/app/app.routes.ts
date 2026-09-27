@@ -1,5 +1,11 @@
 import { Route } from '@angular/router';
-import { authGuard } from '@tesoreria/shared-api';
+import {
+  administradorGuard,
+  authGuard,
+  SIN_ACCESO_RUTA,
+  usuarioInternoGuard,
+} from '@tesoreria/shared-api';
+import { NoAccesoComponent } from '@tesoreria/ui-layout';
 import { DependenciasComponent } from './dependencias/dependencias';
 
 export const appRoutes: Route[] = [
@@ -8,19 +14,30 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('@tesoreria/ui-auth').then(m => m.LoginComponent),
   },
   {
+    // Ruta pública de las guards de acceso; debe ir antes del wildcard.
+    path: SIN_ACCESO_RUTA,
+    component: NoAccesoComponent,
+  },
+  {
     path: 'dependencias',
     component: DependenciasComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    path: 'asignaciones',
+    loadComponent: () =>
+      import('./asignacion-usuarios/asignacion-usuarios').then(m => m.AsignacionUsuariosComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
     path: 'proveedores',
     loadComponent: () => import('@tesoreria/feature-proveedores').then(m => m.ProveedoresComponent),
-    canActivate: [authGuard],
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
     path: 'gastos',
     loadComponent: () => import('@tesoreria/feature-gastos').then(m => m.GastosComponent),
-    canActivate: [authGuard],
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
     path: '',

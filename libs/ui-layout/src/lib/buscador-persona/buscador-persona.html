@@ -1,0 +1,72 @@
+@if (label()) {
+  <label [attr.for]="inputId()" class="um-label">{{ label() }}</label>
+}
+<div class="relative">
+  <input
+    #entrada
+    type="text"
+    role="combobox"
+    autocomplete="off"
+    aria-autocomplete="list"
+    [attr.id]="inputId()"
+    [attr.aria-controls]="listaAbierta() ? listaId() : null"
+    [attr.aria-expanded]="listaAbierta()"
+    [attr.aria-activedescendant]="activa() >= 0 ? opcionId(activa()) : null"
+    [placeholder]="placeholder()"
+    [disabled]="disabled()"
+    (input)="escribir($event)"
+    (keydown)="alPresionarTecla($event)"
+    (blur)="cerrar()"
+    class="um-input"
+  />
+  @if (sugerencias().tipo === 'cargando') {
+    <span class="absolute right-3 top-3 text-xs text-um-muted">Buscando...</span>
+  }
+  @if (listaAbierta()) {
+    <ul
+      [id]="listaId()"
+      role="listbox"
+      aria-label="Personas encontradas"
+      class="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded border border-um-border-strong bg-white py-1 shadow-lg"
+    >
+      @for (
+        persona of personas();
+        track persona.personaId + '.' + persona.documentoId;
+        let i = $index
+      ) {
+        <li
+          [id]="opcionId(i)"
+          role="option"
+          [attr.aria-selected]="i === activa()"
+          (mousedown)="$event.preventDefault(); elegir(persona)"
+          [class.bg-um-selected]="i === activa()"
+          class="flex cursor-pointer items-center justify-between gap-4 px-3 py-2 text-sm hover:bg-um-selected"
+        >
+          <span class="font-medium">{{ persona.apellido }}, {{ persona.nombre }}</span>
+          <span class="whitespace-nowrap text-xs tabular-nums text-um-muted"
+            >{{ persona.personaId }}.{{ persona.documentoId }}</span
+          >
+        </li>
+      } @empty {
+        <li
+          role="option"
+          aria-disabled="true"
+          aria-selected="false"
+          class="px-3 py-2 text-sm text-um-muted"
+        >
+          Sin coincidencias
+        </li>
+      }
+      @if (mostroTope()) {
+        <li role="presentation" class="border-t border-um-border px-3 py-1.5 text-xs text-um-muted">
+          Se muestran los {{ limite() }} resultados más relevantes. Refine la búsqueda.
+        </li>
+      }
+    </ul>
+  }
+  @if (sugerencias().tipo === 'error') {
+    <p class="mt-1 text-xs text-red-700" role="alert">
+      No se pudieron cargar las personas. Puede buscar directamente por número de documento.
+    </p>
+  }
+</div>

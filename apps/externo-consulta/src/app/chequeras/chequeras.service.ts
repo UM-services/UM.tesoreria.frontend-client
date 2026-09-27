@@ -15,7 +15,6 @@ import {
   FacultadAsignada,
   Lectivo,
   Pagina,
-  PersonaSugerida,
 } from './chequeras.models';
 import { normalizarLista } from './chequeras.utils';
 
@@ -47,23 +46,6 @@ export class ChequerasService {
       .pipe(map((data) => normalizarLista<Lectivo>(data)));
   }
 
-  /** Sugerencias por apellido/nombre, sólo de personas con chequeras en las facultades del usuario. */
-  sugerirPersonas(userId: number, texto: string, limite = 8): Observable<PersonaSugerida[]> {
-    const params = new HttpParams().set('q', texto).set('limite', limite);
-    return this.http
-      .get<unknown>(`${this.coreBaseUrl}/persona/sugerencias/usuario/${userId}`, { params })
-      .pipe(
-        map((data) =>
-          normalizarLista<Record<string, unknown>>(data).map((persona) => ({
-            personaId: String(persona['personaId'] ?? ''),
-            documentoId: Number(persona['documentoId']),
-            apellido: String(persona['apellido'] ?? ''),
-            nombre: String(persona['nombre'] ?? ''),
-          })),
-        ),
-      );
-  }
-
   chequeraPorNumero(
     facultadId: number,
     tipoChequeraId: number,
@@ -76,7 +58,9 @@ export class ChequerasService {
 
   chequerasPorSerie(facultadId: number, chequeraSerieId: number): Observable<ChequeraPorNumero[]> {
     return this.http
-      .get<ChequeraPorNumero[]>(`${this.coreBaseUrl}/chequeraSerie/bynumber/${facultadId}/${chequeraSerieId}`)
+      .get<
+        ChequeraPorNumero[]
+      >(`${this.coreBaseUrl}/chequeraSerie/bynumber/${facultadId}/${chequeraSerieId}`)
       .pipe(map((data) => normalizarLista<ChequeraPorNumero>(data)));
   }
 
@@ -101,9 +85,9 @@ export class ChequerasService {
   cuotasConPagos(chequera: ChequeraEstado): Observable<CuotaConPagos[]> {
     const { facultadId, tipoChequeraId, chequeraSerieId, alternativaId } = chequera;
     return this.http
-      .get<CuotaConPagos[]>(
-        `${this.coreBaseUrl}/chequera/cuotas/pagos/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}`,
-      )
+      .get<
+        CuotaConPagos[]
+      >(`${this.coreBaseUrl}/chequera/cuotas/pagos/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}`)
       .pipe(map((data) => normalizarLista<CuotaConPagos>(data)));
   }
 
