@@ -249,7 +249,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.26.1**
+Versión actual: **0.26.2**
 
 ## Licencia
 
