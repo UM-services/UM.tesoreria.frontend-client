@@ -19,7 +19,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
 
       - name: Build all apps with Nx
         run: npx nx run-many -t build --configuration=production
@@ -64,6 +64,7 @@ jobs:
           images: ${{ secrets.DOCKER_USERNAME }}/um.tesoreria.${{ matrix.app }}-client
           tags: |
             type=sha
+            type=raw,value=${{ github.sha }}
             latest
 
       - name: Set up Docker Buildx
