@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.26.2] - 2026-09-28
+
+### Changed
+
+- ci: `docker-publish.yml` instala las dependencias con `npm ci` en lugar de `npm install --legacy-peer-deps`, siguiendo la política del repositorio de instalar desde el lockfile; era el último workflow que usaba `npm install` (`ci.yml`, `deploy-develop.yml`, `deploy-staging.yml` y `generate-docs.yml` ya usaban `npm ci`).
+- ci: Las imágenes de `docker-publish.yml` se etiquetan ahora también con el SHA completo del commit (`type=raw,value=${{ github.sha }}`) además de la etiqueta corta `type=sha` y `latest`, para poder fijar el despliegue a una imagen exacta.
+- docs: README registra la versión actual **0.26.2** y `AGENTS.md` actualiza su nota de instalación, que afirmaba que los workflows de CI usaban `npm install`.
+
 ## [0.26.1] - 2026-09-28
 
 ### Fixed

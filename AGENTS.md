@@ -3,7 +3,7 @@
 ## Workspace
 
 - This is an Nx 22.7.1 monorepo using Angular 21, TypeScript 5.9, Vitest 4, and npm 11.6.2; use Node.js 20+.
-- Install from the lockfile with `npm ci` (the CI workflows currently use `npm install`); do not use another package manager.
+- Install from the lockfile with `npm ci`; do not use another package manager.
 - Applications live under `apps/`: `compras`, `pagos`, `chequeras`, `administrador`, `contable`, `contratados`, `guarani`, and `externo-consulta`.
 - Shared libraries live under `libs/`: `shared-api`, `ui-auth/ui-auth`, `ui-layout`, `feature-proveedores`, `feature-gastos`, and `feature-orden-compra`.
 - Use the configured `@tesoreria/*` path aliases for shared libraries and import public symbols through each library's `src/index.ts`. Nx ESLint enforces module boundaries using project tags (`type:*` and `scope:*`) and dependency direction rules.
