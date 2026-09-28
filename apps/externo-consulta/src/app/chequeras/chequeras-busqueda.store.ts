@@ -21,6 +21,7 @@ import {
   Documento,
   FacultadAsignada,
   Lectivo,
+  SedeAsignada,
 } from './chequeras.models';
 import { ChequerasService } from './chequeras.service';
 import {
@@ -105,6 +106,7 @@ export class ChequerasBusquedaStore {
 
   readonly catalogos = signal<EstadoCatalogos>({ tipo: 'cargando' });
   readonly facultades = signal<FacultadAsignada[]>([]);
+  readonly sedes = signal<SedeAsignada[]>([]);
   readonly documentos = signal<Documento[]>([]);
   readonly lectivos = signal<Lectivo[]>([]);
 
@@ -135,6 +137,26 @@ export class ChequerasBusquedaStore {
     () => this.formularioCompleto() && this.busqueda().tipo !== 'buscando',
   );
 
+  /**
+   * Red de seguridad local: descarta filas de facultades o sedes no asignadas aunque la API las
+   * devuelva. La clase de chequera no puede validarse acá (la fila trae tipoChequeraId, no la
+   * clase); ese tramo lo garantizan los tests de BD del core sobre `/asignaciones`.
+   */
+  readonly chequerasAsignadas = computed(() => {
+    const estado = this.busqueda();
+    if (estado.tipo !== 'resultados') {
+      return [];
+    }
+    const facultades = new Set(this.facultades().map((facultad) => facultad.facultadId));
+    const sedes = new Set(this.sedes().map((sede) => sede.geograficaId));
+    return estado.chequeras.filter(
+      (chequera) =>
+        facultades.has(chequera.facultadId) &&
+        chequera.geograficaId !== null &&
+        sedes.has(chequera.geograficaId),
+    );
+  });
+
   /** Chequeras de la facultad elegida (filtro local: la API ya limita a las asignaciones del usuario). */
   readonly chequerasFiltradas = computed(() => {
     const estado = this.busqueda();
@@ -144,8 +166,8 @@ export class ChequerasBusquedaStore {
     const facultadId = this.facultadFiltro();
     const lista =
       facultadId === null
-        ? estado.chequeras
-        : estado.chequeras.filter((chequera) => chequera.facultadId === facultadId);
+        ? this.chequerasAsignadas()
+        : this.chequerasAsignadas().filter((chequera) => chequera.facultadId === facultadId);
     return ordenarChequeras(lista);
   });
 
@@ -224,6 +246,7 @@ export class ChequerasBusquedaStore {
           const unicasSedes = sinDuplicados(sedes, (sede) => sede.geograficaId);
           const unicasClases = sinDuplicados(clases, (clase) => clase.claseChequeraId);
           this.facultades.set(unicasFacultades);
+          this.sedes.set(unicasSedes);
           this.documentos.set(documentos);
           this.lectivos.set(lectivos);
           this.documentoId.set(documentoPorDefecto(documentos));

@@ -98,7 +98,7 @@ curl -s -H "Authorization: Bearer $TOKEN" $BASE/chequera/cuotas/pagos/<facultadI
 curl -s -H "Authorization: Bearer $TOKEN" $BASE/chequeraCuota/deuda/<facultadId>/<tipoChequeraId>/<chequeraSerieId>
 ```
 
-El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) lo aplica el core con el `userId` que manda el frontend, pero hoy nadie verifica que ese `userId` sea el de la sesión. No es control de acceso: la vista no debe exponerse a usuarios externos reales hasta que el gateway vincule el `userId` a la sesión.
+El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) lo aplica el core con el `userId` que manda el frontend, pero hoy nadie verifica que ese `userId` sea el de la sesión. El frontend suma una red de seguridad local: el store descarta de la vista las chequeras cuya facultad o sede no estén entre los catálogos cargados con el usuario de la sesión (la clase no puede validarse en el cliente). Aun así no es control de acceso: la vista no debe exponerse a usuarios externos reales hasta que el gateway vincule el `userId` a la sesión.
 
 ## Arquitectura
 
@@ -249,7 +249,7 @@ Aplicaciones disponibles:
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.26.0**
+Versión actual: **0.26.1**
 
 ## Licencia
 

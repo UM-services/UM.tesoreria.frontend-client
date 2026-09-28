@@ -335,6 +335,47 @@ describe('ChequerasBusquedaStore', () => {
       expect(servicio.chequerasPorUsuario).toHaveBeenCalledTimes(1);
     });
 
+    it('oculta chequeras de facultades o sedes no asignadas aunque la API las devuelva', () => {
+      // Red de seguridad: si el backend filtrara mal, la vista no muestra opciones que el
+      // usuario no tiene habilitadas (facultad 99, sede 5 y chequera sin sede).
+      servicio.chequerasPorUsuario.mockReturnValue(
+        of(
+          pagina([
+            chequera({ chequeraId: 1 }),
+            chequera({ chequeraId: 2, facultadId: 99, facultad: 'Lejana' }),
+            chequera({ chequeraId: 3, geograficaId: 5 }),
+            chequera({ chequeraId: 4, geograficaId: null }),
+          ]),
+        ),
+      );
+      listoParaBuscar();
+      store.buscar();
+
+      expect(store.chequerasVisibles().map((c) => c.chequeraId)).toEqual([1]);
+    });
+
+    it('la vista con deuda y el resumen usan sólo las chequeras asignadas', () => {
+      servicio.chequerasPorUsuario.mockReturnValue(
+        of(
+          pagina([
+            chequera({ chequeraId: 1, importeDeuda: 100, estadoDeuda: 'CON_DEUDA_VENCIDA' }),
+            chequera({
+              chequeraId: 2,
+              facultadId: 99,
+              importeDeuda: 900,
+              estadoDeuda: 'CON_DEUDA_VENCIDA',
+            }),
+          ]),
+        ),
+      );
+      listoParaBuscar();
+      store.buscar();
+      store.vista.set('conDeuda');
+
+      expect(store.chequerasVisibles().map((c) => c.chequeraId)).toEqual([1]);
+      expect(store.resumen()).toEqual({ deudaTotal: 100, conDeuda: 1 });
+    });
+
     it('la vista "con deuda" deja sólo las chequeras con deuda vencida', () => {
       store.vista.set('conDeuda');
       expect(store.chequerasVisibles().map((c) => c.chequeraId)).toEqual([1]);

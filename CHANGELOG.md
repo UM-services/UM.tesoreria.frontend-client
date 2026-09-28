@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.26.1] - 2026-09-28
+
+### Fixed
+
+- fix(externo-consulta): Red de seguridad local en `/chequeras`: el nuevo computed `chequerasAsignadas` de `ChequerasBusquedaStore` descarta las filas de facultades o sedes geográficas no asignadas —incluidas las que llegan con `geograficaId` nulo— aunque el core las devuelva, y `chequerasFiltradas` (de la que derivan `chequerasVisibles`, `resumen` y `titular`) se construye sobre esa lista; el catálogo `sedes` queda expuesto como signal para poder validar esa dimensión. La clase de chequera no puede validarse en el frontend (la fila trae `tipoChequeraId`, no la clase), por lo que ese tramo sigue garantizado por el filtro del core sobre `/asignaciones`.
+- test: Dos specs nuevas en `ChequerasBusquedaStore`: oculta chequeras de facultades o sedes no asignadas aunque la API las devuelva, y la vista "con deuda" y el `resumen` usan sólo las chequeras asignadas.
+
+### Changed
+
+- docs: README documenta la red de seguridad local de `/chequeras` junto a la nota del filtro por asignaciones y registra la versión actual **0.26.1**.
+
 ## [0.26.0] - 2026-09-28
 
 ### Added
