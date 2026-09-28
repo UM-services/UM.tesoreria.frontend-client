@@ -40,9 +40,10 @@
           </button>
         </div>
       }
-      @case ('sinFacultades') {
+      @case ('sinAsignaciones') {
         <p class="border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-um-text">
-          Su usuario no tiene facultades asignadas para consultar chequeras. Contacte a Tesorería.
+          Su usuario no tiene {{ nombreDimension() }} asignadas para consultar chequeras. Contacte a
+          Tesorería.
         </p>
       }
       @case ('listo') {
