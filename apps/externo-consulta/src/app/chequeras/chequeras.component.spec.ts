@@ -51,6 +51,20 @@ describe('ChequerasComponent', () => {
   ) => {
     servicio = {
       facultadesUsuario: vi.fn().mockReturnValue(of(facultades)),
+      sedesUsuario: vi
+        .fn()
+        .mockReturnValue(
+          of([{ userId: 7, geograficaId: 1, geografica: { geograficaId: 1, nombre: 'Centro' } }]),
+        ),
+      clasesUsuario: vi.fn().mockReturnValue(
+        of([
+          {
+            userId: 7,
+            claseChequeraId: 5,
+            claseChequera: { claseChequeraId: 5, nombre: 'Grado' },
+          },
+        ]),
+      ),
       documentos: vi.fn().mockReturnValue(of([{ documentoId: 1, nombre: 'DNI' }])),
       lectivos: vi.fn().mockReturnValue(of([{ lectivoId: 30, nombre: '2026' }])),
       chequerasPorUsuario: vi.fn().mockReturnValue(of({ content: chequeras, totalElements: 1 })),

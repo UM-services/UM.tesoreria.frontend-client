@@ -9,6 +9,24 @@ export interface FacultadAsignada {
   } | null;
 }
 
+export interface SedeAsignada {
+  userId: number;
+  geograficaId: number;
+  geografica?: {
+    geograficaId: number;
+    nombre: string;
+  } | null;
+}
+
+export interface ClaseChequeraAsignada {
+  userId: number;
+  claseChequeraId: number;
+  claseChequera?: {
+    claseChequeraId: number;
+    nombre: string;
+  } | null;
+}
+
 export interface Documento {
   documentoId: number;
   nombre: string;
@@ -33,7 +51,7 @@ export interface ChequeraPorNumero {
 
 export type EstadoDeuda = 'CON_DEUDA_VENCIDA' | 'SIN_DEUDA_VENCIDA';
 
-/** Fila de `chequeraSerie/usuario/{userId}/lectivo/{lectivoId}`. */
+/** Fila de `chequeraSerie/usuario/{userId}/lectivo/{lectivoId}/asignaciones`. */
 export interface ChequeraEstado {
   chequeraId: number;
   facultadId: number;

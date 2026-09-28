@@ -38,7 +38,7 @@ import {
  * Estado de la vista:
  *
  *   catálogos:  cargando ──ok──> listo
- *                  │   └──sin facultades──> sinFacultades (terminal)
+ *                  │   └──sin asignaciones──> sinAsignaciones (terminal, indica la dimensión faltante)
  *                  └──error──> error ──reintentar──> cargando
  *
  *   búsqueda:   inicial ──buscar──> buscando ──ok──> resultados ──ver más──> resultados(+página)
@@ -47,14 +47,21 @@ import {
  *   Cada búsqueda nueva cancela la anterior (switchMap) y los errores se convierten en estado
  *   dentro del flujo interno, así el flujo externo nunca muere.
  *
+ *   Las chequeras llegan del core ya limitadas a la intersección de facultad, sede geográfica y
+ *   clase de chequera asignadas al usuario; una lista vacía en cualquier dimensión significa que el
+ *   usuario no ve nada por esa dimensión (decisión "vacío = nada", igual que facultad).
+ *
  *   La búsqueda de personas por palabras vive en `ui-buscador-persona` (@tesoreria/ui-layout);
  *   el store sólo consume la persona elegida vía `elegirPersona`.
  */
 
+/** Dimensión de asignación que quedó sin datos: faculty, sede geográfica o clase de chequera. */
+export type DimensionAsignacion = 'facultad' | 'sede' | 'clase';
+
 export type EstadoCatalogos =
   | { tipo: 'cargando' }
   | { tipo: 'listo' }
-  | { tipo: 'sinFacultades' }
+  | { tipo: 'sinAsignaciones'; dimension: DimensionAsignacion }
   | { tipo: 'error'; mensaje: string };
 
 export type EstadoBusqueda =
@@ -128,7 +135,7 @@ export class ChequerasBusquedaStore {
     () => this.formularioCompleto() && this.busqueda().tipo !== 'buscando',
   );
 
-  /** Chequeras de la facultad elegida (filtro local: la API ya limita a las facultades del usuario). */
+  /** Chequeras de la facultad elegida (filtro local: la API ya limita a las asignaciones del usuario). */
   readonly chequerasFiltradas = computed(() => {
     const estado = this.busqueda();
     if (estado.tipo !== 'resultados') {
@@ -193,6 +200,14 @@ export class ChequerasBusquedaStore {
       facultades: this.service
         .facultadesUsuario(userId)
         .pipe(catchError((error: unknown) => fallarCatalogo(error, 'cargar sus facultades'))),
+      sedes: this.service
+        .sedesUsuario(userId)
+        .pipe(catchError((error: unknown) => fallarCatalogo(error, 'cargar sus sedes'))),
+      clases: this.service
+        .clasesUsuario(userId)
+        .pipe(
+          catchError((error: unknown) => fallarCatalogo(error, 'cargar sus clases de chequera')),
+        ),
       documentos: this.service
         .documentos()
         .pipe(
@@ -204,16 +219,30 @@ export class ChequerasBusquedaStore {
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ facultades, documentos, lectivos }) => {
-          const unicas = facultades.filter(
-            (item, i) => facultades.findIndex((otra) => otra.facultadId === item.facultadId) === i,
-          );
-          this.facultades.set(unicas);
+        next: ({ facultades, sedes, clases, documentos, lectivos }) => {
+          const unicasFacultades = sinDuplicados(facultades, (facultad) => facultad.facultadId);
+          const unicasSedes = sinDuplicados(sedes, (sede) => sede.geograficaId);
+          const unicasClases = sinDuplicados(clases, (clase) => clase.claseChequeraId);
+          this.facultades.set(unicasFacultades);
           this.documentos.set(documentos);
           this.lectivos.set(lectivos);
           this.documentoId.set(documentoPorDefecto(documentos));
           this.lectivoId.set(lectivoVigente(lectivos, this.hoy())?.lectivoId ?? null);
-          this.catalogos.set(unicas.length === 0 ? { tipo: 'sinFacultades' } : { tipo: 'listo' });
+          // Vacío = nada: la primer dimensión sin asignaciones bloquea la consulta (prioridad
+          // facultad > sede > clase para el mensaje).
+          const faltante: DimensionAsignacion | null =
+            unicasFacultades.length === 0
+              ? 'facultad'
+              : unicasSedes.length === 0
+                ? 'sede'
+                : unicasClases.length === 0
+                  ? 'clase'
+                  : null;
+          this.catalogos.set(
+            faltante === null
+              ? { tipo: 'listo' }
+              : { tipo: 'sinAsignaciones', dimension: faltante },
+          );
         },
         error: (error: unknown) => {
           this.catalogos.set({
@@ -369,7 +398,7 @@ export class ChequerasBusquedaStore {
   }
 
   private estadoDeError(error: unknown, pedido: Pedido): EstadoBusqueda {
-    registrarError('chequeraSerie/usuario/:userId/lectivo/:lectivoId', error);
+    registrarError('chequeraSerie/usuario/:userId/lectivo/:lectivoId/asignaciones', error);
     if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
       // El errorInterceptor ya cerró la sesión y navega a /login.
       return { tipo: 'inicial' };
@@ -387,6 +416,11 @@ export class ChequerasBusquedaStore {
 }
 
 class ErrorDeCatalogo extends Error {}
+
+/** Conserva la primera aparición de cada clave (las asignaciones del core pueden venir duplicadas). */
+function sinDuplicados<T>(lista: T[], clave: (item: T) => number): T[] {
+  return lista.filter((item, i) => lista.findIndex((otra) => clave(otra) === clave(item)) === i);
+}
 
 function fallarCatalogo(error: unknown, area: string): Observable<never> {
   registrarError(area, error);
