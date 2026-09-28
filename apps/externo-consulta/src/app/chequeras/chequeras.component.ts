@@ -54,6 +54,19 @@ export class ChequerasComponent implements OnInit {
     return facultad.facultad?.nombre ?? `Facultad ${facultad.facultadId}`;
   }
 
+  /** Nombre en plural de la dimensión de asignación que falta, para el mensaje terminal. */
+  nombreDimension(): string {
+    const estado = this.store.catalogos();
+    if (estado.tipo !== 'sinAsignaciones') {
+      return '';
+    }
+    return estado.dimension === 'facultad'
+      ? 'facultades'
+      : estado.dimension === 'sede'
+        ? 'sedes'
+        : 'clases de chequera';
+  }
+
   lectivoActual(): string {
     const estado = this.store.busqueda();
     const lectivoId = estado.tipo === 'resultados' ? estado.chequeras[0]?.lectivoId : null;

@@ -1,5 +1,6 @@
-// El filtrado por facultad lo hace el core según `usuario_chequera_facultad`, pero el `userId`
-// sale de la sesión guardada en localStorage y ni el gateway ni el core lo autentican todavía.
+// El filtrado por asignaciones (facultad, sede geográfica y clase de chequera) lo hace el core según
+// `usuario_chequera_facultad`, `usuario_chequera_geografica` y `usuario_chequera_clase_chequera`, pero el
+// `userId` sale de la sesión guardada en localStorage y ni el gateway ni el core lo autentican todavía.
 // Esto es una guarda de experiencia de usuario, no un control de acceso: no exponer a usuarios
 // externos reales hasta que el backend vincule el `userId` a la sesión.
 import { inject, Injectable } from '@angular/core';
@@ -9,12 +10,14 @@ import { environment } from '../../environments/environment';
 import {
   ChequeraEstado,
   ChequeraPorNumero,
+  ClaseChequeraAsignada,
   CuotaConPagos,
   DeudaChequera,
   Documento,
   FacultadAsignada,
   Lectivo,
   Pagina,
+  SedeAsignada,
 } from './chequeras.models';
 import { normalizarLista } from './chequeras.utils';
 
@@ -32,6 +35,20 @@ export class ChequerasService {
     return this.http
       .get<FacultadAsignada[]>(`${this.coreBaseUrl}/usuarioChequeraFacultad/user/${userId}`)
       .pipe(map((data) => normalizarLista<FacultadAsignada>(data)));
+  }
+
+  sedesUsuario(userId: number): Observable<SedeAsignada[]> {
+    return this.http
+      .get<SedeAsignada[]>(`${this.coreBaseUrl}/usuarioChequeraGeografica/user/${userId}`)
+      .pipe(map((data) => normalizarLista<SedeAsignada>(data)));
+  }
+
+  clasesUsuario(userId: number): Observable<ClaseChequeraAsignada[]> {
+    return this.http
+      .get<
+        ClaseChequeraAsignada[]
+      >(`${this.coreBaseUrl}/usuarioChequeraClaseChequera/user/${userId}`)
+      .pipe(map((data) => normalizarLista<ClaseChequeraAsignada>(data)));
   }
 
   documentos(): Observable<Documento[]> {
@@ -77,7 +94,7 @@ export class ChequerasService {
       .set('page', page)
       .set('size', TAMANIO_PAGINA);
     return this.http.get<Pagina<ChequeraEstado>>(
-      `${this.coreBaseUrl}/chequeraSerie/usuario/${userId}/lectivo/${lectivoId}`,
+      `${this.coreBaseUrl}/chequeraSerie/usuario/${userId}/lectivo/${lectivoId}/asignaciones`,
       { params },
     );
   }

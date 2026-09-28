@@ -37,6 +37,24 @@ describe('ChequerasService', () => {
     expect(resultado).toEqual([{ userId: 7, facultadId: 1 }]);
   });
 
+  it('pide las sedes y clases de chequera asignadas al usuario', () => {
+    let sedes: unknown;
+    let clases: unknown;
+    service.sedesUsuario(7).subscribe((valor) => (sedes = valor));
+    service.clasesUsuario(7).subscribe((valor) => (clases = valor));
+
+    const reqSede = http.expectOne((r) => r.url.endsWith('/core/usuarioChequeraGeografica/user/7'));
+    expect(reqSede.request.url).not.toContain('/auth/');
+    reqSede.flush([{ userId: 7, geograficaId: 1 }]);
+    const reqClase = http.expectOne((r) =>
+      r.url.endsWith('/core/usuarioChequeraClaseChequera/user/7'),
+    );
+    reqClase.flush([{ userId: 7, claseChequeraId: 2 }]);
+
+    expect(sedes).toEqual([{ userId: 7, geograficaId: 1 }]);
+    expect(clases).toEqual([{ userId: 7, claseChequeraId: 2 }]);
+  });
+
   it('pide los catálogos de documentos y lectivos', () => {
     service.documentos().subscribe();
     service.lectivos().subscribe();
@@ -45,10 +63,12 @@ describe('ChequerasService', () => {
     http.expectOne((r) => r.url.endsWith('/core/lectivo/reverse')).flush([]);
   });
 
-  it('consulta las chequeras del usuario con persona, documento y página', () => {
+  it('consulta las chequeras de las asignaciones del usuario con persona, documento y página', () => {
     service.chequerasPorUsuario(7, 30, '30123456', 1, 2).subscribe();
 
-    const req = http.expectOne((r) => r.url.endsWith('/core/chequeraSerie/usuario/7/lectivo/30'));
+    const req = http.expectOne((r) =>
+      r.url.endsWith('/core/chequeraSerie/usuario/7/lectivo/30/asignaciones'),
+    );
     expect(req.request.params.get('personaId')).toBe('30123456');
     expect(req.request.params.get('documentoId')).toBe('1');
     expect(req.request.params.get('page')).toBe('2');

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.26.0] - 2026-09-28
+
+### Added
+
+- feat(externo-consulta): La consulta `/chequeras` se limita ahora por las **tres dimensiones de asignación** del usuario —facultad, sede geográfica y clase de chequera— en lugar de sólo la facultad: el store carga los catálogos `sedesUsuario` y `clasesUsuario` junto a `facultadesUsuario` y las chequeras llegan del core ya filtradas por la intersección de las asignaciones. Rige la decisión "vacío = nada" en cada dimensión: si falta alguna, la consulta queda bloqueada con un mensaje terminal que indica cuál (prioridad del mensaje: facultad > sede > clase), igual que antes con las facultades.
+- feat(externo-consulta): Nuevos métodos `ChequerasService.sedesUsuario(userId)` (`GET core/usuarioChequeraGeografica/user/{userId}`) y `ChequerasService.clasesUsuario(userId)` (`GET core/usuarioChequeraClaseChequera/user/{userId}`), con los modelos `SedeAsignada` y `ClaseChequeraAsignada` en `chequeras.models.ts`, normalizados con `normalizarLista` como el resto de catálogos.
+- test: Specs de las nuevas dimensiones en `ChequerasBusquedaStore` (bloqueo terminal por sede o por clase con su `dimension`, y error de catálogo que informa qué asignación falló con su status), de `ChequerasService` (URLs de `usuarioChequeraGeografica`/`usuarioChequeraClaseChequera` sin `/auth/` y consulta de chequeras sobre `.../asignaciones`) y del componente (mocks de sedes y clases para el arranque de la vista).
+
+### Changed
+
+- refactor(externo-consulta): El estado terminal de catálogos pasa de `sinFacultades` a `sinAsignaciones` con el campo `dimension` (`DimensionAsignacion = 'facultad' | 'sede' | 'clase'`), y la vista muestra en plural el nombre de la dimensión faltante ("facultades" / "sedes" / "clases de chequera") vía `nombreDimension()` en lugar del literal fijo de facultades.
+- refactor(externo-consulta): La consulta de chequeras pasa de `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}` a `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}/asignaciones` (documentado en el modelo `ChequeraEstado`), y el helper `sinDuplicados` deduplica las filas de las tres asignaciones que el core puede devolver repetidas.
+- docs: README actualiza "Probar externo-consulta localmente" con el endpoint `/asignaciones`, los dos catálogos nuevos de asignaciones y el bloqueo por cualquiera de las tres dimensiones, y registra la versión actual **0.26.0**.
+
 ## [0.25.0] - 2026-09-27
 
 ### Added
