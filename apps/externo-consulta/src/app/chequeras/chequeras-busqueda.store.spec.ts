@@ -41,6 +41,8 @@ describe('ChequerasBusquedaStore', () => {
   let store: ChequerasBusquedaStore;
   let servicio: {
     facultadesUsuario: ReturnType<typeof vi.fn>;
+    sedesUsuario: ReturnType<typeof vi.fn>;
+    clasesUsuario: ReturnType<typeof vi.fn>;
     documentos: ReturnType<typeof vi.fn>;
     lectivos: ReturnType<typeof vi.fn>;
     chequerasPorUsuario: ReturnType<typeof vi.fn>;
@@ -57,6 +59,20 @@ describe('ChequerasBusquedaStore', () => {
           { userId: 7, facultadId: 1, facultad: { facultadId: 1, nombre: 'Ingeniería' } },
           { userId: 7, facultadId: 2, facultad: { facultadId: 2, nombre: 'Derecho' } },
           { userId: 7, facultadId: 2, facultad: { facultadId: 2, nombre: 'Derecho' } },
+        ]),
+      ),
+      sedesUsuario: vi
+        .fn()
+        .mockReturnValue(
+          of([{ userId: 7, geograficaId: 1, geografica: { geograficaId: 1, nombre: 'Centro' } }]),
+        ),
+      clasesUsuario: vi.fn().mockReturnValue(
+        of([
+          {
+            userId: 7,
+            claseChequeraId: 5,
+            claseChequera: { claseChequeraId: 5, nombre: 'Grado' },
+          },
         ]),
       ),
       documentos: vi.fn().mockReturnValue(
@@ -156,9 +172,32 @@ describe('ChequerasBusquedaStore', () => {
     it('sin facultades asignadas queda bloqueado', () => {
       servicio.facultadesUsuario.mockReturnValue(of([]));
       store.cargarCatalogos();
-      expect(store.catalogos()).toEqual({ tipo: 'sinFacultades' });
+      expect(store.catalogos()).toEqual({ tipo: 'sinAsignaciones', dimension: 'facultad' });
       store.actualizarDni('30123456');
       expect(store.puedeBuscar()).toBe(false);
+    });
+
+    it('sin sedes asignadas queda bloqueado aunque tenga facultades', () => {
+      servicio.sedesUsuario.mockReturnValue(of([]));
+      store.cargarCatalogos();
+      expect(store.catalogos()).toEqual({ tipo: 'sinAsignaciones', dimension: 'sede' });
+    });
+
+    it('sin clases de chequera asignadas queda bloqueado aunque tenga facultades y sedes', () => {
+      servicio.clasesUsuario.mockReturnValue(of([]));
+      store.cargarCatalogos();
+      expect(store.catalogos()).toEqual({ tipo: 'sinAsignaciones', dimension: 'clase' });
+    });
+
+    it('informa qué catálogo de asignaciones falló', () => {
+      servicio.sedesUsuario.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 404 })),
+      );
+      store.cargarCatalogos();
+      expect(store.catalogos()).toEqual({
+        tipo: 'error',
+        mensaje: 'Error 404 al cargar sus sedes. Si persiste, contacte a Tesorería.',
+      });
     });
 
     it('un error de carga muestra el status y no se trata como cero facultades', () => {
@@ -177,6 +216,8 @@ describe('ChequerasBusquedaStore', () => {
       store.cargarCatalogos();
       expect(store.catalogos().tipo).toBe('error');
       expect(servicio.facultadesUsuario).not.toHaveBeenCalled();
+      expect(servicio.sedesUsuario).not.toHaveBeenCalled();
+      expect(servicio.clasesUsuario).not.toHaveBeenCalled();
     });
   });
 
