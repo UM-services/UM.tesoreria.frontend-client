@@ -287,16 +287,14 @@ describe('ChequeraDetalleModalComponent', () => {
     expect(fixture.componentInstance.pdfPendiente().has('estado')).toBe(true);
   });
 
-  it('avisa si el PDF de estado todavía no existe en el servidor (404)', async () => {
+  it('muestra el fallback si el PDF de estado no existe en el servidor (404)', async () => {
     servicio['descargarPdfEstado'].mockReturnValue(
       throwError(() => new HttpErrorResponse({ status: 404, error: new Blob([]) })),
     );
     await abrir();
     fixture.componentInstance.descargarEstado(chequeraA);
     await vi.waitFor(() =>
-      expect(fixture.componentInstance.pdfErrores()['estado']).toBe(
-        'El PDF de estado de chequera todavía no está disponible en el servidor.',
-      ),
+      expect(fixture.componentInstance.pdfErrores()['estado']).toBe('No se pudo generar el PDF.'),
     );
   });
 

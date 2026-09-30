@@ -29,7 +29,9 @@ export const DEBITO_TIPO_CBU = 2;
 @Injectable({ providedIn: 'root' })
 export class ChequerasService {
   private readonly http = inject(HttpClient);
-  private readonly coreBaseUrl = environment.apiUrl.replace(/\/auth\/?$/, '');
+  private readonly coreBaseUrl = `${environment.apiBase}/core`;
+  // El generador del PDF de estado migró del core al servicio `report` del gateway.
+  private readonly reportBaseUrl = `${environment.apiBase}/report`;
 
   facultadesUsuario(userId: number): Observable<FacultadAsignada[]> {
     return this.http
@@ -117,13 +119,13 @@ export class ChequerasService {
 
   /**
    * "Estado de Chequera": todas las cuotas (pagas e impagas) por producto con subtotales, y una
-   * segunda hoja con la adhesión al débito automático del tipo indicado. Endpoint nuevo del core
-   * (rama 376-generar-pdf-estado-de-chequera); hasta que se publique responde 404.
+   * segunda hoja con la adhesión al débito automático del tipo indicado. Lo genera el servicio
+   * `report` del gateway; antes servía el core en `/chequera/generateEstadoPdf`.
    */
   descargarPdfEstado(chequera: ChequeraEstado, debitoTipoId = DEBITO_TIPO_CBU): Observable<Blob> {
     const { facultadId, tipoChequeraId, chequeraSerieId, alternativaId } = chequera;
     return this.http.get(
-      `${this.coreBaseUrl}/chequera/generateEstadoPdf/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}/${debitoTipoId}`,
+      `${this.reportBaseUrl}/chequeras/estado/facultad/${facultadId}/tipoChequera/${tipoChequeraId}/chequeraSerie/${chequeraSerieId}/alternativa/${alternativaId}/debitoTipo/${debitoTipoId}`,
       { responseType: 'blob' },
     );
   }
