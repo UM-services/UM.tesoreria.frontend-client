@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.26.3] - 2026-09-30
+
+### Fixed
+
+- fix(externo-consulta): La descarga "Estado (PDF)" del detalle de chequera pasa del endpoint del core `chequera/generateEstadoPdf/...` al servicio `report` del gateway: `GET report/chequeras/estado/facultad/{facultadId}/tipoChequera/{tipoChequeraId}/chequeraSerie/{chequeraSerieId}/alternativa/{alternativaId}/debitoTipo/{debitoTipoId}` (débito directo por CBU por defecto, `debitoTipoId = 2`). El generador del PDF de estado migró del core a `report`, así que el botón deja de depender del endpoint pendiente que respondía 404 y se retira el aviso dedicado "El PDF de estado de chequera todavía no está disponible en el servidor."; ese error cae ahora en el genérico de `mensajeErrorPdf` ("No se pudo generar el PDF.", o el `message` del blob cuando el servidor lo envía).
+
+### Changed
+
+- refactor(externo-consulta): Los environments suman el campo `apiBase` (mismo `BACKEND_URL_PLACEHOLDER`, reemplazado en runtime por el `entrypoint.sh` de la app junto con `apiUrl`) y `ChequerasService` deriva de él `coreBaseUrl` (`{apiBase}/core`) y el nuevo `reportBaseUrl` (`{apiBase}/report`), en lugar de quitar el sufijo `/auth` a `apiUrl`; las URLs de los endpoints del core quedan equivalentes.
+- test: `ChequerasService` especifica la nueva URL `report/chequeras/estado/...` del PDF de estado, y el spec del modal valida el fallback genérico ante 404.
+- docs: README lista el servicio `report` del gateway como prerequisito de la prueba local de `/chequeras` y registra la versión actual **0.26.3**.
+
 ## [0.26.2] - 2026-09-28
 
 ### Changed
