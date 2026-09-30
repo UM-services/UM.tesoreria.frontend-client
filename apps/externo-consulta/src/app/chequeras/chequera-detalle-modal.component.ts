@@ -542,16 +542,10 @@ export class ChequeraDetalleModalComponent {
       'estado',
       () => this.service.descargarPdfEstado(chequera),
       nombreArchivoEstadoPdf(chequera),
-      'El PDF de estado de chequera todavía no está disponible en el servidor.',
     );
   }
 
-  private descargar(
-    clave: string,
-    pedido: () => Observable<Blob>,
-    nombre: string,
-    mensajeNoDisponible?: string,
-  ): void {
+  private descargar(clave: string, pedido: () => Observable<Blob>, nombre: string): void {
     if (this.pdfPendiente().has(clave)) {
       return;
     }
@@ -576,10 +570,7 @@ export class ChequeraDetalleModalComponent {
           ) {
             return;
           }
-          const mensaje =
-            mensajeNoDisponible && error instanceof HttpErrorResponse && error.status === 404
-              ? mensajeNoDisponible
-              : await mensajeErrorPdf(error);
+          const mensaje = await mensajeErrorPdf(error);
           this.pdfErrores.set({ ...this.pdfErrores(), [clave]: mensaje });
         },
       });

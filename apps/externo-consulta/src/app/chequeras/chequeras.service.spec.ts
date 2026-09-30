@@ -92,10 +92,12 @@ describe('ChequerasService', () => {
     http.expectOne((r) => r.url.endsWith('/core/chequeraSerie/bynumber/1/14160')).flush([]);
   });
 
-  it('pide el PDF de estado con débito directo por CBU por defecto', () => {
+  it('pide el PDF de estado al servicio report con débito directo por CBU por defecto', () => {
     service.descargarPdfEstado(chequera).subscribe();
     const req = http.expectOne((r) =>
-      r.url.endsWith('/core/chequera/generateEstadoPdf/1/2/300/4/2'),
+      r.url.endsWith(
+        '/report/chequeras/estado/facultad/1/tipoChequera/2/chequeraSerie/300/alternativa/4/debitoTipo/2',
+      ),
     );
     expect(req.request.responseType).toBe('blob');
     req.flush(new Blob(['%PDF']));
