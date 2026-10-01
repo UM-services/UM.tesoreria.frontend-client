@@ -1,0 +1,40 @@
+# Contexto de build mínimo para docker/app.Dockerfile.
+#
+# Sin este archivo Docker manda los ~1 GB del workspace (910 MB de node_modules
+# + .nx 55 MB + .angular 33 MB) en cada build. Peor aún: en el multistage el
+# `COPY . .` pisaría el node_modules instalado por `npm ci` con el de la máquina
+# (binarios de otra plataforma) y el build fallaría o compilaría con lo equivocado.
+
+# Dependencias y artefactos: se regeneran dentro de la imagen
+node_modules
+dist
+.angular
+.nx
+tmp
+out-tsc
+coverage
+test-results
+playwright-report
+
+# Control de versiones y caché del editor / agente
+.git
+.github
+.idea
+.claude
+.opencode
+.gstack
+.vscode
+.history
+
+# Documentación generada
+docs-site
+docs
+
+# Ruido de SO y logs
+**/.DS_Store
+*.log
+npm-debug.log*
+yarn-error.log
+
+# No hace falta para compilar, y `.dockerignore` gana ante cualquier COPY
+apps/*-e2e

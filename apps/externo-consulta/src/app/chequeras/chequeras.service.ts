@@ -23,9 +23,6 @@ import { normalizarLista } from './chequeras.utils';
 
 export const TAMANIO_PAGINA = 100;
 
-/** `debito_tipo_id`: 1 = VISA, 2 = débito directo por CBU (migración VB6, `SQL/debito.sql`). */
-export const DEBITO_TIPO_CBU = 2;
-
 @Injectable({ providedIn: 'root' })
 export class ChequerasService {
   private readonly http = inject(HttpClient);
@@ -118,14 +115,14 @@ export class ChequerasService {
   }
 
   /**
-   * "Estado de Chequera": todas las cuotas (pagas e impagas) por producto con subtotales, y una
-   * segunda hoja con la adhesión al débito automático del tipo indicado. Lo genera el servicio
+   * "Estado de Chequera": todas las cuotas (pagas e impagas) por producto con subtotales, y los
+   * débitos automáticos agrupados por tipo. Lo genera el servicio
    * `report` del gateway; antes servía el core en `/chequera/generateEstadoPdf`.
    */
-  descargarPdfEstado(chequera: ChequeraEstado, debitoTipoId = DEBITO_TIPO_CBU): Observable<Blob> {
+  descargarPdfEstado(chequera: ChequeraEstado): Observable<Blob> {
     const { facultadId, tipoChequeraId, chequeraSerieId, alternativaId } = chequera;
     return this.http.get(
-      `${this.reportBaseUrl}/chequeras/estado/facultad/${facultadId}/tipoChequera/${tipoChequeraId}/chequeraSerie/${chequeraSerieId}/alternativa/${alternativaId}/debitoTipo/${debitoTipoId}`,
+      `${this.reportBaseUrl}/chequeras/estado/facultad/${facultadId}/tipoChequera/${tipoChequeraId}/chequeraSerie/${chequeraSerieId}/alternativa/${alternativaId}`,
       { responseType: 'blob' },
     );
   }
