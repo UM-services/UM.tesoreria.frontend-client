@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.26.4] - 2026-09-30
+
+### Fixed
+
+- El estado de chequera en PDF incluye los débitos automáticos de todos los tipos al consultar la nueva ruta de `report` con los cuatro identificadores de la chequera, sin filtrar por tipo de débito.
+
 ## [0.26.3] - 2026-09-30
 
 ### Fixed
