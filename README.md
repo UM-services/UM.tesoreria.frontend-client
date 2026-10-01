@@ -82,7 +82,9 @@ NODE_OPTIONS=--no-webstorage nx test externo-consulta
 
 `environment.development.ts` usa `BACKEND_URL_PLACEHOLDER/core/auth` como ruta relativa: `nx serve` necesita un proxy que la reenvíe al gateway. El script de preview de Conductor (`externo-consulta`) levanta Consul, el gateway y el core en Docker (Colima) y ejecuta `nx serve externo-consulta --proxy-config .conductor/proxy.json`, que mapea `/BACKEND_URL_PLACEHOLDER` → `http://127.0.0.1:8301/api/tesoreria`. Para usar la vista `/chequeras`:
 
-1. Tener el gateway en el puerto 8301 —incluido el servicio `report`, que sirve el "Estado (PDF)" vía `GET report/chequeras/estado/facultad/{facultadId}/tipoChequera/{tipoChequeraId}/chequeraSerie/{chequeraSerieId}/alternativa/{alternativaId}/debitoTipo/{debitoTipoId}` (antes lo pretendía el core en `chequera/generateEstadoPdf/...`)— y un core que incluya `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}/asignaciones`, `GET usuarioChequeraGeografica/user/{userId}`, `GET usuarioChequeraClaseChequera/user/{userId}` y el alias `api/tesoreria/core/documento`.
+El script de preview no levanta `report`: hay que iniciarlo por separado para descargar el PDF. La versión nueva de `report` requiere además que el core exponga `GET chequera/estado/{facultadId}/{tipoChequeraId}/{chequeraSerieId}/{alternativaId}`.
+
+1. Tener el gateway en el puerto 8301 —incluido el servicio `report`, que sirve el "Estado (PDF)" vía `GET report/chequeras/estado/facultad/{facultadId}/tipoChequera/{tipoChequeraId}/chequeraSerie/{chequeraSerieId}/alternativa/{alternativaId}` e incluye los débitos automáticos de todos los tipos— y un core que incluya `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}/asignaciones`, `GET usuarioChequeraGeografica/user/{userId}`, `GET usuarioChequeraClaseChequera/user/{userId}` y el alias `api/tesoreria/core/documento`.
 2. Usar un usuario que tenga filas en las tres tablas de asignaciones: `usuario_chequera_facultad`, `usuario_chequera_geografica` y `usuario_chequera_clase_chequera`. Sin asignaciones en alguna dimensión, la vista muestra "Su usuario no tiene facultades/sedes/clases de chequera asignadas para consultar chequeras" (la primera dimensión faltante, con prioridad facultad > sede > clase).
 3. Para probar los endpoints con curl, obtener un token:
 
@@ -202,54 +204,61 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 
 ## Tecnologías
 
-| Tecnología   | Versión                |
-| ------------ | ---------------------- |
-| Angular      | 21.2.0                 |
-| Nx           | 22.7.1                 |
-| Tailwind CSS | 4.2.4                  |
-| TypeScript   | 5.9.2                  |
-| Vitest       | 4.0.8                  |
-| Docker       | nginx:alpine (runtime) |
+| Tecnología   | Versión                       |
+| ------------ | ----------------------------- |
+| Angular      | 21.2.0                        |
+| Nx           | 22.7.1                        |
+| Tailwind CSS | 4.2.4                         |
+| TypeScript   | 5.9.2                         |
+| Vitest       | 4.0.8                         |
+| Docker       | node:24-alpine + nginx:alpine |
 
 ## Despliegue con Docker
 
-Cada aplicación incluye un Dockerfile de runtime Nginx que sirve el artefacto generado por Nx, soporte SSL/TLS con certificados auto-firmados y proxy inverso para rutas `/api/` hacia el servicio `tesoreria-gateway-service:8301`.
+`docker/app.Dockerfile` es un **único Dockerfile multistage** para las ocho aplicaciones: una etapa `node:24-alpine` que corre `npm ci` y `npx nx build <app> --configuration=production`, y una etapa `nginx:alpine` que sirve ese resultado con SSL/TLS auto-firmado y proxy inverso de `/api/` hacia `tesoreria-gateway-service:8301`. La aplicación se selecciona con el build argument `APP`.
 
-### Ejecutar contenedores
+La imagen depende exclusivamente del código fuente: el `dist/apps/` del disco es irrelevante. El Dockerfile anterior era sólo runtime (`COPY dist/apps/<app>/browser`) y, si el `nx build` no se volvía a correr, la imagen reconstruida seguía sirviendo el bundle anterior sin ningún aviso.
+
+### Reconstruir la imagen de una aplicación
 
 ```bash
-# Construir primero el artefacto de producción
-npx nx build compras --configuration=production
+# Recomendado: usa el compose del stack (mismo nombre de imagen y red) y siempre recompila
+npm run docker:app -- compras
 
-# Construir la imagen para compras
-docker build -f apps/compras/Dockerfile -t um-tesoreria-compras .
+# Equivalente manual (LOCAL_RESOURCE apunta a la raíz que contiene workspaces/)
+docker compose up -d --build tesoreria-compras-client
 
-# Ejecutar contenedor (puertos 80 redirigen a 443)
-docker run -p 8080:80 -p 8443:443 um-tesoreria-compras
+# Sin Compose, imagen suelta
+docker build -f docker/app.Dockerfile --build-arg APP=compras -t um-tesoreria-compras-client .
 ```
+
+`--build` no es opcional con Compose: `docker compose up -d` a secas reutiliza la imagen existente y no comprueba si el código cambió. El script `npm run docker:app` ya lo incluye.
+
+El `.dockerignore` es obligatorio para que esto sea rápido: sin él Docker enviaría ~1 GB de `node_modules`, `dist`, `.angular` y `.nx` como contexto, y el `COPY . .` de la etapa de compilación pisaría el `node_modules` instalado con binarios de otra plataforma.
 
 ### Características Docker
 
+- **Multistage**: la compilación ocurre dentro de la imagen, en `node:24-alpine`
 - **SSL/TLS**: Certificados auto-firmados generados al construir la imagen
 - **Proxy Inverso**: Rutas `/api/` se redirigen al gateway de tesorería
 - **Redirect**: HTTP (80) redirige automáticamente a HTTPS (443)
 
-Aplicaciones disponibles:
+Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
-- `apps/compras/Dockerfile` - Gestión de compras
-- `apps/pagos/Dockerfile` - Gestión de facturas pendientes
-- `apps/chequeras/Dockerfile` - Gestión de chequeras
-- `apps/administrador/Dockerfile` - Gestión administrativa
-- `apps/contable/Dockerfile` - Módulo contable
-- `apps/contratados/Dockerfile` - Gestión de contratados
-- `apps/guarani/Dockerfile` - Gestión de Guaraní
-- `apps/externo-consulta/Dockerfile` - Consulta externa
+- `compras` - Gestión de compras
+- `pagos` - Gestión de facturas pendientes
+- `chequeras` - Gestión de chequeras
+- `administrador` - Gestión administrativa
+- `contable` - Módulo contable
+- `contratados` - Gestión de contratados
+- `guarani` - Gestión de Guaraní
+- `externo-consulta` - Consulta externa
 
 ## Versionado
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.26.3**
+Versión actual: **0.26.4**
 
 ## Licencia
 
