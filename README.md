@@ -204,48 +204,55 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 
 ## Tecnologías
 
-| Tecnología   | Versión                |
-| ------------ | ---------------------- |
-| Angular      | 21.2.0                 |
-| Nx           | 22.7.1                 |
-| Tailwind CSS | 4.2.4                  |
-| TypeScript   | 5.9.2                  |
-| Vitest       | 4.0.8                  |
-| Docker       | nginx:alpine (runtime) |
+| Tecnología   | Versión                       |
+| ------------ | ----------------------------- |
+| Angular      | 21.2.0                        |
+| Nx           | 22.7.1                        |
+| Tailwind CSS | 4.2.4                         |
+| TypeScript   | 5.9.2                         |
+| Vitest       | 4.0.8                         |
+| Docker       | node:24-alpine + nginx:alpine |
 
 ## Despliegue con Docker
 
-Cada aplicación incluye un Dockerfile de runtime Nginx que sirve el artefacto generado por Nx, soporte SSL/TLS con certificados auto-firmados y proxy inverso para rutas `/api/` hacia el servicio `tesoreria-gateway-service:8301`.
+`docker/app.Dockerfile` es un **único Dockerfile multistage** para las ocho aplicaciones: una etapa `node:24-alpine` que corre `npm ci` y `npx nx build <app> --configuration=production`, y una etapa `nginx:alpine` que sirve ese resultado con SSL/TLS auto-firmado y proxy inverso de `/api/` hacia `tesoreria-gateway-service:8301`. La aplicación se selecciona con el build argument `APP`.
 
-### Ejecutar contenedores
+La imagen depende exclusivamente del código fuente: el `dist/apps/` del disco es irrelevante. El Dockerfile anterior era sólo runtime (`COPY dist/apps/<app>/browser`) y, si el `nx build` no se volvía a correr, la imagen reconstruida seguía sirviendo el bundle anterior sin ningún aviso.
+
+### Reconstruir la imagen de una aplicación
 
 ```bash
-# Construir primero el artefacto de producción
-npx nx build compras --configuration=production
+# Recomendado: usa el compose del stack (mismo nombre de imagen y red) y siempre recompila
+npm run docker:app -- compras
 
-# Construir la imagen para compras
-docker build -f apps/compras/Dockerfile -t um-tesoreria-compras .
+# Equivalente manual (LOCAL_RESOURCE apunta a la raíz que contiene workspaces/)
+docker compose up -d --build tesoreria-compras-client
 
-# Ejecutar contenedor (puertos 80 redirigen a 443)
-docker run -p 8080:80 -p 8443:443 um-tesoreria-compras
+# Sin Compose, imagen suelta
+docker build -f docker/app.Dockerfile --build-arg APP=compras -t um-tesoreria-compras-client .
 ```
+
+`--build` no es opcional con Compose: `docker compose up -d` a secas reutiliza la imagen existente y no comprueba si el código cambió. El script `npm run docker:app` ya lo incluye.
+
+El `.dockerignore` es obligatorio para que esto sea rápido: sin él Docker enviaría ~1 GB de `node_modules`, `dist`, `.angular` y `.nx` como contexto, y el `COPY . .` de la etapa de compilación pisaría el `node_modules` instalado con binarios de otra plataforma.
 
 ### Características Docker
 
+- **Multistage**: la compilación ocurre dentro de la imagen, en `node:24-alpine`
 - **SSL/TLS**: Certificados auto-firmados generados al construir la imagen
 - **Proxy Inverso**: Rutas `/api/` se redirigen al gateway de tesorería
 - **Redirect**: HTTP (80) redirige automáticamente a HTTPS (443)
 
-Aplicaciones disponibles:
+Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
-- `apps/compras/Dockerfile` - Gestión de compras
-- `apps/pagos/Dockerfile` - Gestión de facturas pendientes
-- `apps/chequeras/Dockerfile` - Gestión de chequeras
-- `apps/administrador/Dockerfile` - Gestión administrativa
-- `apps/contable/Dockerfile` - Módulo contable
-- `apps/contratados/Dockerfile` - Gestión de contratados
-- `apps/guarani/Dockerfile` - Gestión de Guaraní
-- `apps/externo-consulta/Dockerfile` - Consulta externa
+- `compras` - Gestión de compras
+- `pagos` - Gestión de facturas pendientes
+- `chequeras` - Gestión de chequeras
+- `administrador` - Gestión administrativa
+- `contable` - Módulo contable
+- `contratados` - Gestión de contratados
+- `guarani` - Gestión de Guaraní
+- `externo-consulta` - Consulta externa
 
 ## Versionado
 
