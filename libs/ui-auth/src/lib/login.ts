@@ -5,7 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '@tesoreria/shared-api';
 
 @Component({
-  selector: 'ui-auth-login',
+  selector: 'lib-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './login.html',
