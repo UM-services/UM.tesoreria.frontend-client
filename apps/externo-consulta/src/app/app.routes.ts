@@ -13,7 +13,8 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'chequeras',
-    loadComponent: () => import('./chequeras/chequeras.component').then(m => m.ChequerasComponent),
+    loadComponent: () =>
+      import('@tesoreria/feature-externo-consulta').then(m => m.ChequerasComponent),
     canActivate: [authGuard],
   },
   {

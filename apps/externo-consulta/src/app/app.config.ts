@@ -4,7 +4,14 @@ import localeEsAr from '@angular/common/locales/es-AR';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appRoutes } from './app.routes';
-import { API_URL, authInterceptor, errorInterceptor, provideAppEnvInfo } from '@tesoreria/shared-api';
+import {
+  API_URL,
+  authInterceptor,
+  errorInterceptor,
+  EXTERNO_API_BASE,
+  EXTERNO_ENABLE_DEBUG,
+  provideAppEnvInfo,
+} from '@tesoreria/shared-api';
 import { environment } from '../environments/environment';
 
 registerLocaleData(localeEsAr);
@@ -15,6 +22,8 @@ export const appConfig: ApplicationConfig = {
     provideRouter(appRoutes),
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
     { provide: API_URL, useValue: environment.apiUrl },
+    { provide: EXTERNO_API_BASE, useValue: environment.apiBase },
+    { provide: EXTERNO_ENABLE_DEBUG, useValue: environment.enableDebug },
     { provide: LOCALE_ID, useValue: 'es-AR' },
     provideAppEnvInfo({ name: environment.env, version: environment.version })
   ],

@@ -17,12 +17,14 @@
         end
 
         subgraph "Libraries"
-            SharedAPI["@tesoreria/shared-api<br/>AuthService, AuthGuard<br/>Auth y error interceptors<br/>Models"]
+            SharedAPI["@tesoreria/shared-api<br/>AuthService, AuthGuard<br/>Auth y error interceptors<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
             UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent<br/>BuscadorPersonaComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
             FeatureOrdenCompra["@tesoreria/feature-orden-compra<br/>OcDashboardComponent<br/>OcCreateComponent<br/>OcDetailComponent"]
+            FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
+            FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
         end
     end
 
@@ -60,10 +62,16 @@
     Guarani --> SharedAPI
     Guarani --> UIAuth
     Guarani --> UILayout
+    Guarani -->|"loadChildren"| FeatureGuarani
+    FeatureGuarani --> SharedAPI
+    FeatureGuarani --> UILayout
 
     ExternoConsulta --> SharedAPI
     ExternoConsulta --> UIAuth
     ExternoConsulta --> UILayout
+    ExternoConsulta -->|"loadComponent"| FeatureExterno
+    FeatureExterno --> SharedAPI
+    FeatureExterno --> UILayout
 
     UILayout -->|"modal cambio de clave"| UIAuth
 
@@ -217,12 +225,12 @@ correspondan (`errorInterceptor` expulsa la sesión en ese caso).
 
 ```mermaid
 flowchart TD
-    GuaraniApp["Guaraní App"] --> AppRoutes["Rutas protegidas"]
-    AppRoutes --> SedeGuard["GuaraniSedePrincipalGuard<br/>Rutas administrativas por sede"]
-    AppRoutes --> Pendientes["Pendientes Pre Guaraní"]
-    AppRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
-    AppRoutes --> Beneficios["Beneficios de requisitos y porcentajes"]
-    AppRoutes --> Datos["Datos Personales y captura<br/>/datos-personales"]
+    GuaraniApp["Guaraní App<br/>Shell delgado"] -->|"loadChildren"| LibRoutes["GUARANI_ROUTES<br/>@tesoreria/feature-guarani"]
+    LibRoutes --> SedeGuard["GuaraniSedePrincipalGuard<br/>Rutas administrativas por sede"]
+    LibRoutes --> Pendientes["Pendientes Pre Guaraní"]
+    LibRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
+    LibRoutes --> Beneficios["Beneficios de requisitos y porcentajes"]
+    LibRoutes --> Datos["Datos Personales y captura<br/>/datos-personales"]
 
     Pendientes --> GuaraniAPI["API Guaraní"]
     Pendientes --> SedeFilter["Filtrado de ubicaciones por sede"]
