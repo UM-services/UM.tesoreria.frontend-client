@@ -25,6 +25,8 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-orden-compra` - Módulo de órdenes de compra con dashboard, creación multi-paso y flujo de aprobación (integrado en compras)
+- `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
+- `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
 
 La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
 
@@ -120,20 +122,17 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     subgraph Modules["Módulos de aplicación"]
         FP["Pagos: facturas pendientes"]
         DEP["Administrador: dependencias"]
-        GP["Guaraní: pendientes y chequeras"]
-        GS["Guaraní: acceso y ubicaciones por sede"]
-        GU["Guaraní: ubicaciones"]
-        GB["Guaraní: beneficios y porcentajes"]
-        GD["Guaraní: datos personales y captura"]
     end
 
     subgraph Libs["Librerías compartidas"]
-        API["shared-api<br/>AuthService, guard e interceptores"]
+        API["shared-api<br/>AuthService, guard e interceptores<br/>Tokens API_URL y EXTERNO_*"]
         AUTH["ui-auth<br/>Login y modal de cambio de clave"]
         LAYOUT["ui-layout<br/>Shell J2 y buscadores"]
         FPROV["feature-proveedores"]
         FGAST["feature-gastos"]
         ORDCOMPRA["feature-orden-compra"]
+        FGUAR["feature-guarani<br/>GUARANI_ROUTES y vistas"]
+        FEXT["feature-externo-consulta<br/>Vista chequeras del portal externo"]
     end
 
     C --> API
@@ -174,19 +173,16 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     G --> API
     G --> AUTH
     G --> LAYOUT
-    G --> GP
-    G --> GS
-    G --> GU
-    G --> GB
-    G --> GD
-    GP --> API
-    GU --> API
-    GB --> API
-    GD --> API
+    G --> FGUAR
+    FGUAR --> API
+    FGUAR --> LAYOUT
 
     EC --> API
     EC --> AUTH
     EC --> LAYOUT
+    EC --> FEXT
+    FEXT --> API
+    FEXT --> LAYOUT
 
     LAYOUT --> AUTH
     API --> AUTH
@@ -200,7 +196,7 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 - **Tokens**: paleta `um-*` (p. ej. `bg-um-sidebar`, `text-um-ink`, `border-um-border`), tipografía, espaciados y radios. Es la única fuente de colores: no agregar hex sueltos en templates.
 - **Shell**: `<ui-shell moduleName="..." [menuItems]="...">` (`@tesoreria/ui-layout`) aporta sidebar oscuro, badge de entorno con color por ambiente, usuario, logout y layout responsive. Las apps solo definen marca y menú.
 - **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`.
-- **Referencia viva**: la vista `apps/externo-consulta/src/app/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
+- **Referencia viva**: la vista `libs/feature-externo-consulta/src/lib/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
 
 ## Tecnologías
 
@@ -258,7 +254,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.26.4**
+Versión actual: **0.27.0**
 
 ## Licencia
 
