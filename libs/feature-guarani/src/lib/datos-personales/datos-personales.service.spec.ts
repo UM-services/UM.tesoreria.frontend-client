@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
+import { API_URL } from '@tesoreria/shared-api';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { DatosPersonalesService } from './datos-personales.service';
@@ -10,7 +11,11 @@ describe('DatosPersonalesService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_URL, useValue: 'http://localhost/api/tesoreria/core/auth' },
+      ],
     });
 
     service = TestBed.inject(DatosPersonalesService);

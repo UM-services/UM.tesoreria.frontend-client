@@ -6,7 +6,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { EXTERNO_API_BASE } from '@tesoreria/shared-api';
 import {
   ChequeraEstado,
   ChequeraPorNumero,
@@ -26,9 +26,10 @@ export const TAMANIO_PAGINA = 100;
 @Injectable({ providedIn: 'root' })
 export class ChequerasService {
   private readonly http = inject(HttpClient);
-  private readonly coreBaseUrl = `${environment.apiBase}/core`;
+  private readonly apiBase = inject(EXTERNO_API_BASE);
+  private readonly coreBaseUrl = `${this.apiBase}/core`;
   // El generador del PDF de estado migró del core al servicio `report` del gateway.
-  private readonly reportBaseUrl = `${environment.apiBase}/report`;
+  private readonly reportBaseUrl = `${this.apiBase}/report`;
 
   facultadesUsuario(userId: number): Observable<FacultadAsignada[]> {
     return this.http

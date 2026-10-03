@@ -1,10 +1,10 @@
 import { Component, ChangeDetectorRef, NgZone, OnInit, inject } from '@angular/core';
+import { API_URL } from '@tesoreria/shared-api';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { environment } from '../../environments/environment';
 
 export interface Ubicacion {
   ubicacion: number;
@@ -243,8 +243,9 @@ export class GuaraniUbicacionesComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
 
-  private readonly apiBaseUrl = environment.apiUrl.replace(/\/core\/auth\/?$/, '');
-  private readonly coreBaseUrl = environment.apiUrl.replace(/\/auth\/?$/, '');
+  private readonly apiUrl = inject(API_URL);
+  private readonly apiBaseUrl = this.apiUrl.replace(/\/core\/auth\/?$/, '');
+  private readonly coreBaseUrl = this.apiUrl.replace(/\/auth\/?$/, '');
   private readonly ubicacionesUrl = `${this.apiBaseUrl}/guarani/ubicacion/tipo/3`;
   private readonly geograficasUrl = `${this.coreBaseUrl}/geografica/`;
   private readonly associationsUrl = `${this.coreBaseUrl}/guaraniUbicacion`;

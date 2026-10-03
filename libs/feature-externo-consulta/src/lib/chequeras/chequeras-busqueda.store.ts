@@ -14,7 +14,7 @@ import {
 } from 'rxjs';
 import { AuthService } from '@tesoreria/shared-api';
 import { PersonaBusqueda } from '@tesoreria/ui-layout';
-import { environment } from '../../environments/environment';
+import { EXTERNO_ENABLE_DEBUG } from '@tesoreria/shared-api';
 import {
   ChequeraEstado,
   ChequeraPorNumero,
@@ -99,6 +99,7 @@ export class ChequerasBusquedaStore {
   private readonly service = inject(ChequerasService);
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly enableDebug = inject(EXTERNO_ENABLE_DEBUG);
   private readonly pedidos$ = new Subject<Pedido>();
   /** Reemplazable en tests. */
   hoy: () => Date = () => new Date();
@@ -221,23 +222,23 @@ export class ChequerasBusquedaStore {
     forkJoin({
       facultades: this.service
         .facultadesUsuario(userId)
-        .pipe(catchError((error: unknown) => fallarCatalogo(error, 'cargar sus facultades'))),
+        .pipe(catchError((error: unknown) => this.fallarCatalogo(error, 'cargar sus facultades'))),
       sedes: this.service
         .sedesUsuario(userId)
-        .pipe(catchError((error: unknown) => fallarCatalogo(error, 'cargar sus sedes'))),
+        .pipe(catchError((error: unknown) => this.fallarCatalogo(error, 'cargar sus sedes'))),
       clases: this.service
         .clasesUsuario(userId)
         .pipe(
-          catchError((error: unknown) => fallarCatalogo(error, 'cargar sus clases de chequera')),
+          catchError((error: unknown) => this.fallarCatalogo(error, 'cargar sus clases de chequera')),
         ),
       documentos: this.service
         .documentos()
         .pipe(
-          catchError((error: unknown) => fallarCatalogo(error, 'cargar los tipos de documento')),
+          catchError((error: unknown) => this.fallarCatalogo(error, 'cargar los tipos de documento')),
         ),
       lectivos: this.service
         .lectivos()
-        .pipe(catchError((error: unknown) => fallarCatalogo(error, 'cargar los lectivos'))),
+        .pipe(catchError((error: unknown) => this.fallarCatalogo(error, 'cargar los lectivos'))),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -341,7 +342,7 @@ export class ChequerasBusquedaStore {
       },
       error: (error: unknown) => {
         this.buscandoNumero.set(false);
-        registrarError('chequeraSerie/unique', error);
+        this.registrarError('chequeraSerie/unique', error);
         if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
           return;
         }
@@ -421,7 +422,7 @@ export class ChequerasBusquedaStore {
   }
 
   private estadoDeError(error: unknown, pedido: Pedido): EstadoBusqueda {
-    registrarError('chequeraSerie/usuario/:userId/lectivo/:lectivoId/asignaciones', error);
+    this.registrarError('chequeraSerie/usuario/:userId/lectivo/:lectivoId/asignaciones', error);
     if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
       // El errorInterceptor ya cerró la sesión y navega a /login.
       return { tipo: 'inicial' };
@@ -436,6 +437,19 @@ export class ChequerasBusquedaStore {
     }
     return { tipo: 'error', mensaje: mensajeError(error, 'consultar las chequeras') };
   }
+
+  private fallarCatalogo(error: unknown, area: string): Observable<never> {
+    this.registrarError(area, error);
+    return throwError(() => new ErrorDeCatalogo(mensajeError(error, area)));
+  }
+
+  /** Sólo en entornos con debug: se registra la plantilla del endpoint, nunca el DNI. */
+  private registrarError(endpoint: string, error: unknown): void {
+    if (this.enableDebug) {
+      const status = error instanceof HttpErrorResponse ? error.status : 'sin status';
+      console.error(`[chequeras] ${endpoint} falló`, status);
+    }
+  }
 }
 
 class ErrorDeCatalogo extends Error {}
@@ -445,20 +459,7 @@ function sinDuplicados<T>(lista: T[], clave: (item: T) => number): T[] {
   return lista.filter((item, i) => lista.findIndex((otra) => clave(otra) === clave(item)) === i);
 }
 
-function fallarCatalogo(error: unknown, area: string): Observable<never> {
-  registrarError(area, error);
-  return throwError(() => new ErrorDeCatalogo(mensajeError(error, area)));
-}
-
 function documentoPorDefecto(documentos: Documento[]): number | null {
   const dni = documentos.find((documento) => /\bd\.?\s*n\.?\s*i\b/i.test(documento.nombre));
   return (dni ?? documentos[0])?.documentoId ?? null;
-}
-
-/** Sólo en entornos con debug: se registra la plantilla del endpoint, nunca el DNI. */
-function registrarError(endpoint: string, error: unknown): void {
-  if (environment.enableDebug) {
-    const status = error instanceof HttpErrorResponse ? error.status : 'sin status';
-    console.error(`[chequeras] ${endpoint} falló`, status);
-  }
 }

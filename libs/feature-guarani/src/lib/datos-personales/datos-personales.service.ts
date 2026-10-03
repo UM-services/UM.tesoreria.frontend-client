@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { API_URL } from '@tesoreria/shared-api';
 import { map, Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
 import {
   AlumnoGuarani,
   CreatePersonalesResponse,
@@ -12,9 +12,10 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DatosPersonalesService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl.replace(/\/core\/auth\/?$/, '')}/guarani/alumno`;
+  private readonly apiUrl = inject(API_URL);
+  private readonly baseUrl = `${this.apiUrl.replace(/\/core\/auth\/?$/, '')}/guarani/alumno`;
   private readonly url = `${this.baseUrl}/documento`;
-  private readonly beneficiosUrl = `${environment.apiUrl.replace(/\/auth\/?$/, '')}/guaraniBeneficio`;
+  private readonly beneficiosUrl = `${this.apiUrl.replace(/\/auth\/?$/, '')}/guaraniBeneficio`;
 
   consultar(documento: string): Observable<DatosPersonalesAlumno> {
     const doc = documento.trim();

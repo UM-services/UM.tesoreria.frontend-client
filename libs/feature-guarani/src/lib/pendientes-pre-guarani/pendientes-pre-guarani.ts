@@ -2,10 +2,9 @@ import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
 import { catchError, timeout } from 'rxjs/operators';
 import { EMPTY, forkJoin, of } from 'rxjs';
-import { AuthService } from '@tesoreria/shared-api';
+import { API_URL, AuthService } from '@tesoreria/shared-api';
 import { DatosPersonalesModalComponent } from '../datos-personales/datos-personales-modal.component';
 import { DatosPersonalesAlumno } from '../datos-personales/datos-personales.models';
 
@@ -665,19 +664,20 @@ export class PendientesPreGuaraniComponent implements OnInit {
   private readonly zone = inject(NgZone);
   private readonly authService = inject(AuthService);
 
+  private readonly apiUrl = inject(API_URL);
   private readonly facultadesUrl =
-    environment.apiUrl.replace(/\/auth\/?$/, '') + '/facultad/con-responsable-academica';
+    this.apiUrl.replace(/\/auth\/?$/, '') + '/facultad/con-responsable-academica';
   private readonly guaraniBaseUrl =
-    environment.apiUrl.replace(/\/core\/auth\/?$/, '') +
+    this.apiUrl.replace(/\/core\/auth\/?$/, '') +
     '/guarani/propuestaResponsableAcademica/responsableAcademica/preuniversitario';
   private readonly ubicacionesUrl =
-    environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/ubicacion/tipo/3';
+    this.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/ubicacion/tipo/3';
   private readonly propuestasAspiraUrl =
-    environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaAspira';
+    this.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaAspira';
   private readonly propuestasOfertaUrl =
-    environment.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaOferta';
+    this.apiUrl.replace(/\/core\/auth\/?$/, '') + '/guarani/propuestaOferta';
   private readonly propuestaTipoPreuniversitario = 204;
-  private readonly coreBaseUrl = environment.apiUrl.replace(/\/auth\/?$/, '');
+  private readonly coreBaseUrl = this.apiUrl.replace(/\/auth\/?$/, '');
   private readonly guaraniUbicacionesUrl = `${this.coreBaseUrl}/guaraniUbicacion`;
   private readonly lectivosUrl = `${this.coreBaseUrl}/lectivo/reverse`;
   private readonly tiposChequeraSearchUrl = `${this.coreBaseUrl}/tipoChequera/search/1`;

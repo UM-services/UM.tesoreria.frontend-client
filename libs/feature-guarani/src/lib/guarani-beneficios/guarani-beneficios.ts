@@ -1,10 +1,10 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit, inject } from '@angular/core';
+import { API_URL } from '@tesoreria/shared-api';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
-import { environment } from '../../environments/environment';
 
 export interface Requisito {
   requisito: number;
@@ -213,8 +213,9 @@ export class GuaraniBeneficiosComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
 
-  private readonly apiBaseUrl = environment.apiUrl.replace(/\/core\/auth\/?$/, '');
-  private readonly coreBaseUrl = environment.apiUrl.replace(/\/auth\/?$/, '');
+  private readonly apiUrl = inject(API_URL);
+  private readonly apiBaseUrl = this.apiUrl.replace(/\/core\/auth\/?$/, '');
+  private readonly coreBaseUrl = this.apiUrl.replace(/\/auth\/?$/, '');
   private readonly requisitosUrl = `${this.apiBaseUrl}/guarani/requisito/tipo/4`;
   private readonly beneficiosUrl = `${this.coreBaseUrl}/guaraniBeneficio`;
 
