@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '@tesoreria/shared-api';
@@ -56,12 +57,16 @@ export class LoginComponent implements OnInit {
       next: () => {
         void this.router.navigateByUrl(this.returnUrl, { replaceUrl: true });
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isLoading = false;
-        // Map backend errors similar to VB6 MsgBox
-        this.errorMessage = err.error || 'Error: Usuario NO Válido';
+        this.errorMessage =
+          err instanceof HttpErrorResponse && err.status === 401
+            ? 'Usuario o contraseña incorrectos.'
+            : err instanceof HttpErrorResponse && typeof err.error === 'string' && err.error.trim()
+              ? err.error
+              : 'No se pudo iniciar sesión. Intente de nuevo.';
         this.loginForm.get('password')?.reset();
-      }
+      },
     });
   }
 }
