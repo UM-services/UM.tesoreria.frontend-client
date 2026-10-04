@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.27.1] - 2026-10-04
+
+### Changed
+
+- docs: README registra la versión actual **0.27.1**. Los diagramas de `docs/architecture.md` (`CambioClaveModalComponent`, `ChangePasswordRequest` y `AuthService.changePassword`) siguen siendo exactos tras el cambio, por lo que no se modifican.
+
+### Fixed
+
+- fix(ui-auth): `CambioClaveModalComponent.onSubmit` elimina el rechazo client-side de las cuentas cuyo `login` empieza con `admin` ("ERROR: NO se puede Cambiar ESTA Clave") y delega esa regla al backend: el modal siempre envía `AuthService.changePassword` (`POST auth/change-password`) y, si el servidor la rechaza, el error se muestra por el camino ya existente de `HttpErrorResponse` (texto plano, `message` o el genérico "ERROR: No se pudo cambiar la clave."). Las únicas validaciones client-side que quedan son los campos de contraseña obligatorios y la coincidencia de `newPassword` con `reClaveNueva`. El spec retira el caso de bloqueo de cuentas `admin` y el diff se completa con reformateo Prettier (imports multilínea del componente y `providers` en una línea). La API pública del componente (`selector`, `@Input isOpen`, `@Output closed`) y el modelo `ChangePasswordRequest` no cambian.
+
+## [0.27.0] - 2026-10-03
+
+### Added
+
+- feat(workspace): Nuevas librerías compartidas `@tesoreria/feature-guarani` y `@tesoreria/feature-externo-consulta` (registradas en los alias `@tesoreria/*` de `tsconfig.base.json`). La app `guarani` monta su módulo con `loadChildren` sobre `GUARANI_ROUTES` (`libs/feature-guarani/src/lib/lib.routes.ts`), que incluye las vistas pendientes-pre-guarani, guarani-ubicaciones, guarani-beneficios y datos-personales junto al guard `guaraniSedePrincipalGuard`; `externo-consulta` carga `/chequeras` con `loadComponent` desde la lib. Ambas apps quedan como shells delgados (componente raíz, `app.config.ts` y `app.routes.ts`) y se retira `apps/guarani/src/app/blank.component.ts` y las vistas locales.
+- feat(shared-api): Nuevos tokens de inyección exportados desde `@tesoreria/shared-api`: `EXTERNO_API_BASE` (base del gateway del portal público sin sufijo `/core/auth`, con factory por defecto `/api/tesoreria`) y `EXTERNO_ENABLE_DEBUG` (log de plantillas de endpoint al fallar, sin datos personales; factory por defecto `false`). El host `externo-consulta` los provee desde su `environment` (`apiBase`, `enableDebug`) en `app.config.ts`; `ChequerasService` deriva de ellos sus bases core/report y `ChequerasBusquedaStore` habilita el log de depuración, de modo que la lib no importa `apps/**/environments/*`.
+- feat(ui-auth): `LoginComponent` sale del login si ya hay sesión: `ngOnInit` navega al `returnUrl` cuando `AuthService.isLoggedIn()`. El `returnUrl` de la query se sanea (acepta sólo rutas que empiezan con `/`, nunca `//` ni `/login`; caso contrario cae en `/`) y la navegación usa `replaceUrl`.
+- test(e2e): `compras-e2e` y `chequeras-e2e` reemplazan el `example.spec.ts` generado por un smoke de acceso real en `login.spec.ts`: sin sesión el guard redirige a `/login` y el formulario renderiza los campos de usuario y clave sin necesitar backend.
+
+### Changed
+
+- refactor(ui-auth): La lib se aplana de `libs/ui-auth/ui-auth/` a `libs/ui-auth/` (el alias `@tesoreria/ui-auth` ahora resuelve a `libs/ui-auth/src/index.ts`, `index.ts` exporta `cambio-clave` desde su ruta local y se suma `test-setup.ts`); el selector de `LoginComponent` pasa de `ui-auth-login` a `lib-login`.
+- chore: Se elimina el remanente del scaffold inicial de Angular en la raíz del workspace (`src/`, `project.json` raíz, `tsconfig.app.json`, `tsconfig.spec.json`, `public/favicon.ico`); el `tsconfig.json` raíz ahora extiende `tsconfig.base.json` y `nx.json` fija `defaultBase: "main"`.
+- ci: `deploy-develop.yml`, `deploy-staging.yml` y `docker-publish.yml` se convierten en llamadores delgados del nuevo workflow reutilizable `deploy-pipeline.yml` (`workflow_call`), que recibe `environment`, `apps`, `deploy`, `deployRunner`/`deployScript` y `publishLatest`, unificando criterios con um.haberes.frontend-client: en PR el verify corre lint + test + `nx build`; en push se omite el build de Nx porque el Dockerfile multistage compila cada app dentro de la imagen; la imagen se etiqueta con el SHA completo y `latest` sólo en main (`docker-publish.yml`, renombrado "Deploy main", ya no despliega).
+- fix(e2e): Las configuraciones de Playwright de `compras-e2e` y `chequeras-e2e` apuntan al puerto real de cada app (`4201` y `4203`) en `baseURL` y en el `webServer`, en lugar del `4200` por defecto.
+- docs: README y `docs/architecture.md` reflejan las nuevas libs `feature-guarani`/`feature-externo-consulta` y los tokens `EXTERNO_*` en sus diagramas; la "Referencia viva" del sistema J2 y la estrategia del buscador apuntan a `libs/feature-externo-consulta/src/lib/chequeras`; README registra la versión actual **0.27.0**. `AGENTS.md` documenta la regla de apps como shells delgados, la inyección de configuración vía tokens, los buscadores compartidos obligatorios, la prohibición de artefactos VB6 en UI y los criterios de CI.
+
+### Fixed
+
+- fix(ui-auth): El error de login deja de volcar el objeto crudo de la respuesta (`err.error || 'Error: Usuario NO Válido'`): un `HttpErrorResponse` 401 muestra "Usuario o contraseña incorrectos."; un body de error `string` no vacío se muestra tal cual; cualquier otro fallo usa el genérico "No se pudo iniciar sesión. Intente de nuevo.". La clave se resetea en todos los intentos. El spec de `LoginComponent` se reescribe con cuatro casos: el 401 con mensaje propio y reseteo de la clave, el genérico ante error con objeto, la salida con sesión activa y el reemplazo del login en el historial tras ingresar.
+
 ## [0.26.4] - 2026-09-30
 
 ### Fixed
