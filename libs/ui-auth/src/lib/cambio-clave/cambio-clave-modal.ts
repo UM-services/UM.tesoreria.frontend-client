@@ -1,4 +1,13 @@
-import { Component, EventEmitter, inject, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  inject,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -84,12 +93,6 @@ export class CambioClaveModalComponent implements OnInit, OnChanges {
 
     if (val.newPassword !== val.reClaveNueva) {
       this.errorMessage = 'ERROR: Claves NO Coinciden';
-      return;
-    }
-
-    const safeLogin = val.login?.trim().toLowerCase() || '';
-    if (safeLogin.startsWith('admin')) {
-      this.errorMessage = 'ERROR: NO se puede Cambiar ESTA Clave';
       return;
     }
 

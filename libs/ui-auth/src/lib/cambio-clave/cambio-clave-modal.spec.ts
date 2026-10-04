@@ -24,10 +24,7 @@ describe('CambioClaveModalComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [CambioClaveModalComponent],
-      providers: [
-        provideHttpClient(),
-        { provide: API_URL, useValue: '' },
-      ],
+      providers: [provideHttpClient(), { provide: API_URL, useValue: '' }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CambioClaveModalComponent);
@@ -67,22 +64,6 @@ describe('CambioClaveModalComponent', () => {
     component.onSubmit();
 
     expect(component.errorMessage).toBe('ERROR: Claves NO Coinciden');
-  });
-
-  it('prevents changing password for admin accounts', () => {
-    component.isOpen = true;
-    component.resetForm();
-
-    component.form.patchValue({
-      login: 'adminGeneral',
-      currentPassword: 'oldPassword',
-      newPassword: 'samePassword',
-      reClaveNueva: 'samePassword',
-    });
-
-    component.onSubmit();
-
-    expect(component.errorMessage).toBe('ERROR: NO se puede Cambiar ESTA Clave');
   });
 
   it('submits changePassword successfully and shows success message', () => {
