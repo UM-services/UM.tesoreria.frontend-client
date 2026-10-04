@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.27.1] - 2026-10-04
+
+### Changed
+
+- docs: README registra la versión actual **0.27.1**. Los diagramas de `docs/architecture.md` (`CambioClaveModalComponent`, `ChangePasswordRequest` y `AuthService.changePassword`) siguen siendo exactos tras el cambio, por lo que no se modifican.
+
+### Fixed
+
+- fix(ui-auth): `CambioClaveModalComponent.onSubmit` elimina el rechazo client-side de las cuentas cuyo `login` empieza con `admin` ("ERROR: NO se puede Cambiar ESTA Clave") y delega esa regla al backend: el modal siempre envía `AuthService.changePassword` (`POST auth/change-password`) y, si el servidor la rechaza, el error se muestra por el camino ya existente de `HttpErrorResponse` (texto plano, `message` o el genérico "ERROR: No se pudo cambiar la clave."). Las únicas validaciones client-side que quedan son los campos de contraseña obligatorios y la coincidencia de `newPassword` con `reClaveNueva`. El spec retira el caso de bloqueo de cuentas `admin` y el diff se completa con reformateo Prettier (imports multilínea del componente y `providers` en una línea). La API pública del componente (`selector`, `@Input isOpen`, `@Output closed`) y el modelo `ChangePasswordRequest` no cambian.
+
 ## [0.27.0] - 2026-10-03
 
 ### Added
