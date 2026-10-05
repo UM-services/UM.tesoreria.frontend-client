@@ -1,0 +1,307 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Administración / Parámetros</p>
+      <h1 class="um-page-title">Personas</h1>
+      <p class="um-page-desc">
+        Datos personales y domicilio. Busque una persona o complete los datos para darla de alta.
+      </p>
+    </div>
+  </div>
+
+  @if (mensaje(); as m) {
+    <div
+      class="um-alert"
+      [class.um-alert-error]="m.tipo === 'error'"
+      [class.um-alert-success]="m.tipo === 'ok'"
+      [class.um-alert-warn]="m.tipo === 'aviso'"
+      [attr.role]="m.tipo === 'error' ? 'alert' : 'status'"
+    >
+      {{ m.texto }}
+    </div>
+  }
+
+  <section class="um-card" aria-labelledby="personas-buscar">
+    <h2 id="personas-buscar" class="mb-4 text-base font-bold text-um-ink">Buscar</h2>
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-12">
+      <div class="md:col-span-6">
+        <ui-buscador-persona
+          label="Apellido y nombre"
+          inputId="personas-buscador"
+          [(texto)]="textoBusqueda"
+          [disabled]="ocupado()"
+          (seleccionada)="elegirPersona($event)"
+        />
+      </div>
+    </div>
+  </section>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-6" novalidate>
+    <section class="um-card" aria-labelledby="personas-datos">
+      <h2 id="personas-datos" class="mb-4 text-base font-bold text-um-ink">Datos personales</h2>
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-12">
+        <div class="md:col-span-3">
+          <label class="um-label" for="personas-id"
+            >Número <span class="text-red-500">*</span></label
+          >
+          <input
+            id="personas-id"
+            type="number"
+            min="1"
+            formControlName="personaId"
+            class="um-input"
+            [class.um-input-invalid]="
+              form.controls.personaId.invalid && form.controls.personaId.touched
+            "
+            (keydown.enter)="$event.preventDefault(); buscarPorNumero()"
+          />
+        </div>
+
+        <div class="md:col-span-4">
+          <label class="um-label" for="personas-documento">
+            Tipo de documento <span class="text-red-500">*</span>
+          </label>
+          <select
+            id="personas-documento"
+            formControlName="documentoId"
+            class="um-input"
+            [class.um-input-invalid]="
+              form.controls.documentoId.invalid && form.controls.documentoId.touched
+            "
+          >
+            <option [ngValue]="null">Seleccione...</option>
+            @for (d of documentos(); track d.documentoId) {
+              <option [ngValue]="d.documentoId">{{ d.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="flex items-end gap-2 md:col-span-5">
+          <button
+            type="button"
+            class="um-btn-secondary"
+            [disabled]="ocupado() || form.controls.personaId.disabled"
+            (click)="buscarPorNumero()"
+          >
+            Buscar por número
+          </button>
+        </div>
+
+        <div class="md:col-span-6">
+          <label class="um-label" for="personas-apellido"
+            >Apellido <span class="text-red-500">*</span></label
+          >
+          <input
+            id="personas-apellido"
+            type="text"
+            formControlName="apellido"
+            autocomplete="off"
+            class="um-input"
+            [class.um-input-invalid]="
+              form.controls.apellido.invalid && form.controls.apellido.touched
+            "
+          />
+        </div>
+
+        <div class="md:col-span-6">
+          <label class="um-label" for="personas-nombre"
+            >Nombre <span class="text-red-500">*</span></label
+          >
+          <input
+            id="personas-nombre"
+            type="text"
+            formControlName="nombre"
+            autocomplete="off"
+            class="um-input"
+            [class.um-input-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched"
+          />
+        </div>
+
+        <fieldset class="md:col-span-3">
+          <legend class="um-label">Sexo <span class="text-red-500">*</span></legend>
+          <div class="flex gap-6 py-2 text-sm text-um-ink">
+            <label class="inline-flex items-center gap-2">
+              <input type="radio" formControlName="sexo" value="M" /> Masculino
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input type="radio" formControlName="sexo" value="F" /> Femenino
+            </label>
+          </div>
+          @if (form.controls.sexo.invalid && form.controls.sexo.touched) {
+            <p class="mt-1 text-xs text-red-700">Elija una opción.</p>
+          }
+        </fieldset>
+
+        <div class="md:col-span-3">
+          <label class="um-label" for="personas-cuil">CUIL/CUIT</label>
+          <input id="personas-cuil" type="text" formControlName="cuit" class="um-input" />
+        </div>
+
+        <div class="md:col-span-6">
+          <label class="um-label" for="personas-cbu">CBU</label>
+          <div class="flex gap-2">
+            <input id="personas-cbu" type="text" formControlName="cbu" class="um-input" />
+            <button
+              type="button"
+              class="um-btn-secondary whitespace-nowrap"
+              [disabled]="ocupado() || !personaCargada()"
+              (click)="recuperarCbu()"
+            >
+              Recuperar CBU
+            </button>
+          </div>
+          @if (cbuConLongitudRara()) {
+            <p class="mt-1 text-xs text-amber-800">
+              El CBU suele tener {{ longitudCbu }} caracteres.
+            </p>
+          }
+        </div>
+
+        @if (cbuPropuesto(); as cbu) {
+          <div class="um-alert um-alert-warn md:col-span-12" role="status">
+            <p>
+              CBU recuperado de la última factura de contrato: <strong>{{ cbu }}</strong>
+            </p>
+            <p class="mt-1">¿Desea guardarlo como CBU de la persona?</p>
+            <div class="mt-3 flex gap-2">
+              <button
+                type="button"
+                class="um-btn-primary"
+                [disabled]="ocupado()"
+                (click)="aceptarCbu()"
+              >
+                Sí, guardar
+              </button>
+              <button
+                type="button"
+                class="um-btn-secondary"
+                [disabled]="ocupado()"
+                (click)="cancelarCbu()"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="um-card" formGroupName="domicilio" aria-labelledby="personas-domicilio">
+      <h2 id="personas-domicilio" class="mb-4 text-base font-bold text-um-ink">Domicilio</h2>
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-12">
+        <div class="md:col-span-6">
+          <label class="um-label" for="personas-calle">Calle</label>
+          <input id="personas-calle" type="text" formControlName="calle" class="um-input" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="um-label" for="personas-puerta">Puerta</label>
+          <input id="personas-puerta" type="text" formControlName="puerta" class="um-input" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="um-label" for="personas-piso">Piso</label>
+          <input id="personas-piso" type="text" formControlName="piso" class="um-input" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="um-label" for="personas-dpto">Dpto</label>
+          <input id="personas-dpto" type="text" formControlName="dpto" class="um-input" />
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="um-label" for="personas-cp">Código postal</label>
+          <input
+            id="personas-cp"
+            type="text"
+            inputmode="numeric"
+            formControlName="codigoPostal"
+            class="um-input"
+            (blur)="buscarPostal()"
+            (keydown.enter)="$event.preventDefault(); buscarPostal()"
+          />
+        </div>
+        <div class="md:col-span-4">
+          <label class="um-label" for="personas-provincia">Provincia</label>
+          <select id="personas-provincia" formControlName="provinciaId" class="um-input">
+            <option [ngValue]="null">Seleccione...</option>
+            @for (p of provincias(); track p.provinciaId) {
+              <option [ngValue]="p.provinciaId">{{ p.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="md:col-span-5">
+          <label class="um-label" for="personas-localidad">Localidad</label>
+          <select id="personas-localidad" formControlName="localidadId" class="um-input">
+            <option [ngValue]="null">Seleccione...</option>
+            @for (l of localidades(); track l.localidadId) {
+              <option [ngValue]="l.localidadId">{{ l.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        @if (avisoPostal(); as aviso) {
+          <p class="um-alert um-alert-warn md:col-span-12" role="status">{{ aviso }}</p>
+        }
+
+        <div class="md:col-span-3">
+          <label class="um-label" for="personas-telefono">Teléfono</label>
+          <input id="personas-telefono" type="text" formControlName="telefono" class="um-input" />
+        </div>
+        <div class="md:col-span-3">
+          <label class="um-label" for="personas-movil">Móvil</label>
+          <input id="personas-movil" type="text" formControlName="movil" class="um-input" />
+        </div>
+        <div class="md:col-span-6">
+          <label class="um-label" for="personas-laboral">Lugar de trabajo</label>
+          <input id="personas-laboral" type="text" formControlName="laboral" class="um-input" />
+        </div>
+
+        <div class="md:col-span-6">
+          <label class="um-label" for="personas-email">E-mail personal</label>
+          <input
+            id="personas-email"
+            type="email"
+            formControlName="emailPersonal"
+            class="um-input"
+            [class.um-input-invalid]="emailInvalido('emailPersonal')"
+          />
+          @if (emailInvalido('emailPersonal')) {
+            <p class="mt-1 text-xs text-red-700">
+              El formato del e-mail no parece válido (no impide guardar).
+            </p>
+          }
+        </div>
+        <div class="md:col-span-6">
+          <label class="um-label" for="personas-email-inst">E-mail institucional</label>
+          <input
+            id="personas-email-inst"
+            type="email"
+            formControlName="emailInstitucional"
+            class="um-input"
+            [class.um-input-invalid]="emailInvalido('emailInstitucional')"
+          />
+          @if (emailInvalido('emailInstitucional')) {
+            <p class="mt-1 text-xs text-red-700">
+              El formato del e-mail no parece válido (no impide guardar).
+            </p>
+          }
+        </div>
+
+        <div class="md:col-span-12">
+          <label class="um-label" for="personas-observaciones">Observaciones</label>
+          <textarea
+            id="personas-observaciones"
+            rows="2"
+            formControlName="observaciones"
+            class="um-input"
+          ></textarea>
+        </div>
+      </div>
+    </section>
+
+    <div class="flex justify-end gap-3">
+      <button type="button" class="um-btn-secondary" [disabled]="ocupado()" (click)="limpiar()">
+        Limpiar
+      </button>
+      <button type="submit" class="um-btn-primary" [disabled]="ocupado()">Guardar</button>
+    </div>
+  </form>
+</div>

@@ -19,6 +19,11 @@ export const appRoutes: Route[] = [
     component: NoAccesoComponent,
   },
   {
+    path: 'personas',
+    loadComponent: () => import('./personas/personas').then(m => m.PersonasComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
     path: 'dependencias',
     component: DependenciasComponent,
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
