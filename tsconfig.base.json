@@ -14,7 +14,7 @@
         "./libs/shared-api/src/index.ts"
       ],
       "@tesoreria/ui-auth": [
-        "./libs/ui-auth/ui-auth/src/index.ts"
+        "./libs/ui-auth/src/index.ts"
       ],
       "@tesoreria/feature-proveedores": [
         "./libs/feature-proveedores/src/index.ts"
@@ -24,6 +24,12 @@
       ],
       "@tesoreria/feature-orden-compra": [
         "./libs/feature-orden-compra/src/index.ts"
+      ],
+      "@tesoreria/feature-guarani": [
+        "./libs/feature-guarani/src/index.ts"
+      ],
+      "@tesoreria/feature-externo-consulta": [
+        "./libs/feature-externo-consulta/src/index.ts"
       ]
     }
   }

@@ -261,7 +261,7 @@ según el estilo local de cada view, como el combobox actual).
   `.../PersonaKeyRepositoryCustomImpl.java` (AND LIKE sobre `search`, máx 50),
   `.../domain/model/PersonaKey.java` (forma cruda de la respuesta; contiene campos
   sensibles).
-- Frontend a reemplazar: `apps/externo-consulta/src/app/chequeras/chequeras.component.html`
+- Frontend a reemplazar: `libs/feature-externo-consulta/src/lib/chequeras/chequeras.component.html`
   (bloque 91-155), `chequeras.component.ts` (teclado de sugerencias),
   `chequeras-busqueda.store.ts` (`sugerir`, `MINIMO_SUGERENCIA`),
   `chequeras.service.ts` (`sugerirPersonas`).

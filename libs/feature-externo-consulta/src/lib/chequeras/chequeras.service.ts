@@ -1,0 +1,130 @@
+// El filtrado por asignaciones (facultad, sede geográfica y clase de chequera) lo hace el core según
+// `usuario_chequera_facultad`, `usuario_chequera_geografica` y `usuario_chequera_clase_chequera`, pero el
+// `userId` sale de la sesión guardada en localStorage y ni el gateway ni el core lo autentican todavía.
+// Esto es una guarda de experiencia de usuario, no un control de acceso: no exponer a usuarios
+// externos reales hasta que el backend vincule el `userId` a la sesión.
+import { inject, Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { map, Observable } from 'rxjs';
+import { EXTERNO_API_BASE } from '@tesoreria/shared-api';
+import {
+  ChequeraEstado,
+  ChequeraPorNumero,
+  ClaseChequeraAsignada,
+  CuotaConPagos,
+  DeudaChequera,
+  Documento,
+  FacultadAsignada,
+  Lectivo,
+  Pagina,
+  SedeAsignada,
+} from './chequeras.models';
+import { normalizarLista } from './chequeras.utils';
+
+export const TAMANIO_PAGINA = 100;
+
+@Injectable({ providedIn: 'root' })
+export class ChequerasService {
+  private readonly http = inject(HttpClient);
+  private readonly apiBase = inject(EXTERNO_API_BASE);
+  private readonly coreBaseUrl = `${this.apiBase}/core`;
+  // El generador del PDF de estado migró del core al servicio `report` del gateway.
+  private readonly reportBaseUrl = `${this.apiBase}/report`;
+
+  facultadesUsuario(userId: number): Observable<FacultadAsignada[]> {
+    return this.http
+      .get<FacultadAsignada[]>(`${this.coreBaseUrl}/usuarioChequeraFacultad/user/${userId}`)
+      .pipe(map((data) => normalizarLista<FacultadAsignada>(data)));
+  }
+
+  sedesUsuario(userId: number): Observable<SedeAsignada[]> {
+    return this.http
+      .get<SedeAsignada[]>(`${this.coreBaseUrl}/usuarioChequeraGeografica/user/${userId}`)
+      .pipe(map((data) => normalizarLista<SedeAsignada>(data)));
+  }
+
+  clasesUsuario(userId: number): Observable<ClaseChequeraAsignada[]> {
+    return this.http
+      .get<
+        ClaseChequeraAsignada[]
+      >(`${this.coreBaseUrl}/usuarioChequeraClaseChequera/user/${userId}`)
+      .pipe(map((data) => normalizarLista<ClaseChequeraAsignada>(data)));
+  }
+
+  documentos(): Observable<Documento[]> {
+    return this.http
+      .get<Documento[]>(`${this.coreBaseUrl}/documento/`)
+      .pipe(map((data) => normalizarLista<Documento>(data)));
+  }
+
+  lectivos(): Observable<Lectivo[]> {
+    return this.http
+      .get<Lectivo[]>(`${this.coreBaseUrl}/lectivo/reverse`)
+      .pipe(map((data) => normalizarLista<Lectivo>(data)));
+  }
+
+  chequeraPorNumero(
+    facultadId: number,
+    tipoChequeraId: number,
+    chequeraSerieId: number,
+  ): Observable<ChequeraPorNumero> {
+    return this.http.get<ChequeraPorNumero>(
+      `${this.coreBaseUrl}/chequeraSerie/unique/${facultadId}/${tipoChequeraId}/${chequeraSerieId}`,
+    );
+  }
+
+  chequerasPorSerie(facultadId: number, chequeraSerieId: number): Observable<ChequeraPorNumero[]> {
+    return this.http
+      .get<
+        ChequeraPorNumero[]
+      >(`${this.coreBaseUrl}/chequeraSerie/bynumber/${facultadId}/${chequeraSerieId}`)
+      .pipe(map((data) => normalizarLista<ChequeraPorNumero>(data)));
+  }
+
+  chequerasPorUsuario(
+    userId: number,
+    lectivoId: number,
+    personaId: string,
+    documentoId: number,
+    page = 0,
+  ): Observable<Pagina<ChequeraEstado>> {
+    const params = new HttpParams()
+      .set('personaId', personaId)
+      .set('documentoId', documentoId)
+      .set('page', page)
+      .set('size', TAMANIO_PAGINA);
+    return this.http.get<Pagina<ChequeraEstado>>(
+      `${this.coreBaseUrl}/chequeraSerie/usuario/${userId}/lectivo/${lectivoId}/asignaciones`,
+      { params },
+    );
+  }
+
+  cuotasConPagos(chequera: ChequeraEstado): Observable<CuotaConPagos[]> {
+    const { facultadId, tipoChequeraId, chequeraSerieId, alternativaId } = chequera;
+    return this.http
+      .get<
+        CuotaConPagos[]
+      >(`${this.coreBaseUrl}/chequera/cuotas/pagos/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}`)
+      .pipe(map((data) => normalizarLista<CuotaConPagos>(data)));
+  }
+
+  deuda(chequera: ChequeraEstado): Observable<DeudaChequera> {
+    const { facultadId, tipoChequeraId, chequeraSerieId } = chequera;
+    return this.http.get<DeudaChequera>(
+      `${this.coreBaseUrl}/chequeraCuota/deuda/${facultadId}/${tipoChequeraId}/${chequeraSerieId}`,
+    );
+  }
+
+  /**
+   * "Estado de Chequera": todas las cuotas (pagas e impagas) por producto con subtotales, y los
+   * débitos automáticos agrupados por tipo. Lo genera el servicio
+   * `report` del gateway; antes servía el core en `/chequera/generateEstadoPdf`.
+   */
+  descargarPdfEstado(chequera: ChequeraEstado): Observable<Blob> {
+    const { facultadId, tipoChequeraId, chequeraSerieId, alternativaId } = chequera;
+    return this.http.get(
+      `${this.reportBaseUrl}/chequeras/estado/facultad/${facultadId}/tipoChequera/${tipoChequeraId}/chequeraSerie/${chequeraSerieId}/alternativa/${alternativaId}`,
+      { responseType: 'blob' },
+    );
+  }
+}

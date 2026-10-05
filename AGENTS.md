@@ -4,8 +4,9 @@
 
 - This is an Nx 22.7.1 monorepo using Angular 21, TypeScript 5.9, Vitest 4, and npm 11.6.2; use Node.js 20+.
 - Install from the lockfile with `npm ci`; do not use another package manager.
-- Applications live under `apps/`: `compras`, `pagos`, `chequeras`, `administrador`, `contable`, `contratados`, `guarani`, and `externo-consulta`.
-- Shared libraries live under `libs/`: `shared-api`, `ui-auth/ui-auth`, `ui-layout`, `feature-proveedores`, `feature-gastos`, and `feature-orden-compra`.
+- Applications live under `apps/`: `compras`, `pagos`, `chequeras`, `administrador`, `contable`, `contratados`, `guarani`, and `externo-consulta`. Apps are thin shells: root component with `<ui-shell>`, `app.config.ts`, and `app.routes.ts` only. Feature views never live inside `apps/<app>/src/app/`.
+- Shared libraries live under `libs/`: `shared-api`, `ui-auth`, `ui-layout`, `feature-proveedores`, `feature-gastos`, `feature-orden-compra`, `feature-guarani`, and `feature-externo-consulta`. Each app's views belong in its feature libraries, which export their routes (`lib.routes.ts`, e.g. `GUARANI_ROUTES`) and are mounted with `loadChildren`/`loadComponent`.
+- Libraries must not import `apps/**/environments/*`; anything configuration-driven (API bases, debug flags) comes through injection tokens (`API_URL`, `EXTERNO_API_BASE`, `EXTERNO_ENABLE_DEBUG` in `@tesoreria/shared-api`) provided by the host app's `app.config.ts`. Because feature libs are lazy-loaded, `@nx/enforce-module-boundaries` forbids statically importing them anywhere else than route loaders.
 - Use the configured `@tesoreria/*` path aliases for shared libraries and import public symbols through each library's `src/index.ts`. Nx ESLint enforces module boundaries using project tags (`type:*` and `scope:*`) and dependency direction rules.
 - `apps/compras-e2e` and `apps/chequeras-e2e` are Playwright projects; their generated `e2e` targets start the corresponding app server.
 
@@ -25,7 +26,18 @@
 
 - TypeScript and Angular template checking are strict (`strict`, `strictTemplates`, strict injection parameters); preserve those checks rather than loosening compiler options.
 - Production builds enforce initial bundle limits of 500 kB warning / 1 MB error and component-style limits of 4 kB warning / 8 kB error.
-- All applications, including `guarani`, build from the shared multistage `docker/app.Dockerfile` with `--build-arg APP=<app>`: the Node stage runs `npm ci` and `npx nx build <app> --configuration=production`, and the Nginx stage copies that build. Images depend only on source, never on a local `dist/apps/`, so do not reintroduce runtime-only Dockerfiles that `COPY dist/`. Keep `node_modules`, `dist`, `.angular`, `.nx` and `.git` out of the build context in `.dockerignore`. Rebuilding through Compose requires `--build` (or `npm run docker:app -- <app>`) because `up -d` reuses an existing image without looking at the source. The Docker workflow builds and publishes the images directly on pushes to `main`; `npx nx affected -t build` in `.github/workflows/ci.yml` stays as the pre-merge compile check since PRs never build images.
+- All applications, including `guarani` and `externo-consulta`, build from the shared multistage `docker/app.Dockerfile` with `--build-arg APP=<app>`: the Node stage runs `npm ci` and `npx nx build <app> --configuration=production`, and the Nginx stage copies that build. Images depend only on source, never on a local `dist/apps/`, so do not reintroduce runtime-only Dockerfiles that `COPY dist/`. Keep `node_modules`, `dist`, `.angular`, `.nx` and `.git` out of the build context in `.dockerignore`. Rebuilding through Compose requires `--build` (or `npm run docker:app -- <app>`) because `up -d` reuses an existing image without looking at the source.
+- CI criteria (shared with um.haberes.frontend-client): PRs to `main` run affected lint/test/build via `ci.yml`; `develop`/`staging` and `main` flows run through the reusable `.github/workflows/deploy-pipeline.yml`, whose thin callers (`deploy-develop.yml`, `deploy-staging.yml`, `docker-publish.yml`) pass `apps`, `environment`, `deploy`, `deployRunner`/`deployScript`, and `publishLatest`. On PRs the full `nx build` in the verify job is the pre-merge compile check; on pushes it is omitted because the multistage image build already compiles every app. Image tags: full commit sha on every push, plus `latest` only for main.
 - Each app registers the shared `authInterceptor` and `errorInterceptor`: authenticated API requests receive a bearer token, while HTTP 401/403 responses clear the session and navigate to `/login`.
-- Pull requests targeting `main` run affected-project lint, test, and production build validation through `.github/workflows/ci.yml`.
 - The docs workflow runs on pushes to `main` or `master`, generates an Nx graph and dashboard, and deploys GitHub Pages; generated `docs-site`, `dist`, and Nx/Angular caches are not source files.
+
+## Standard Search Components (Buscadores Compartidos)
+
+- Every screen that looks up a person, provider, or accounting account MUST reuse the shared widgets from `@tesoreria/ui-layout`: `<ui-buscador-persona>` (with `persona-busqueda` helpers), `<ui-buscador-proveedor>`, and `<ui-buscador-cuenta-contable>`. Do not re-implement search pipelines (debounce/keyboard/dropdown wiring) inside feature libraries or apps, and do not add persona/proveedor/account search methods to feature services.
+- Exact-key lookups (legajo/DNI) belong in their own editable form fields firing on ENTER and blur, not inside the search widget. Exception: the external portal's person search (`feature-externo-consulta`) queries by assigned-faculty semantics via its own `ChequerasService`; keep that backend contract as-is and route its UI through the shared `BuscadorPersonaComponent`.
+
+## Nomenclature & Legacy VB6 Strict Ban (Limpieza de UI)
+
+- NEVER expose Visual Basic 6 legacy artifacts in user-facing UI: no `.frm`/`.vbp` extensions in titles, tables, or badges, and no phrases like "migración desde VB6", "formulario VB6", or legacy project names (`prjGestion.vbp`, `prjChequera.vbp`).
+- Use clean domain terminology in copy and statuses: "Módulo de Chequeras", "Pendientes Pre Guaraní", "Orden de Compra", "Módulo en Desarrollo"; status indicators read "Planificado en Desarrollo", never "Pendiente de migración".
+- Internal fields or routing names kept for backend protocol mapping are acceptable in TypeScript data structures, but they MUST NEVER be rendered into HTML templates or exposed to users.
