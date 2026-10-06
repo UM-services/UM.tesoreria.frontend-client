@@ -20,7 +20,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'personas',
-    loadComponent: () => import('./personas/personas').then(m => m.PersonasComponent),
+      loadComponent: () => import('@tesoreria/feature-personas').then((m) => m.PersonasComponent),
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {

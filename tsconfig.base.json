@@ -7,24 +7,13 @@
     "module": "preserve",
     "skipLibCheck": true,
     "paths": {
-      "@tesoreria/ui-layout": [
-        "./libs/ui-layout/src/index.ts"
-      ],
-      "@tesoreria/shared-api": [
-        "./libs/shared-api/src/index.ts"
-      ],
-      "@tesoreria/ui-auth": [
-        "./libs/ui-auth/ui-auth/src/index.ts"
-      ],
-      "@tesoreria/feature-proveedores": [
-        "./libs/feature-proveedores/src/index.ts"
-      ],
-      "@tesoreria/feature-gastos": [
-        "./libs/feature-gastos/src/index.ts"
-      ],
-      "@tesoreria/feature-orden-compra": [
-        "./libs/feature-orden-compra/src/index.ts"
-      ]
+      "@tesoreria/ui-layout": ["./libs/ui-layout/src/index.ts"],
+      "@tesoreria/shared-api": ["./libs/shared-api/src/index.ts"],
+      "@tesoreria/ui-auth": ["./libs/ui-auth/ui-auth/src/index.ts"],
+      "@tesoreria/feature-proveedores": ["./libs/feature-proveedores/src/index.ts"],
+      "@tesoreria/feature-gastos": ["./libs/feature-gastos/src/index.ts"],
+      "@tesoreria/feature-orden-compra": ["./libs/feature-orden-compra/src/index.ts"],
+      "@tesoreria/feature-personas": ["./libs/feature-personas/src/index.ts"]
     }
   }
 }

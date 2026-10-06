@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { BuscadorPersonaComponent, PersonaBusqueda } from '@tesoreria/ui-layout';
 import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
 import {
@@ -20,8 +21,8 @@ import {
   Persona,
   Provincia,
   Sexo,
-} from './personas.models';
-import { PersonasService } from './personas.service';
+} from './feature-personas.models';
+import { PersonasService } from './feature-personas.service';
 
 interface Mensaje {
   tipo: 'error' | 'ok' | 'aviso';
@@ -51,12 +52,20 @@ function normalizar(texto: string | null | undefined): string {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, BuscadorPersonaComponent],
-  templateUrl: './personas.html',
+  templateUrl: './feature-personas.html',
 })
 export class PersonasComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(PersonasService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+
+  /**
+   * Texto superior del encabezado. Cada app lo puede definir en `data.eyebrow` de su ruta; si
+   * no lo define se muestra el de Administración.
+   */
+  protected readonly eyebrow: string =
+    (this.route?.snapshot.data['eyebrow'] as string | undefined) ?? 'Administración / Parámetros';
 
   readonly documentos = signal<Documento[]>([]);
   readonly provincias = signal<Provincia[]>([]);

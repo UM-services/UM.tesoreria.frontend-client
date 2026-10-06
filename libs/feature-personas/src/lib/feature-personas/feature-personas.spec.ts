@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 import { API_URL } from '@tesoreria/shared-api';
-import { Persona } from './personas.models';
-import { PersonasComponent } from './personas';
+import { Persona } from './feature-personas.models';
+import { PersonasComponent } from './feature-personas';
 
 const BASE = '/api/tesoreria/core';
 
@@ -61,6 +62,12 @@ describe('PersonasComponent', () => {
       sexo: 'M',
     });
   }
+
+  it('muestra por defecto el encabezado de Administración', () => {
+    const eyebrow = (fixture.nativeElement as HTMLElement).querySelector('.um-eyebrow');
+
+    expect(eyebrow?.textContent?.trim()).toBe('Administración / Parámetros');
+  });
 
   it('carga los tipos de documento y las provincias al iniciar', () => {
     expect(component.documentos()).toEqual([{ documentoId: 1, nombre: 'DNI' }]);
@@ -303,5 +310,32 @@ describe('PersonasComponent', () => {
       expect(component.cbuPropuesto()).toBeNull();
       expect(component.mensaje()?.texto).toBe('CBU actualizado.');
     });
+  });
+});
+
+describe('PersonasComponent con encabezado definido en la ruta', () => {
+  it('muestra el texto de data.eyebrow de la ruta', () => {
+    TestBed.configureTestingModule({
+      imports: [PersonasComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_URL, useValue: `${BASE}/auth` },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { data: { eyebrow: 'Chequeras / Personas' } } },
+        },
+      ],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(PersonasComponent);
+    fixture.detectChanges();
+    http.expectOne(`${BASE}/documento/`).flush([]);
+    http.expectOne(`${BASE}/provincia/facultad/6`).flush([]);
+
+    const eyebrow = (fixture.nativeElement as HTMLElement).querySelector('.um-eyebrow');
+
+    expect(eyebrow?.textContent?.trim()).toBe('Chequeras / Personas');
+    http.verify();
   });
 });

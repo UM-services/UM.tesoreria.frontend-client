@@ -3,8 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { API_URL } from '@tesoreria/shared-api';
-import { Domicilio, DomicilioEditable, Persona, PersonaEditable } from './personas.models';
-import { PersonasService } from './personas.service';
+import { Domicilio, DomicilioEditable, Persona, PersonaEditable } from './feature-personas.models';
+import { PersonasService } from './feature-personas.service';
 
 const BASE = '/api/tesoreria/core';
 

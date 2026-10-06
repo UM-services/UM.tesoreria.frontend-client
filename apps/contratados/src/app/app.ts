@@ -10,5 +10,8 @@ import { ShellMenuItem, UiShellComponent } from '@tesoreria/ui-layout';
 export class AppComponent {
   title = 'contratados';
 
-  readonly menuItems: ShellMenuItem[] = [{ label: 'Inicio', path: '/' }];
+  readonly menuItems: ShellMenuItem[] = [
+    { label: 'Inicio', path: '/' },
+    { label: 'Personas', path: '/personas' },
+  ];
 }

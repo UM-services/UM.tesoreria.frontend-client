@@ -11,7 +11,7 @@ import {
   PersonaEditable,
   Postal,
   Provincia,
-} from './personas.models';
+} from './feature-personas.models';
 
 /** Convierte en `null` los errores HTTP que core usa para decir "no existe". */
 function comoNulo<T>(estados: readonly number[]): OperatorFunction<T, T | null> {

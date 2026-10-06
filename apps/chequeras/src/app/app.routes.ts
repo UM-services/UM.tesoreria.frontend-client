@@ -14,6 +14,12 @@ export const appRoutes: Route[] = [
     component: NoAccesoComponent,
   },
   {
+    path: 'personas',
+    loadComponent: () => import('@tesoreria/feature-personas').then(m => m.PersonasComponent),
+    canActivate: [authGuard, usuarioInternoGuard],
+    data: { eyebrow: 'Chequeras / Personas' },
+  },
+  {
     path: '',
     component: NxWelcomeComponent,
     canActivate: [authGuard, usuarioInternoGuard],
