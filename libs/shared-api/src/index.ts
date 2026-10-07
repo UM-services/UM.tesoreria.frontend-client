@@ -4,6 +4,8 @@ export * from './lib/auth.models';
 export * from './lib/auth.flags';
 export * from './lib/auth.guard';
 export * from './lib/module-access.guard';
+export * from './lib/permisos.service';
+export * from './lib/permiso.guard';
 export * from './lib/tokens';
 export * from './lib/env';
 export * from './lib/auth.interceptor';

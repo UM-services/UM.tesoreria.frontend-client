@@ -7,11 +7,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const currentUser = authService.currentUserSignal();
 
   if (currentUser && currentUser.token) {
-    const authReq = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${currentUser.token}`
-      }
-    });
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${currentUser.token}`
+    };
+    // Identidad transitoria para el PEP de las fachadas (hasta el JWT de M2).
+    if (currentUser.userId != null) {
+      headers['X-User-Id'] = String(currentUser.userId);
+    }
+    const authReq = req.clone({ setHeaders: headers });
     return next(authReq);
   }
 
