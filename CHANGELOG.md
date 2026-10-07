@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.28.0] - 2026-10-07
+
+### Added
+
+- feat(shared-api): Gating de permisos en el frontend: `PermisosService` carga el bundle efectivo del usuario (`GET /permisoEfectivo/usuario/{userId}`) al iniciar sesión y lo limpia al cerrar; si el endpoint falla o no hay sesión el bundle queda vacío (**fail-closed**). `permisoGuard(clave)` filtra rutas por la convención `modulo.accion` y, cuando el bundle aún no se cargó, espera `ensureLoaded` antes de decidir; denegar redirige a `sin-acceso` (nunca a `/login`, para no generar bucles). El `authInterceptor` agrega el header `X-User-Id` con el `userId` de la sesión como identidad transitoria para el PEP de las fachadas hasta el JWT de M2, y `LoginResponse` suma el campo opcional `dependenciaId`.
+- feat(ui-layout): `PermisoDirective` (`*uiPermiso="'modulo.accion'"`) muestra o retira el contenido de forma reactiva según el bundle de permisos, y `ShellMenuItem.permiso` permite ocultar ítems del menú que el usuario no posee; `UiShellComponent.visibleMenuItems` filtra los ítems con `permiso` y mantiene visibles los que no lo declaran (retrocompatible con los menús existentes).
+- feat(permisos): Nueva librería `@tesoreria/feature-permisos` con las pantallas de seguridad del core: `/permisos` (asigna roles y excepciones usuario×permiso y muestra el bundle efectivo), `/roles` (ABM de roles y matriz rol × permiso con guardado inmediato por celda), `/catalogo` (ABM del catálogo de claves) y `/simulador` (lectura que explica si cada permiso efectivo proviene de un rol, de una excepción individual o del puente de flags legacy). Se montan de forma perezosa en la app administrador detrás de `[authGuard, usuarioInternoGuard, administradorGuard]`.
+- feat(administrador): Nueva librería `@tesoreria/feature-administrador` con `DependenciasComponent` y `AsignacionUsuariosComponent` (junto a `UsuarioChequeraService`), extraídos de la app administrador; sus rutas `/dependencias` y `/asignaciones` los cargan con `loadComponent` desde `@tesoreria/feature-administrador`.
+- feat(compras): Nueva librería `@tesoreria/feature-pedido-compra` (`pedidoCompraRoutes` con lista, alta y detalle) que consume la fachada `tesoreria-compras` (`/compras/pedido`) para iniciar, editar, enviar y consultar pedidos de compra; la app `compras` monta `/pedido` protegido por `permisoGuard('compras.iniciar_pedido')`.
+- test: Specs de `PermisosService` y `permisoGuard` en `shared-api` (carga del bundle al iniciar sesión, fail-closed, espera de carga y redirección) y de `PermisoDirective` en `ui-layout` (render y retiro reactivos según el permiso), más `permisos.service.spec.ts` de `feature-permisos`.
+
+### Changed
+
+- feat(compras): El circuito de compras pasa de "Compras" (`/orden-compra`, `feature-orden-compra`) a "Pedidos" (`/pedido`, `feature-pedido-compra`); el ítem del menú se llama "Pedidos" y declara `permiso: 'compras.iniciar_pedido'`.
+- refactor(administrador): Las rutas `/dependencias` y `/asignaciones` cargan los componentes desde `@tesoreria/feature-administrador` en lugar de componentes locales; se eliminan `apps/administrador/src/app/shared/buscador-cuenta/` y las vistas locales de dependencias y asignaciones.
+- chore(workspace): `tsconfig.base.json` reemplaza el alias `@tesoreria/feature-orden-compra` por `@tesoreria/feature-pedido-compra` y agrega los alias `@tesoreria/feature-administrador` y `@tesoreria/feature-permisos`.
+- docs: `AGENTS.md` documenta el gating de permisos (convención `modulo.accion`, fail-closed, pantallas de `feature-permisos` y la regla legacy de no modificar gating existente); `README.md` y `docs/architecture.md` reflejan las librerías `feature-pedido-compra`, `feature-administrador` y `feature-permisos`, el `X-User-Id` del interceptor y el nuevo esquema de guards.
+
+### Removed
+
+- `feature-orden-compra`: se elimina la librería completa (dashboard, alta multi-paso, detalle, servicio y modelos) junto con su alias `@tesoreria/feature-orden-compra`, la ruta `/orden-compra` de la app `compras` y la opción "Compras" del menú lateral. El circuito vigente de compras pasa a ser "Pedidos" (`feature-pedido-compra`, ruta `/pedido`). Se actualizan `AGENTS.md`, `README.md` y `docs/architecture.md`.
+
+### Fixed
+
+- `feature-pedido-compra`: el botón "Volver" de "Iniciar pedido de compra" no navegaba porque `PedidoFormComponent` usaba `routerLink` en su plantilla sin importar la directiva `RouterLink` (Angular lo trataba como atributo estático y el `<a>` quedaba sin navegación). Se agrega `RouterLink` a los `imports` del componente standalone.
+
 ## [0.27.1] - 2026-10-04
 
 ### Changed

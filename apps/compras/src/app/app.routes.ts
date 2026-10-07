@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { authGuard, SIN_ACCESO_RUTA, usuarioInternoGuard } from '@tesoreria/shared-api';
+import { authGuard, permisoGuard, SIN_ACCESO_RUTA, usuarioInternoGuard } from '@tesoreria/shared-api';
 import { NoAccesoComponent } from '@tesoreria/ui-layout';
 import { BlankComponent } from './blank.component';
 
@@ -19,9 +19,9 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
-    path: 'orden-compra',
-    loadChildren: () => import('@tesoreria/feature-orden-compra').then(m => m.ordenCompraRoutes),
-    canActivate: [authGuard, usuarioInternoGuard],
+    path: 'pedido',
+    loadChildren: () => import('@tesoreria/feature-pedido-compra').then(m => m.pedidoCompraRoutes),
+    canActivate: [authGuard, usuarioInternoGuard, permisoGuard('compras.iniciar_pedido')],
   },
   {
     path: 'gastos',
