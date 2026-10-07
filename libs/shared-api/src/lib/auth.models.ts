@@ -15,6 +15,8 @@ export interface LoginResponse {
   nombre: string;
   sede: string;
   geograficaId?: number;
+  /** Dependencia a la que pertenece el usuario (agregada al backend el 2026-10-07). */
+  dependenciaId?: number;
   /** 1 = usuario con permisos en el módulo administrador. */
   administrador?: number;
   /** 1 = usuario externo: sólo puede usar el módulo externo-consulta. */

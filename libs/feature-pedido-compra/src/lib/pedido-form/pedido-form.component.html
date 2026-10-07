@@ -1,0 +1,178 @@
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Compras / Pedidos</p>
+      <h1 class="um-page-title">Iniciar pedido de compra</h1>
+      <p class="um-page-desc">
+        Complete la solicitud. Puede guardarla como borrador y enviarla más tarde.
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a routerLink="/pedido" class="um-btn-secondary">Volver</a>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Solicitante -->
+  @if (contexto(); as ctx) {
+    <section class="um-card">
+      <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Solicitante</h2>
+      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label class="um-label">Solicitante</label>
+          <input class="um-input" [value]="ctx.solicitante.nombre" readonly />
+        </div>
+        @if (ctx.dependencia) {
+          <div>
+            <label class="um-label">Dependencia</label>
+            <input class="um-input" [value]="ctx.dependencia.nombre" readonly />
+          </div>
+          <div>
+            <label class="um-label">Facultad</label>
+            <input class="um-input" [value]="ctx.dependencia.facultadNombre || ''" readonly />
+          </div>
+          <div>
+            <label class="um-label">Sede</label>
+            <input class="um-input" [value]="ctx.dependencia.sedeNombre || ''" readonly />
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  @if (sinDependencia()) {
+    <div class="um-alert um-alert-warn">
+      <p class="text-sm">
+        No tenés una dependencia asignada. Contactá al administrador para poder iniciar pedidos.
+      </p>
+    </div>
+  }
+
+  <!-- Ítems -->
+  <section class="um-card">
+    <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Ítems</h2>
+    <div class="mt-4 overflow-x-auto">
+      <table class="um-table">
+        <thead>
+          <tr>
+            <th scope="col">Cantidad</th>
+            <th scope="col">Unidad</th>
+            <th scope="col">Bien / servicio</th>
+            <th scope="col">Especificaciones</th>
+            <th scope="col">Referencia web</th>
+            <th scope="col" class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items; track $index; let i = $index) {
+            <tr>
+              <td><input class="um-input" type="number" min="0" [(ngModel)]="item.cantidad" /></td>
+              <td><input class="um-input" [(ngModel)]="item.unidad" /></td>
+              <td><input class="um-input" [(ngModel)]="item.descripcion" /></td>
+              <td><input class="um-input" [(ngModel)]="item.especificaciones" /></td>
+              <td><input class="um-input" [(ngModel)]="item.referenciaWeb" /></td>
+              <td class="text-right">
+                <button type="button" class="um-link-btn" (click)="quitarItem(i)">Quitar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <button type="button" class="um-btn-secondary mt-3 inline-flex items-center" (click)="agregarItem()">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="mr-2 h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Agregar ítem
+    </button>
+  </section>
+
+  <!-- Necesidad y condiciones -->
+  <section class="um-card">
+    <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">
+      Necesidad y condiciones
+    </h2>
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div>
+        <label class="um-label">Fundamento / necesidad</label>
+        <textarea class="um-input" rows="4" [(ngModel)]="necesidad"></textarea>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="um-label">Fecha requerida</label>
+          <input class="um-input" type="date" [(ngModel)]="fechaRequerida" />
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="urgente" type="checkbox" [(ngModel)]="urgente" />
+          <label for="urgente" class="um-label mb-0">Urgente</label>
+        </div>
+        @if (urgente) {
+          <div>
+            <label class="um-label">Motivo de urgencia</label>
+            <input class="um-input" [(ngModel)]="urgenciaMotivo" />
+          </div>
+        }
+      </div>
+    </div>
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="flex items-center gap-2">
+        <input id="montoConocido" type="checkbox" [(ngModel)]="montoConocido" />
+        <label for="montoConocido" class="um-label mb-0">¿Conoce el monto estimado?</label>
+      </div>
+      <div>
+        <label class="um-label">Monto estimado</label>
+        <input class="um-input" type="number" [(ngModel)]="montoEstimado" />
+      </div>
+      <div>
+        <label class="um-label">Fuente de estimación</label>
+        <input class="um-input" [(ngModel)]="fuenteEstimacion" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-3">
+    <button
+      type="button"
+      class="um-btn-secondary"
+      [disabled]="isLoading() || sinDependencia()"
+      (click)="guardarBorrador()"
+    >
+      Guardar borrador
+    </button>
+    <button
+      type="button"
+      class="um-btn-primary"
+      [disabled]="isLoading() || sinDependencia()"
+      (click)="enviar()"
+    >
+      Enviar
+    </button>
+  </div>
+</div>

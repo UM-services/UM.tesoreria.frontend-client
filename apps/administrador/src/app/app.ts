@@ -15,5 +15,9 @@ export class AppComponent {
     { label: 'Proveedores', path: '/proveedores' },
     { label: 'Dependencias', path: '/dependencias' },
     { label: 'Asignaciones', path: '/asignaciones' },
+    { label: 'Permisos', path: '/permisos' },
+    { label: 'Roles', path: '/roles' },
+    { label: 'Catálogo', path: '/catalogo' },
+    { label: 'Simulador', path: '/simulador' },
   ];
 }
