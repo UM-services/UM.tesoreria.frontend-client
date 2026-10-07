@@ -2,7 +2,7 @@ import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
+import { API_URL } from '@tesoreria/shared-api';
 import { BuscadorCuentaContableComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -31,7 +31,7 @@ export class DependenciasComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
   
-  private readonly baseUrl = environment.apiUrl.replace(/\/auth\/?$/, '') + '/dependencia';
+  private readonly baseUrl = inject(API_URL).replace(/\/auth\/?$/, '') + '/dependencia';
 
   public dependencias: Dependencia[] = [];
   public selectedDependencia: Dependencia | null = null;

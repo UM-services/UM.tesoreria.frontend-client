@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { API_URL } from '@tesoreria/shared-api';
 
 export interface UsuarioResumen {
   userId: number;
@@ -55,7 +55,7 @@ export interface AsignacionClaseChequera {
 @Injectable({ providedIn: 'root' })
 export class UsuarioChequeraService {
   private readonly http = inject(HttpClient);
-  private readonly coreUrl = environment.apiUrl.replace(/\/auth\/?$/, '');
+  private readonly coreUrl = inject(API_URL).replace(/\/auth\/?$/, '');
 
   buscarUsuarios(texto: string): Observable<UsuarioResumen[]> {
     const params = new HttpParams().set('q', texto);
