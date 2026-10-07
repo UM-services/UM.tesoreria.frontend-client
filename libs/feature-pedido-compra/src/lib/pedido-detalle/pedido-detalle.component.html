@@ -1,0 +1,89 @@
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Compras / Pedidos</p>
+      <h1 class="um-page-title">{{ pedido()?.numero || 'Borrador' }}</h1>
+      <p class="um-page-desc">Detalle del pedido de compra.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a routerLink="/pedido" class="um-btn-secondary">Volver</a>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="p-6 text-sm text-um-muted">Cargando…</div>
+  } @else if (pedido(); as p) {
+    <section class="um-card">
+      <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Cabecera</h2>
+      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div>
+          <label class="um-label">Estado</label>
+          <p class="text-sm text-um-text">{{ p.estado }}</p>
+        </div>
+        <div>
+          <label class="um-label">Fecha</label>
+          <p class="text-sm text-um-text">{{ p.fecha | date: 'short' }}</p>
+        </div>
+        <div>
+          <label class="um-label">Fecha requerida</label>
+          <p class="text-sm text-um-text">
+            {{ p.fechaRequerida ? (p.fechaRequerida | date: 'short') : '—' }}
+          </p>
+        </div>
+        <div class="md:col-span-3">
+          <label class="um-label">Fundamento / necesidad</label>
+          <p class="text-sm text-um-text">{{ p.necesidad }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="um-card">
+      <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Ítems</h2>
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Unidad</th>
+              <th scope="col">Bien / servicio</th>
+              <th scope="col">Especificaciones</th>
+              <th scope="col">Referencia web</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of p.items || []; track item.compraPedidoItemId) {
+              <tr>
+                <td>{{ item.cantidad }}</td>
+                <td>{{ item.unidad }}</td>
+                <td>{{ item.descripcion }}</td>
+                <td>{{ item.especificaciones }}</td>
+                <td>{{ item.referenciaWeb }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>

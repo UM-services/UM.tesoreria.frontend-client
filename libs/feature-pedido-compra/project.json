@@ -1,8 +1,8 @@
 {
-  "name": "feature-orden-compra",
+  "name": "feature-pedido-compra",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/feature-orden-compra/src",
-  "prefix": "lib",
+  "sourceRoot": "libs/feature-pedido-compra/src",
+  "prefix": "app",
   "projectType": "library",
   "tags": ["type:feature", "scope:compras"],
   "targets": {

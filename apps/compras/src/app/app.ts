@@ -11,7 +11,7 @@ export class AppComponent {
   title = 'compras';
 
   readonly menuItems: ShellMenuItem[] = [
-    { label: 'Compras', path: '/orden-compra' },
+    { label: 'Pedidos', path: '/pedido', permiso: 'compras.iniciar_pedido' },
     { label: 'Gastos', path: '/gastos' },
     { label: 'Proveedores', path: '/proveedores' },
   ];

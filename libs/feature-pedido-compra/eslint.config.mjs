@@ -12,7 +12,7 @@ export default [
         'error',
         {
           type: 'attribute',
-          prefix: ['tesoreria', 'lib'],
+          prefix: 'app',
           style: 'camelCase',
         },
       ],
@@ -20,16 +20,11 @@ export default [
         'error',
         {
           type: 'element',
-          prefix: ['tesoreria', 'lib'],
+          prefix: 'app',
           style: 'kebab-case',
         },
       ],
     },
-  },
-  {
-    files: ['**/*.html'],
-    // Override or add rules here
-    rules: {},
   },
   {
     files: ['**/*.html'],
