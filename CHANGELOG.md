@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.29.0] - 2026-10-08
+
+### Added
+
+- feat(shared-api): Nuevo `permisoAlgunoGuard(claves)`, guard por permiso con alternativa (**OR**): autoriza si el usuario tiene **al menos una** de las claves, con la misma semántica que `permisoGuard` (espera `ensureLoaded`, sin sesión redirige a `/login?returnUrl=` y denegar redirige a `sin-acceso`). Pensado para vistas compartidas por roles distintos, como el detalle de un pedido. Se exporta desde `@tesoreria/shared-api` y se cubre con `permiso-alguno.guard.spec.ts` (permite con una clave, deniega a `sin-acceso` sin ninguna y manda a `/login` sin sesión).
+- feat(compras): El circuito de pedidos suma la **bandeja del autorizante** (`PedidoBandejaComponent`, ruta `/pedido/bandeja`, permiso `compras.enviar_pedido`) para aprobar el envío a compras o rechazarlo con motivo sobre los pedidos de las dependencias habilitadas, y la **consulta global** (`PedidoConsultaComponent`, ruta `/pedido/consulta`, permiso `compras.consultar_pedidos`) con filtros por estado, dependencia y rango de fechas.
+- feat(compras): El detalle del pedido (`PedidoDetalleComponent`) muestra acciones según el estado y los permisos del usuario —presentar para envío, editar y descartar (solicitante, `compras.iniciar_pedido`) y aprobar/rechazar (autorizante, `compras.enviar_pedido`)— y una línea de tiempo con el historial de estados (`GET /compras/pedido/{id}/historial`). El formulario pasa a soportar edición en `/pedido/:id/editar` (precarga un borrador o rechazado y lo actualiza), la lista enlaza a la edición y los estados se muestran con etiquetas y badges legibles.
+- feat(administrador): Nueva pantalla "Autorizantes de envío" (`AutorizantesEnvioComponent`, ruta `/autorizantes-envio` e ítem del menú, detrás de `[authGuard, usuarioInternoGuard, administradorGuard]`) con `AutorizanteEnvioService`: habilita por usuario las dependencias sobre las que puede aprobar o rechazar el envío de pedidos, sobre el slice `compraPedidoAutorizante` del core (`GET .../dependencias/{userId}`, `POST .../` y `DELETE .../{userId}/{dependenciaId}`), con búsqueda de usuarios (mínimo 2 caracteres, `debounce` 300 ms) y checkboxes de aplicación inmediata.
+- feat(administrador): La asignación de usuarios suma las acciones masivas "Asignar todas" / "Quitar todas" para sedes, clases de chequera y facultades, con confirmación previa y ejecución en paralelo (`forkJoin`).
+
+### Changed
+
+- feat(compras): El gating de `/pedido` baja del padre a cada ruta hija (el padre queda con `[authGuard, usuarioInternoGuard]`): `''`, `nuevo` y `:id/editar` con `permisoGuard('compras.iniciar_pedido')`, `bandeja` con `compras.enviar_pedido`, `consulta` con `compras.consultar_pedidos` y `:id` con `permisoAlgunoGuard` (visible para los tres roles). El menú de la app compras agrega "Bandeja de envío" y "Consulta de pedidos".
+- feat(compras): `PedidoCompraService` suma `bandeja`, `consulta`, `historial`, `descartar`, `aprobar`, `rechazar` y `dependencias`; los modelos incorporan `PedidoCompraHistorial`, `PedidoCompraFiltro` y `DependenciaResumen`, campos de envío/rechazo/descarte en `PedidoCompra` y los helpers `ESTADOS_PEDIDO`, `estadoLabel` y `estadoBadgeClass`.
+- docs: `README.md` registra la versión actual **0.29.0** y actualiza las descripciones de `@tesoreria/feature-pedido-compra` y `@tesoreria/feature-administrador` (bandeja, consulta, edición e historial; autorizantes de envío); `docs/architecture.md` suma `permisoAlgunoGuard` al nodo de `shared-api`, los nuevos componentes a los diagramas de componentes y de los módulos Compras y Administrador, y documenta el guard alternativo en "Gating de permisos".
+
 ## [0.28.0] - 2026-10-07
 
 ### Added

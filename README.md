@@ -19,13 +19,13 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 ### Librerías
 
-- `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService` y `permisoGuard`)
+- `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard` y `permisoAlgunoGuard`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
 - `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`), buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona) y la directiva `*uiPermiso`
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
-- `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta y detalle) montado por la app compras en `/pedido`
-- `@tesoreria/feature-administrador` - Módulo administrativo: dependencias y asignaciones de usuario
+- `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta, edición, bandeja de envío, consulta y detalle) montado por la app compras en `/pedido`
+- `@tesoreria/feature-administrador` - Módulo administrativo: dependencias, asignaciones de usuario y autorizantes de envío
 - `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` y `/simulador` (app administrador)
 - `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
 - `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
@@ -126,13 +126,13 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     end
 
     subgraph Libs["Librerías compartidas"]
-        API["shared-api<br/>AuthService, guards e interceptores<br/>PermisosService y permisoGuard<br/>Tokens API_URL y EXTERNO_*"]
+        API["shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Tokens API_URL y EXTERNO_*"]
         AUTH["ui-auth<br/>Login y modal de cambio de clave"]
         LAYOUT["ui-layout<br/>Shell J2, buscadores y *uiPermiso"]
         FPROV["feature-proveedores"]
         FGAST["feature-gastos"]
-        FPED["feature-pedido-compra<br/>Lista, alta y detalle de pedido"]
-        FADM["feature-administrador<br/>Dependencias y asignaciones"]
+        FPED["feature-pedido-compra<br/>Lista, alta, edición, bandeja,<br/>consulta y detalle de pedido"]
+        FADM["feature-administrador<br/>Dependencias, asignaciones<br/>y autorizantes de envío"]
         FPERM["feature-permisos<br/>Permisos, roles, catálogo y simulador"]
         FGUAR["feature-guarani<br/>GUARANI_ROUTES y vistas"]
         FEXT["feature-externo-consulta<br/>Vista chequeras del portal externo"]
@@ -202,7 +202,7 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 
 - **Tokens**: paleta `um-*` (p. ej. `bg-um-sidebar`, `text-um-ink`, `border-um-border`), tipografía, espaciados y radios. Es la única fuente de colores: no agregar hex sueltos en templates.
 - **Shell**: `<ui-shell moduleName="..." [menuItems]="...">` (`@tesoreria/ui-layout`) aporta sidebar oscuro, badge de entorno con color por ambiente, usuario, logout y layout responsive. Las apps solo definen marca y menú.
-- **Permisos**: los ítems del menú con `permiso` y las acciones con `*uiPermiso="'modulo.accion'"` sólo se muestran si el bundle efectivo del usuario (`PermisosService`, convención `modulo.accion`) incluye la clave; sin backend o ante error el bundle queda vacío (fail-closed). Las rutas se protegen con `permisoGuard('<clave>')`.
+- **Permisos**: los ítems del menú con `permiso` y las acciones con `*uiPermiso="'modulo.accion'"` sólo se muestran si el bundle efectivo del usuario (`PermisosService`, convención `modulo.accion`) incluye la clave; sin backend o ante error el bundle queda vacío (fail-closed). Las rutas se protegen con `permisoGuard('<clave>')` o, en vistas compartidas por varios roles, con `permisoAlgunoGuard(['<clave>', ...])` (autoriza con al menos una).
 - **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`.
 - **Referencia viva**: la vista `libs/feature-externo-consulta/src/lib/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
 
@@ -262,7 +262,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.28.0**
+Versión actual: **0.29.0**
 
 ## Licencia
 

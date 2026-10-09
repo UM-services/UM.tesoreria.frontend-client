@@ -3,7 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PermisoDirective } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
-import { PedidoCompra } from '../models/pedido-compra.models';
+import { PedidoCompra, estadoBadgeClass, estadoLabel } from '../models/pedido-compra.models';
 
 @Component({
   selector: 'app-pedido-lista',
@@ -17,6 +17,8 @@ export class PedidoListaComponent implements OnInit {
   readonly pedidos = signal<PedidoCompra[]>([]);
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
+  readonly estadoLabel = estadoLabel;
+  readonly estadoBadgeClass = estadoBadgeClass;
 
   ngOnInit(): void {
     this.cargar();
