@@ -1,5 +1,78 @@
 # Changelog
 
+## [0.29.0] - 2026-10-08
+
+### Added
+
+- feat(shared-api): Nuevo `permisoAlgunoGuard(claves)`, guard por permiso con alternativa (**OR**): autoriza si el usuario tiene **al menos una** de las claves, con la misma semántica que `permisoGuard` (espera `ensureLoaded`, sin sesión redirige a `/login?returnUrl=` y denegar redirige a `sin-acceso`). Pensado para vistas compartidas por roles distintos, como el detalle de un pedido. Se exporta desde `@tesoreria/shared-api` y se cubre con `permiso-alguno.guard.spec.ts` (permite con una clave, deniega a `sin-acceso` sin ninguna y manda a `/login` sin sesión).
+- feat(compras): El circuito de pedidos suma la **bandeja del autorizante** (`PedidoBandejaComponent`, ruta `/pedido/bandeja`, permiso `compras.enviar_pedido`) para aprobar el envío a compras o rechazarlo con motivo sobre los pedidos de las dependencias habilitadas, y la **consulta global** (`PedidoConsultaComponent`, ruta `/pedido/consulta`, permiso `compras.consultar_pedidos`) con filtros por estado, dependencia y rango de fechas.
+- feat(compras): El detalle del pedido (`PedidoDetalleComponent`) muestra acciones según el estado y los permisos del usuario —presentar para envío, editar y descartar (solicitante, `compras.iniciar_pedido`) y aprobar/rechazar (autorizante, `compras.enviar_pedido`)— y una línea de tiempo con el historial de estados (`GET /compras/pedido/{id}/historial`). El formulario pasa a soportar edición en `/pedido/:id/editar` (precarga un borrador o rechazado y lo actualiza), la lista enlaza a la edición y los estados se muestran con etiquetas y badges legibles.
+- feat(administrador): Nueva pantalla "Autorizantes de envío" (`AutorizantesEnvioComponent`, ruta `/autorizantes-envio` e ítem del menú, detrás de `[authGuard, usuarioInternoGuard, administradorGuard]`) con `AutorizanteEnvioService`: habilita por usuario las dependencias sobre las que puede aprobar o rechazar el envío de pedidos, sobre el slice `compraPedidoAutorizante` del core (`GET .../dependencias/{userId}`, `POST .../` y `DELETE .../{userId}/{dependenciaId}`), con búsqueda de usuarios (mínimo 2 caracteres, `debounce` 300 ms) y checkboxes de aplicación inmediata.
+- feat(administrador): La asignación de usuarios suma las acciones masivas "Asignar todas" / "Quitar todas" para sedes, clases de chequera y facultades, con confirmación previa y ejecución en paralelo (`forkJoin`).
+
+### Changed
+
+- feat(compras): El gating de `/pedido` baja del padre a cada ruta hija (el padre queda con `[authGuard, usuarioInternoGuard]`): `''`, `nuevo` y `:id/editar` con `permisoGuard('compras.iniciar_pedido')`, `bandeja` con `compras.enviar_pedido`, `consulta` con `compras.consultar_pedidos` y `:id` con `permisoAlgunoGuard` (visible para los tres roles). El menú de la app compras agrega "Bandeja de envío" y "Consulta de pedidos".
+- feat(compras): `PedidoCompraService` suma `bandeja`, `consulta`, `historial`, `descartar`, `aprobar`, `rechazar` y `dependencias`; los modelos incorporan `PedidoCompraHistorial`, `PedidoCompraFiltro` y `DependenciaResumen`, campos de envío/rechazo/descarte en `PedidoCompra` y los helpers `ESTADOS_PEDIDO`, `estadoLabel` y `estadoBadgeClass`.
+- docs: `README.md` registra la versión actual **0.29.0** y actualiza las descripciones de `@tesoreria/feature-pedido-compra` y `@tesoreria/feature-administrador` (bandeja, consulta, edición e historial; autorizantes de envío); `docs/architecture.md` suma `permisoAlgunoGuard` al nodo de `shared-api`, los nuevos componentes a los diagramas de componentes y de los módulos Compras y Administrador, y documenta el guard alternativo en "Gating de permisos".
+
+## [0.28.0] - 2026-10-07
+
+### Added
+
+- feat(shared-api): Gating de permisos en el frontend: `PermisosService` carga el bundle efectivo del usuario (`GET /permisoEfectivo/usuario/{userId}`) al iniciar sesión y lo limpia al cerrar; si el endpoint falla o no hay sesión el bundle queda vacío (**fail-closed**). `permisoGuard(clave)` filtra rutas por la convención `modulo.accion` y, cuando el bundle aún no se cargó, espera `ensureLoaded` antes de decidir; denegar redirige a `sin-acceso` (nunca a `/login`, para no generar bucles). El `authInterceptor` agrega el header `X-User-Id` con el `userId` de la sesión como identidad transitoria para el PEP de las fachadas hasta el JWT de M2, y `LoginResponse` suma el campo opcional `dependenciaId`.
+- feat(ui-layout): `PermisoDirective` (`*uiPermiso="'modulo.accion'"`) muestra o retira el contenido de forma reactiva según el bundle de permisos, y `ShellMenuItem.permiso` permite ocultar ítems del menú que el usuario no posee; `UiShellComponent.visibleMenuItems` filtra los ítems con `permiso` y mantiene visibles los que no lo declaran (retrocompatible con los menús existentes).
+- feat(permisos): Nueva librería `@tesoreria/feature-permisos` con las pantallas de seguridad del core: `/permisos` (asigna roles y excepciones usuario×permiso y muestra el bundle efectivo), `/roles` (ABM de roles y matriz rol × permiso con guardado inmediato por celda), `/catalogo` (ABM del catálogo de claves) y `/simulador` (lectura que explica si cada permiso efectivo proviene de un rol, de una excepción individual o del puente de flags legacy). Se montan de forma perezosa en la app administrador detrás de `[authGuard, usuarioInternoGuard, administradorGuard]`.
+- feat(administrador): Nueva librería `@tesoreria/feature-administrador` con `DependenciasComponent` y `AsignacionUsuariosComponent` (junto a `UsuarioChequeraService`), extraídos de la app administrador; sus rutas `/dependencias` y `/asignaciones` los cargan con `loadComponent` desde `@tesoreria/feature-administrador`.
+- feat(compras): Nueva librería `@tesoreria/feature-pedido-compra` (`pedidoCompraRoutes` con lista, alta y detalle) que consume la fachada `tesoreria-compras` (`/compras/pedido`) para iniciar, editar, enviar y consultar pedidos de compra; la app `compras` monta `/pedido` protegido por `permisoGuard('compras.iniciar_pedido')`.
+- test: Specs de `PermisosService` y `permisoGuard` en `shared-api` (carga del bundle al iniciar sesión, fail-closed, espera de carga y redirección) y de `PermisoDirective` en `ui-layout` (render y retiro reactivos según el permiso), más `permisos.service.spec.ts` de `feature-permisos`.
+
+### Changed
+
+- feat(compras): El circuito de compras pasa de "Compras" (`/orden-compra`, `feature-orden-compra`) a "Pedidos" (`/pedido`, `feature-pedido-compra`); el ítem del menú se llama "Pedidos" y declara `permiso: 'compras.iniciar_pedido'`.
+- refactor(administrador): Las rutas `/dependencias` y `/asignaciones` cargan los componentes desde `@tesoreria/feature-administrador` en lugar de componentes locales; se eliminan `apps/administrador/src/app/shared/buscador-cuenta/` y las vistas locales de dependencias y asignaciones.
+- chore(workspace): `tsconfig.base.json` reemplaza el alias `@tesoreria/feature-orden-compra` por `@tesoreria/feature-pedido-compra` y agrega los alias `@tesoreria/feature-administrador` y `@tesoreria/feature-permisos`.
+- docs: `AGENTS.md` documenta el gating de permisos (convención `modulo.accion`, fail-closed, pantallas de `feature-permisos` y la regla legacy de no modificar gating existente); `README.md` y `docs/architecture.md` reflejan las librerías `feature-pedido-compra`, `feature-administrador` y `feature-permisos`, el `X-User-Id` del interceptor y el nuevo esquema de guards.
+
+### Removed
+
+- `feature-orden-compra`: se elimina la librería completa (dashboard, alta multi-paso, detalle, servicio y modelos) junto con su alias `@tesoreria/feature-orden-compra`, la ruta `/orden-compra` de la app `compras` y la opción "Compras" del menú lateral. El circuito vigente de compras pasa a ser "Pedidos" (`feature-pedido-compra`, ruta `/pedido`). Se actualizan `AGENTS.md`, `README.md` y `docs/architecture.md`.
+
+### Fixed
+
+- `feature-pedido-compra`: el botón "Volver" de "Iniciar pedido de compra" no navegaba porque `PedidoFormComponent` usaba `routerLink` en su plantilla sin importar la directiva `RouterLink` (Angular lo trataba como atributo estático y el `<a>` quedaba sin navegación). Se agrega `RouterLink` a los `imports` del componente standalone.
+
+## [0.27.1] - 2026-10-04
+
+### Changed
+
+- docs: README registra la versión actual **0.27.1**. Los diagramas de `docs/architecture.md` (`CambioClaveModalComponent`, `ChangePasswordRequest` y `AuthService.changePassword`) siguen siendo exactos tras el cambio, por lo que no se modifican.
+
+### Fixed
+
+- fix(ui-auth): `CambioClaveModalComponent.onSubmit` elimina el rechazo client-side de las cuentas cuyo `login` empieza con `admin` ("ERROR: NO se puede Cambiar ESTA Clave") y delega esa regla al backend: el modal siempre envía `AuthService.changePassword` (`POST auth/change-password`) y, si el servidor la rechaza, el error se muestra por el camino ya existente de `HttpErrorResponse` (texto plano, `message` o el genérico "ERROR: No se pudo cambiar la clave."). Las únicas validaciones client-side que quedan son los campos de contraseña obligatorios y la coincidencia de `newPassword` con `reClaveNueva`. El spec retira el caso de bloqueo de cuentas `admin` y el diff se completa con reformateo Prettier (imports multilínea del componente y `providers` en una línea). La API pública del componente (`selector`, `@Input isOpen`, `@Output closed`) y el modelo `ChangePasswordRequest` no cambian.
+
+## [0.27.0] - 2026-10-03
+
+### Added
+
+- feat(workspace): Nuevas librerías compartidas `@tesoreria/feature-guarani` y `@tesoreria/feature-externo-consulta` (registradas en los alias `@tesoreria/*` de `tsconfig.base.json`). La app `guarani` monta su módulo con `loadChildren` sobre `GUARANI_ROUTES` (`libs/feature-guarani/src/lib/lib.routes.ts`), que incluye las vistas pendientes-pre-guarani, guarani-ubicaciones, guarani-beneficios y datos-personales junto al guard `guaraniSedePrincipalGuard`; `externo-consulta` carga `/chequeras` con `loadComponent` desde la lib. Ambas apps quedan como shells delgados (componente raíz, `app.config.ts` y `app.routes.ts`) y se retira `apps/guarani/src/app/blank.component.ts` y las vistas locales.
+- feat(shared-api): Nuevos tokens de inyección exportados desde `@tesoreria/shared-api`: `EXTERNO_API_BASE` (base del gateway del portal público sin sufijo `/core/auth`, con factory por defecto `/api/tesoreria`) y `EXTERNO_ENABLE_DEBUG` (log de plantillas de endpoint al fallar, sin datos personales; factory por defecto `false`). El host `externo-consulta` los provee desde su `environment` (`apiBase`, `enableDebug`) en `app.config.ts`; `ChequerasService` deriva de ellos sus bases core/report y `ChequerasBusquedaStore` habilita el log de depuración, de modo que la lib no importa `apps/**/environments/*`.
+- feat(ui-auth): `LoginComponent` sale del login si ya hay sesión: `ngOnInit` navega al `returnUrl` cuando `AuthService.isLoggedIn()`. El `returnUrl` de la query se sanea (acepta sólo rutas que empiezan con `/`, nunca `//` ni `/login`; caso contrario cae en `/`) y la navegación usa `replaceUrl`.
+- test(e2e): `compras-e2e` y `chequeras-e2e` reemplazan el `example.spec.ts` generado por un smoke de acceso real en `login.spec.ts`: sin sesión el guard redirige a `/login` y el formulario renderiza los campos de usuario y clave sin necesitar backend.
+
+### Changed
+
+- refactor(ui-auth): La lib se aplana de `libs/ui-auth/ui-auth/` a `libs/ui-auth/` (el alias `@tesoreria/ui-auth` ahora resuelve a `libs/ui-auth/src/index.ts`, `index.ts` exporta `cambio-clave` desde su ruta local y se suma `test-setup.ts`); el selector de `LoginComponent` pasa de `ui-auth-login` a `lib-login`.
+- chore: Se elimina el remanente del scaffold inicial de Angular en la raíz del workspace (`src/`, `project.json` raíz, `tsconfig.app.json`, `tsconfig.spec.json`, `public/favicon.ico`); el `tsconfig.json` raíz ahora extiende `tsconfig.base.json` y `nx.json` fija `defaultBase: "main"`.
+- ci: `deploy-develop.yml`, `deploy-staging.yml` y `docker-publish.yml` se convierten en llamadores delgados del nuevo workflow reutilizable `deploy-pipeline.yml` (`workflow_call`), que recibe `environment`, `apps`, `deploy`, `deployRunner`/`deployScript` y `publishLatest`, unificando criterios con um.haberes.frontend-client: en PR el verify corre lint + test + `nx build`; en push se omite el build de Nx porque el Dockerfile multistage compila cada app dentro de la imagen; la imagen se etiqueta con el SHA completo y `latest` sólo en main (`docker-publish.yml`, renombrado "Deploy main", ya no despliega).
+- fix(e2e): Las configuraciones de Playwright de `compras-e2e` y `chequeras-e2e` apuntan al puerto real de cada app (`4201` y `4203`) en `baseURL` y en el `webServer`, en lugar del `4200` por defecto.
+- docs: README y `docs/architecture.md` reflejan las nuevas libs `feature-guarani`/`feature-externo-consulta` y los tokens `EXTERNO_*` en sus diagramas; la "Referencia viva" del sistema J2 y la estrategia del buscador apuntan a `libs/feature-externo-consulta/src/lib/chequeras`; README registra la versión actual **0.27.0**. `AGENTS.md` documenta la regla de apps como shells delgados, la inyección de configuración vía tokens, los buscadores compartidos obligatorios, la prohibición de artefactos VB6 en UI y los criterios de CI.
+
+### Fixed
+
+- fix(ui-auth): El error de login deja de volcar el objeto crudo de la respuesta (`err.error || 'Error: Usuario NO Válido'`): un `HttpErrorResponse` 401 muestra "Usuario o contraseña incorrectos."; un body de error `string` no vacío se muestra tal cual; cualquier otro fallo usa el genérico "No se pudo iniciar sesión. Intente de nuevo.". La clave se resetea en todos los intentos. El spec de `LoginComponent` se reescribe con cuatro casos: el 401 con mensaje propio y reseteo de la clave, el genérico ante error con objeto, la salida con sesión activa y el reemplazo del login en el historial tras ingresar.
+
 ## [0.26.4] - 2026-09-30
 
 ### Fixed

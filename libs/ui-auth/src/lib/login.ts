@@ -1,17 +1,18 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '@tesoreria/shared-api';
 
 @Component({
-  selector: 'ui-auth-login',
+  selector: 'lib-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './login.html',
-  styleUrls: ['./login.css']
+  styleUrls: ['./login.css'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
@@ -19,11 +20,27 @@ export class LoginComponent {
 
   public loginForm = this.fb.nonNullable.group({
     login: ['', Validators.required],
-    password: ['', Validators.required]
+    password: ['', Validators.required],
   });
 
   public errorMessage = '';
   public isLoading = false;
+
+  public ngOnInit(): void {
+    if (this.authService.isLoggedIn()) {
+      void this.router.navigateByUrl(this.returnUrl, { replaceUrl: true });
+    }
+  }
+
+  private get returnUrl(): string {
+    const value = this.route.snapshot.queryParams['returnUrl'];
+    return typeof value === 'string' &&
+      value.startsWith('/') &&
+      !value.startsWith('//') &&
+      !value.startsWith('/login')
+      ? value
+      : '/';
+  }
 
   public onSubmit() {
     if (this.loginForm.invalid) {
@@ -38,15 +55,18 @@ export class LoginComponent {
 
     this.authService.login(credentials).subscribe({
       next: () => {
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-        this.router.navigateByUrl(returnUrl);
+        void this.router.navigateByUrl(this.returnUrl, { replaceUrl: true });
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isLoading = false;
-        // Map backend errors similar to VB6 MsgBox
-        this.errorMessage = err.error || 'Error: Usuario NO Válido';
+        this.errorMessage =
+          err instanceof HttpErrorResponse && err.status === 401
+            ? 'Usuario o contraseña incorrectos.'
+            : err instanceof HttpErrorResponse && typeof err.error === 'string' && err.error.trim()
+              ? err.error
+              : 'No se pudo iniciar sesión. Intente de nuevo.';
         this.loginForm.get('password')?.reset();
-      }
+      },
     });
   }
 }

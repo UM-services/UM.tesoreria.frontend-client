@@ -17,12 +17,16 @@
         end
 
         subgraph "Libraries"
-            SharedAPI["@tesoreria/shared-api<br/>AuthService, AuthGuard<br/>Auth y error interceptors<br/>Models"]
+            SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent<br/>BuscadorPersonaComponent"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>PermisoDirective (*uiPermiso)"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
-            FeatureOrdenCompra["@tesoreria/feature-orden-compra<br/>OcDashboardComponent<br/>OcCreateComponent<br/>OcDetailComponent"]
+            FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent"]
+            FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>AsignacionUsuariosComponent<br/>AutorizantesEnvioComponent"]
+            FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent, SimuladorComponent"]
+            FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
+            FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
         end
     end
 
@@ -31,7 +35,7 @@
     Compras --> UILayout
     Compras --> FeatureProveedores
     Compras --> FeatureGastos
-    Compras --> FeatureOrdenCompra
+    Compras --> FeaturePedidoCompra
 
     Pagos --> SharedAPI
     Pagos --> UIAuth
@@ -48,6 +52,8 @@
     Admin --> UILayout
     Admin --> FeatureProveedores
     Admin --> FeatureGastos
+    Admin --> FeatureAdministrador
+    Admin --> FeaturePermisos
 
     Contable --> SharedAPI
     Contable --> UIAuth
@@ -60,10 +66,16 @@
     Guarani --> SharedAPI
     Guarani --> UIAuth
     Guarani --> UILayout
+    Guarani -->|"loadChildren"| FeatureGuarani
+    FeatureGuarani --> SharedAPI
+    FeatureGuarani --> UILayout
 
     ExternoConsulta --> SharedAPI
     ExternoConsulta --> UIAuth
     ExternoConsulta --> UILayout
+    ExternoConsulta -->|"loadComponent"| FeatureExterno
+    FeatureExterno --> SharedAPI
+    FeatureExterno --> UILayout
 
     UILayout -->|"modal cambio de clave"| UIAuth
 
@@ -95,7 +107,7 @@ sequenceDiagram
     AuthGuard->>AuthGuard: Verificar token
     AuthGuard-->>User: Acceso permitido
     User->>AuthInterceptor: Solicitud protegida
-    AuthInterceptor->>API: Authorization: Bearer token
+    AuthInterceptor->>API: Authorization: Bearer + X-User-Id
     API-->>ErrorInterceptor: 401 o 403
     ErrorInterceptor->>AuthService: logout()
     ErrorInterceptor-->>User: Navegar a /login
@@ -127,6 +139,26 @@ es editable por el usuario, la sesión se revalida contra `GET /auth/me/{userId}
 app y tras el login: el backend es la fuente de verdad y debe denegar 401/403 en las APIs que
 correspondan (`errorInterceptor` expulsa la sesión en ese caso).
 
+### Gating de permisos
+
+`@tesoreria/shared-api` exporta `PermisosService` y `permisoGuard(clave)`. El servicio carga el bundle
+efectivo del usuario (`GET /permisoEfectivo/usuario/{userId}`) al iniciar sesión y lo limpia al
+cerrar; si la llamada falla el bundle queda vacío (**fail-closed**). La clave sigue la convención
+`modulo.accion` (p. ej. `compras.iniciar_pedido`). `permisoGuard` espera `ensureLoaded` antes de
+decidir y, al denegar, redirige a `sin-acceso` (nunca a `/login`, para no generar bucles).
+`permisoAlgunoGuard(claves)` aplica la misma semántica con alternativa (**OR**): autoriza si el
+usuario tiene al menos una de las claves, para vistas compartidas por roles distintos (p. ej. el
+detalle de un pedido, que ven solicitante y autorizante). Cada app declara sus rutas gated junto a
+los guards de acceso: `[authGuard, usuarioInternoGuard, administradorGuard, permisoGuard('<clave>')]`
+o `permisoAlgunoGuard(['<clave>', ...])`.
+
+En la UI, `@tesoreria/ui-layout` aporta `PermisoDirective` (`*uiPermiso="'modulo.accion'"`) y el
+campo `ShellMenuItem.permiso`; `UiShellComponent.visibleMenuItems` oculta los ítems sin permiso y
+mantiene visibles los que no declaran `permiso`. El header `X-User-Id` que agrega `authInterceptor`
+es identidad transitoria para el PEP de las fachadas, hasta que el gateway valide el JWT. Las
+pantallas de administración del catálogo, roles, asignaciones y simulador viven en
+`@tesoreria/feature-permisos` (app administrador, detrás de `administradorGuard`).
+
 ## Estructura de Módulos - Compras
 
 ```mermaid
@@ -136,16 +168,17 @@ correspondan (`errorInterceptor` expulsa la sesión en ese caso).
     AppRoutes --> Blank["Blank Component<br/>Contenedor protegido"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
-    AppRoutes --> OrdenCompra["OrdenCompra Module<br/>@tesoreria/feature-orden-compra"]
-
-    OrdenCompra --> OCDashboard["OcDashboardComponent<br/>Listado y simulación de roles"]
-    OrdenCompra --> OCCreate["OcCreateComponent<br/>Formulario multi-paso"]
-    OrdenCompra --> OCDetail["OcDetailComponent<br/>Detalle y aprobación"]
+    AppRoutes --> Pedidos["PedidoCompra Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>iniciar, enviar y consultar"]
 
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
-    OCCreate --> BuscadorProveedor
-    OCCreate --> BuscadorCuentaContable
+    Pedidos --> Bandeja["PedidoBandeja Component<br/>compras.enviar_pedido"]
+    Pedidos --> Consulta["PedidoConsulta Component<br/>compras.consultar_pedidos"]
+    Pedidos --> Detalle["PedidoDetalle Component<br/>permisoAlgunoGuard"]
+    Pedidos --> PedidoAPI["Fachada tesoreria-compras<br/>/compras/pedido"]
+    Bandeja --> PedidoAPI
+    Consulta --> PedidoAPI
+    Detalle --> PedidoAPI
 ```
 
 ## Estructura de Módulos - Administrador
@@ -154,12 +187,24 @@ correspondan (`errorInterceptor` expulsa la sesión en ese caso).
     flowchart TD
     AdminApp["Administrador App"] --> AppRoutes["Rutas de la App"]
     AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
-    AppRoutes --> Dependencias["Dependencias Component"]
+    AppRoutes --> Dependencias["Dependencias Component<br/>@tesoreria/feature-administrador"]
+    AppRoutes --> Asignaciones["AsignacionUsuarios Component<br/>@tesoreria/feature-administrador"]
+    AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compraPedidoAutorizante del core"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
+    AppRoutes --> Permisos["Permisos Component<br/>@tesoreria/feature-permisos"]
+    AppRoutes --> Roles["Roles Component<br/>@tesoreria/feature-permisos"]
+    AppRoutes --> Catalogo["Catalogo Component<br/>@tesoreria/feature-permisos"]
+    AppRoutes --> Simulador["Simulador Component<br/>@tesoreria/feature-permisos"]
     AppRoutes --> Redirect["Redirección a /dependencias"]
 
     Dependencias --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
+    Asignaciones --> PermisosAPI["API de seguridad del core<br/>usuario, rol, permiso y overrides"]
+    Autorizantes --> AutorizantesAPI["Slice compraPedidoAutorizante del core<br/>dependencias habilitadas por usuario"]
+    Permisos --> PermisosAPI
+    Roles --> PermisosAPI
+    Catalogo --> PermisosAPI
+    Simulador --> PermisosAPI
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable
 ```
@@ -180,49 +225,16 @@ correspondan (`errorInterceptor` expulsa la sesión en ese caso).
     Gastos --> BuscadorCuentaContable
 ```
 
-## Estructura de Módulos - Órdenes de Compra
-
-```mermaid
-    flowchart TD
-    OCMOD["feature-orden-compra"] --> Routes["Rutas"]
-    Routes --> Dashboard["OcDashboardComponent<br/>/orden-compra"]
-    Routes --> Create["OcCreateComponent<br/>/orden-compra/nueva"]
-    Routes --> Detail["OcDetailComponent<br/>/orden-compra/oc/:id"]
-
-    Dashboard --> Service["OrdenCompraService"]
-    Create --> Service
-    Detail --> Service
-
-    Service --> Models["Modelos: OrdenCompra<br/>ArticuloOC, Comentario<br/>RolSimulado, OrdenCompraEstado"]
-
-    subgraph "Flujo de Estados"
-        PEND[PENDIENTE_APROBACION] --> APRO[APROBADA]
-        APRO --> ENV[ENVIADA]
-        ENV --> CUM[CUMPLIDA]
-        PEND --> ANU1[ANULADA]
-        APRO --> ANU2[ANULADA]
-        ENV --> CPP[CUMPLIDA_PARCIAL]
-    end
-
-    subgraph "Simulación de Roles"
-        DIRC["Director de Compras<br/>Crear OC"]
-        DIRA["Director de Administración<br/>Aprobar ≤ $50k"]
-        SEC["Secretario Administrativo<br/>Aprobar $50k-$200k"]
-        DIRG["Director de Gestión<br/>Aprobar $50k-$200k"]
-        REC["Rector<br/>Aprobar > $200k"]
-    end
-```
-
 ## Estructura de Módulos - Guaraní
 
 ```mermaid
 flowchart TD
-    GuaraniApp["Guaraní App"] --> AppRoutes["Rutas protegidas"]
-    AppRoutes --> SedeGuard["GuaraniSedePrincipalGuard<br/>Rutas administrativas por sede"]
-    AppRoutes --> Pendientes["Pendientes Pre Guaraní"]
-    AppRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
-    AppRoutes --> Beneficios["Beneficios de requisitos y porcentajes"]
-    AppRoutes --> Datos["Datos Personales y captura<br/>/datos-personales"]
+    GuaraniApp["Guaraní App<br/>Shell delgado"] -->|"loadChildren"| LibRoutes["GUARANI_ROUTES<br/>@tesoreria/feature-guarani"]
+    LibRoutes --> SedeGuard["GuaraniSedePrincipalGuard<br/>Rutas administrativas por sede"]
+    LibRoutes --> Pendientes["Pendientes Pre Guaraní"]
+    LibRoutes --> Ubicaciones["Asociaciones de sedes Guaraní y Tesium"]
+    LibRoutes --> Beneficios["Beneficios de requisitos y porcentajes"]
+    LibRoutes --> Datos["Datos Personales y captura<br/>/datos-personales"]
 
     Pendientes --> GuaraniAPI["API Guaraní"]
     Pendientes --> SedeFilter["Filtrado de ubicaciones por sede"]
@@ -252,6 +264,7 @@ classDiagram
         +string nombre
         +string sede
         +number geograficaId
+        +number dependenciaId
         +number administrador
         +number usuarioExterno
         +number activo

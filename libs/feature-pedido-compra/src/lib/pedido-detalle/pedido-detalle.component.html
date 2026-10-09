@@ -1,0 +1,216 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Compras / Pedidos</p>
+      <h1 class="um-page-title">{{ pedido()?.numero || 'Borrador' }}</h1>
+      <div class="mt-1 flex items-center gap-3">
+        <span class="um-page-desc">Detalle del pedido de compra.</span>
+        @if (pedido()?.estado; as estado) {
+          <span class="um-badge" [ngClass]="estadoBadgeClass(estado)">{{ estadoLabel(estado) }}</span>
+        }
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a routerLink="/pedido" class="um-btn-secondary">Volver</a>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="p-6 text-sm text-um-muted">Cargando…</div>
+  } @else if (pedido(); as p) {
+    @if (puedePresentar() || puedeDecidir()) {
+      <section class="um-card">
+        <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Acciones</h2>
+
+        @if (puedePresentar()) {
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button type="button" class="um-btn-primary" [disabled]="enCurso()" (click)="presentar()">
+              Presentar para envío
+            </button>
+            <a [routerLink]="['/pedido', p.compraPedidoId, 'editar']" class="um-btn-secondary">
+              Editar
+            </a>
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [disabled]="enCurso()"
+              (click)="descartando.set(true)"
+            >
+              Descartar
+            </button>
+          </div>
+        }
+
+        @if (descartando()) {
+          <div class="mt-4 space-y-2">
+            <label class="um-label" for="motivo-descarte">Motivo del descarte (opcional)</label>
+            <textarea
+              id="motivo-descarte"
+              class="um-input"
+              rows="2"
+              [(ngModel)]="motivoDescarte"
+            ></textarea>
+            <div class="flex justify-end gap-3">
+              <button type="button" class="um-btn-secondary" (click)="descartando.set(false)">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="um-btn-primary"
+                [disabled]="enCurso()"
+                (click)="confirmarDescarte()"
+              >
+                Confirmar descarte
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (puedeDecidir()) {
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button type="button" class="um-btn-primary" [disabled]="enCurso()" (click)="aprobar()">
+              Aprobar envío a compras
+            </button>
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [disabled]="enCurso()"
+              (click)="rechazando.set(true)"
+            >
+              Rechazar
+            </button>
+          </div>
+        }
+
+        @if (rechazando()) {
+          <div class="mt-4 space-y-2">
+            <label class="um-label" for="motivo-rechazo">Motivo del rechazo</label>
+            <textarea
+              id="motivo-rechazo"
+              class="um-input"
+              rows="2"
+              [(ngModel)]="motivoRechazo"
+              placeholder="Indique qué debe corregir el solicitante…"
+            ></textarea>
+            <div class="flex justify-end gap-3">
+              <button type="button" class="um-btn-secondary" (click)="rechazando.set(false)">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="um-btn-primary"
+                [disabled]="enCurso()"
+                (click)="confirmarRechazo()"
+              >
+                Confirmar rechazo
+              </button>
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <section class="um-card">
+      <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Cabecera</h2>
+      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div>
+          <label class="um-label">Fecha</label>
+          <p class="text-sm text-um-text">{{ p.fecha | date: 'short' }}</p>
+        </div>
+        <div>
+          <label class="um-label">Fecha requerida</label>
+          <p class="text-sm text-um-text">
+            {{ p.fechaRequerida ? (p.fechaRequerida | date: 'short') : '—' }}
+          </p>
+        </div>
+        <div>
+          <label class="um-label">Fecha de envío a compras</label>
+          <p class="text-sm text-um-text">
+            {{ p.fechaEnvio ? (p.fechaEnvio | date: 'short') : '—' }}
+          </p>
+        </div>
+        <div class="md:col-span-3">
+          <label class="um-label">Fundamento / necesidad</label>
+          <p class="text-sm text-um-text">{{ p.necesidad }}</p>
+        </div>
+        @if (p.rechazoMotivo) {
+          <div class="md:col-span-3">
+            <label class="um-label">Motivo del rechazo</label>
+            <p class="text-sm text-red-700">{{ p.rechazoMotivo }}</p>
+          </div>
+        }
+        @if (p.descartadoMotivo) {
+          <div class="md:col-span-3">
+            <label class="um-label">Motivo del descarte</label>
+            <p class="text-sm text-um-text">{{ p.descartadoMotivo }}</p>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="um-card">
+      <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Ítems</h2>
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Unidad</th>
+              <th scope="col">Bien / servicio</th>
+              <th scope="col">Especificaciones</th>
+              <th scope="col">Referencia web</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of p.items || []; track item.compraPedidoItemId) {
+              <tr>
+                <td>{{ item.cantidad }}</td>
+                <td>{{ item.unidad }}</td>
+                <td>{{ item.descripcion }}</td>
+                <td>{{ item.especificaciones }}</td>
+                <td>{{ item.referenciaWeb }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="um-card">
+      <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Historial</h2>
+      @if (historial().length === 0) {
+        <p class="mt-4 text-sm text-um-muted">Sin movimientos registrados.</p>
+      } @else {
+        <ol class="mt-4 space-y-4">
+          @for (entrada of historial(); track entrada.compraPedidoHistorialId) {
+            <li class="flex gap-3">
+              <span class="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-um-primary"></span>
+              <div>
+                <p class="text-sm font-semibold text-um-ink">
+                  {{ estadoLabel(entrada.estado) }}
+                  <span class="ml-2 text-xs font-normal text-um-muted">
+                    {{ entrada.fecha | date: 'short' }}
+                  </span>
+                </p>
+                @if (entrada.observacion) {
+                  <p class="text-sm text-um-muted">{{ entrada.observacion }}</p>
+                }
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  }
+</div>

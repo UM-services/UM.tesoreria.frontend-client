@@ -1,12 +1,24 @@
-import { Component, inject, Input, signal } from '@angular/core';
+import { Component, computed, inject, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { APP_ENV_INFO, AuthService, EnvDisplayKey, getEnvDisplay } from '@tesoreria/shared-api';
+import {
+  APP_ENV_INFO,
+  AuthService,
+  EnvDisplayKey,
+  getEnvDisplay,
+  PermisosService,
+} from '@tesoreria/shared-api';
 import { CambioClaveModalComponent } from '@tesoreria/ui-auth';
 
 export interface ShellMenuItem {
   label: string;
   path: string;
+  /**
+   * Clave de permiso (convención `modulo.accion`). Si se define, el ítem sólo se
+   * muestra cuando el usuario tiene ese permiso; si se omite, se muestra siempre
+   * (retrocompatible con los menús existentes).
+   */
+  permiso?: string;
 }
 
 const ENV_BADGE_BASE_CLASSES =
@@ -55,7 +67,7 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
             >
               {{ menuSectionLabel }}
             </p>
-            @for (item of menuItems; track item.path) {
+            @for (item of visibleMenuItems(); track item.path) {
               <a
                 [routerLink]="item.path"
                 routerLinkActive="bg-um-sidebar-active text-white"
@@ -133,7 +145,7 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
             class="flex gap-2 border-b border-um-border px-4 py-2 md:hidden"
             [attr.aria-label]="menuSectionLabel"
           >
-            @for (item of menuItems; track item.path) {
+            @for (item of visibleMenuItems(); track item.path) {
               <a
                 [routerLink]="item.path"
                 routerLinkActive="bg-um-selected text-um-primary"
@@ -163,12 +175,30 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
 export class UiShellComponent {
   @Input() moduleName = 'Tesorería';
   @Input() menuSectionLabel = 'Menú';
-  @Input() menuItems: ShellMenuItem[] = [];
-  /** URL del logo (p. ej. '/logo.png'). Si se define, reemplaza el texto "UM · Tesorería". */
+
+  private readonly menuItemsState = signal<ShellMenuItem[]>([]);
+
+  @Input() set menuItems(items: ShellMenuItem[]) {
+    this.menuItemsState.set(items ?? []);
+  }
+
+  get menuItems(): ShellMenuItem[] {
+    return this.menuItemsState();
+  }
+
   @Input() logoUrl?: string;
 
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly permisosService = inject(PermisosService);
+
+  /** Ítems del menú visibles: filtra por permiso (los ítems sin `permiso` siempre se muestran). */
+  readonly visibleMenuItems = computed(() =>
+    this.menuItemsState().filter(
+      item => !item.permiso || this.permisosService.hasPermiso(item.permiso),
+    ),
+  );
+
   readonly envInfo = inject(APP_ENV_INFO, { optional: true });
   readonly envDisplay = getEnvDisplay(this.envInfo?.name);
   readonly envBadgeClass = `${ENV_BADGE_BASE_CLASSES} ${ENV_BADGE_CLASSES[this.envDisplay.key]}`;

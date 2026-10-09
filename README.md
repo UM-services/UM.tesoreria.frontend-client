@@ -19,12 +19,16 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 ### Librerías
 
-- `@tesoreria/shared-api` - Servicios API, autenticación y modelos compartidos
+- `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard` y `permisoAlgunoGuard`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona)
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`), buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona) y la directiva `*uiPermiso`
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
-- `@tesoreria/feature-orden-compra` - Módulo de órdenes de compra con dashboard, creación multi-paso y flujo de aprobación (integrado en compras)
+- `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta, edición, bandeja de envío, consulta y detalle) montado por la app compras en `/pedido`
+- `@tesoreria/feature-administrador` - Módulo administrativo: dependencias, asignaciones de usuario y autorizantes de envío
+- `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` y `/simulador` (app administrador)
+- `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
+- `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
 
 La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
 
@@ -119,21 +123,19 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
 
     subgraph Modules["Módulos de aplicación"]
         FP["Pagos: facturas pendientes"]
-        DEP["Administrador: dependencias"]
-        GP["Guaraní: pendientes y chequeras"]
-        GS["Guaraní: acceso y ubicaciones por sede"]
-        GU["Guaraní: ubicaciones"]
-        GB["Guaraní: beneficios y porcentajes"]
-        GD["Guaraní: datos personales y captura"]
     end
 
     subgraph Libs["Librerías compartidas"]
-        API["shared-api<br/>AuthService, guard e interceptores"]
+        API["shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Tokens API_URL y EXTERNO_*"]
         AUTH["ui-auth<br/>Login y modal de cambio de clave"]
-        LAYOUT["ui-layout<br/>Shell J2 y buscadores"]
+        LAYOUT["ui-layout<br/>Shell J2, buscadores y *uiPermiso"]
         FPROV["feature-proveedores"]
         FGAST["feature-gastos"]
-        ORDCOMPRA["feature-orden-compra"]
+        FPED["feature-pedido-compra<br/>Lista, alta, edición, bandeja,<br/>consulta y detalle de pedido"]
+        FADM["feature-administrador<br/>Dependencias, asignaciones<br/>y autorizantes de envío"]
+        FPERM["feature-permisos<br/>Permisos, roles, catálogo y simulador"]
+        FGUAR["feature-guarani<br/>GUARANI_ROUTES y vistas"]
+        FEXT["feature-externo-consulta<br/>Vista chequeras del portal externo"]
     end
 
     C --> API
@@ -141,8 +143,8 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     C --> LAYOUT
     C --> FPROV
     C --> FGAST
-    C --> ORDCOMPRA
-    ORDCOMPRA --> LAYOUT
+    C --> FPED
+    FPED --> API
 
     P --> API
     P --> AUTH
@@ -160,8 +162,12 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     A --> LAYOUT
     A --> FPROV
     A --> FGAST
-    A --> DEP
-    DEP --> LAYOUT
+    A --> FADM
+    A --> FPERM
+    FADM --> API
+    FADM --> LAYOUT
+    FPERM --> API
+    FPERM --> LAYOUT
 
     CT --> API
     CT --> AUTH
@@ -174,19 +180,16 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     G --> API
     G --> AUTH
     G --> LAYOUT
-    G --> GP
-    G --> GS
-    G --> GU
-    G --> GB
-    G --> GD
-    GP --> API
-    GU --> API
-    GB --> API
-    GD --> API
+    G --> FGUAR
+    FGUAR --> API
+    FGUAR --> LAYOUT
 
     EC --> API
     EC --> AUTH
     EC --> LAYOUT
+    EC --> FEXT
+    FEXT --> API
+    FEXT --> LAYOUT
 
     LAYOUT --> AUTH
     API --> AUTH
@@ -199,8 +202,9 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 
 - **Tokens**: paleta `um-*` (p. ej. `bg-um-sidebar`, `text-um-ink`, `border-um-border`), tipografía, espaciados y radios. Es la única fuente de colores: no agregar hex sueltos en templates.
 - **Shell**: `<ui-shell moduleName="..." [menuItems]="...">` (`@tesoreria/ui-layout`) aporta sidebar oscuro, badge de entorno con color por ambiente, usuario, logout y layout responsive. Las apps solo definen marca y menú.
+- **Permisos**: los ítems del menú con `permiso` y las acciones con `*uiPermiso="'modulo.accion'"` sólo se muestran si el bundle efectivo del usuario (`PermisosService`, convención `modulo.accion`) incluye la clave; sin backend o ante error el bundle queda vacío (fail-closed). Las rutas se protegen con `permisoGuard('<clave>')` o, en vistas compartidas por varios roles, con `permisoAlgunoGuard(['<clave>', ...])` (autoriza con al menos una).
 - **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`.
-- **Referencia viva**: la vista `apps/externo-consulta/src/app/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
+- **Referencia viva**: la vista `libs/feature-externo-consulta/src/lib/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
 
 ## Tecnologías
 
@@ -258,7 +262,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.26.4**
+Versión actual: **0.29.0**
 
 ## Licencia
 

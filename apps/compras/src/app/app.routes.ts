@@ -19,8 +19,8 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
-    path: 'orden-compra',
-    loadChildren: () => import('@tesoreria/feature-orden-compra').then(m => m.ordenCompraRoutes),
+    path: 'pedido',
+    loadChildren: () => import('@tesoreria/feature-pedido-compra').then(m => m.pedidoCompraRoutes),
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
