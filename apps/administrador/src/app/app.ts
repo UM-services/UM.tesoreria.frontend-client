@@ -11,6 +11,7 @@ export class AppComponent {
   title = 'administrador';
 
   readonly menuItems: ShellMenuItem[] = [
+    { label: 'Personas', path: '/personas' },
     { label: 'Gastos', path: '/gastos' },
     { label: 'Proveedores', path: '/proveedores' },
     { label: 'Dependencias', path: '/dependencias' },

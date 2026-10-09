@@ -36,6 +36,9 @@
       ],
       "@tesoreria/feature-permisos": [
         "./libs/feature-permisos/src/index.ts"
+      ],
+      "@tesoreria/feature-personas": [
+        "./libs/feature-personas/src/index.ts"
       ]
     }
   }

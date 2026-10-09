@@ -15,5 +15,6 @@ export class AppComponent {
     { label: 'Emisión', path: '/emision' },
     { label: 'Cobranzas', path: '/cobranzas' },
     { label: 'Consultas', path: '/consultas' },
+    { label: 'Personas', path: '/personas' },
   ];
 }
