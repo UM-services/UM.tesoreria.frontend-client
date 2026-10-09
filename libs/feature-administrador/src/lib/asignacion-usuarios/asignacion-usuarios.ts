@@ -11,6 +11,9 @@ import {
   UsuarioResumen,
 } from './usuario-chequera.service';
 
+type GrupoKey = 'sedes' | 'clases' | 'facultades';
+type AccionMasiva = 'asignar' | 'quitar';
+
 /**
  * Pantalla de administración para asignar/desasignar sedes (geográficas) y clases
  * de chequera a los usuarios, sobre los slices usuarioChequeraGeografica y
@@ -41,6 +44,9 @@ export class AsignacionUsuariosComponent implements OnInit, OnDestroy {
   public sedesPendientes = new Set<number>();
   public clasesPendientes = new Set<number>();
   public facultadesPendientes = new Set<number>();
+
+  public masivoEnCurso: GrupoKey | null = null;
+  public confirmacionMasiva: { tipo: GrupoKey; accion: AccionMasiva } | null = null;
 
   public cargando = false;
   public errorMessage = '';
@@ -105,6 +111,8 @@ export class AsignacionUsuariosComponent implements OnInit, OnDestroy {
       this.sedesAsignadas = new Set<number>();
       this.clasesAsignadas = new Set<number>();
       this.facultadesAsignadas = new Set<number>();
+      this.confirmacionMasiva = null;
+      this.masivoEnCurso = null;
       this.errorMessage = '';
       this.successMessage = '';
       this.cdr.detectChanges();
@@ -229,6 +237,122 @@ export class AsignacionUsuariosComponent implements OnInit, OnDestroy {
         }),
     });
     this.cdr.detectChanges();
+  }
+
+  public pedirConfirmacionMasiva(tipo: GrupoKey, accion: AccionMasiva): void {
+    if (this.masivoEnCurso !== null) {
+      return;
+    }
+    this.zone.run(() => {
+      this.confirmacionMasiva = { tipo, accion };
+      this.errorMessage = '';
+      this.successMessage = '';
+      this.cdr.detectChanges();
+    });
+  }
+
+  public cancelarConfirmacionMasiva(): void {
+    this.zone.run(() => {
+      this.confirmacionMasiva = null;
+      this.cdr.detectChanges();
+    });
+  }
+
+  public confirmarMasiva(): void {
+    const confirmacion = this.confirmacionMasiva;
+    const userId = this.usuarioSeleccionado?.userId;
+    if (!confirmacion || userId === undefined) {
+      return;
+    }
+    this.zone.run(() => {
+      this.confirmacionMasiva = null;
+      this.cdr.detectChanges();
+    });
+
+    const agregar = confirmacion.accion === 'asignar';
+    if (confirmacion.tipo === 'sedes') {
+      const ids = this.sedes
+        .filter(sede => this.sedesAsignadas.has(sede.geograficaId) !== agregar)
+        .map(sede => sede.geograficaId);
+      this.ejecutarMasivo(
+        'sedes',
+        confirmacion.accion,
+        ids,
+        id => (agregar ? this.service.asignarSede(userId, id) : this.service.desasignarSede(userId, id)),
+        id => (agregar ? this.sedesAsignadas.add(id) : this.sedesAsignadas.delete(id)),
+      );
+    } else if (confirmacion.tipo === 'clases') {
+      const ids = this.clases
+        .filter(clase => this.clasesAsignadas.has(clase.claseChequeraId) !== agregar)
+        .map(clase => clase.claseChequeraId);
+      this.ejecutarMasivo(
+        'clases',
+        confirmacion.accion,
+        ids,
+        id => (agregar ? this.service.asignarClase(userId, id) : this.service.desasignarClase(userId, id)),
+        id => (agregar ? this.clasesAsignadas.add(id) : this.clasesAsignadas.delete(id)),
+      );
+    } else {
+      const ids = this.facultades
+        .filter(facultad => this.facultadesAsignadas.has(facultad.facultadId) !== agregar)
+        .map(facultad => facultad.facultadId);
+      this.ejecutarMasivo(
+        'facultades',
+        confirmacion.accion,
+        ids,
+        id =>
+          agregar
+            ? this.service.asignarFacultad(userId, id)
+            : this.service.desasignarFacultad(userId, id),
+        id => (agregar ? this.facultadesAsignadas.add(id) : this.facultadesAsignadas.delete(id)),
+      );
+    }
+  }
+
+  public nombreGrupo(tipo: GrupoKey): string {
+    switch (tipo) {
+      case 'sedes':
+        return 'sedes';
+      case 'clases':
+        return 'clases de chequera';
+      default:
+        return 'facultades';
+    }
+  }
+
+  private ejecutarMasivo(
+    tipo: GrupoKey,
+    accion: AccionMasiva,
+    ids: number[],
+    operar: (id: number) => Observable<unknown>,
+    aplicar: (id: number) => void,
+  ): void {
+    if (ids.length === 0) {
+      this.showSuccess('No había ítems para actualizar.');
+      return;
+    }
+    this.masivoEnCurso = tipo;
+    this.cdr.detectChanges();
+    forkJoin(ids.map(operar)).subscribe({
+      next: () =>
+        this.zone.run(() => {
+          ids.forEach(aplicar);
+          this.masivoEnCurso = null;
+          this.showSuccess(
+            accion === 'asignar'
+              ? `Se asignaron ${ids.length} ${this.nombreGrupo(tipo)}.`
+              : `Se quitaron ${ids.length} ${this.nombreGrupo(tipo)}.`,
+          );
+          this.cdr.detectChanges();
+        }),
+      error: () =>
+        this.zone.run(() => {
+          this.masivoEnCurso = null;
+          this.showError('Error al aplicar la acción masiva. Se recargó el estado.');
+          this.cargarDatosUsuario();
+          this.cdr.detectChanges();
+        }),
+    });
   }
 
   private cargarDatosUsuario() {

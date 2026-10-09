@@ -47,6 +47,21 @@
     </div>
   }
 
+  @if (confirmacionMasiva) {
+    <div class="um-alert um-alert-warn">
+      <p class="text-sm text-amber-800">
+        ¿{{ confirmacionMasiva.accion === 'asignar' ? 'Asignar' : 'Quitar' }} todas las
+        {{ nombreGrupo(confirmacionMasiva.tipo) }} de {{ usuarioSeleccionado?.nombre }}?
+      </p>
+      <div class="mt-3 flex justify-end gap-3">
+        <button type="button" class="um-btn-secondary" (click)="cancelarConfirmacionMasiva()">
+          Cancelar
+        </button>
+        <button type="button" class="um-btn-primary" (click)="confirmarMasiva()">Confirmar</button>
+      </div>
+    </div>
+  }
+
   @if (!usuarioSeleccionado) {
     <div class="bg-white border border-um-border rounded-lg shadow-sm p-6">
       <label for="buscar-usuario" class="block text-sm font-semibold text-um-ink"
@@ -143,9 +158,44 @@
     } @else {
       <div class="grid gap-6 lg:grid-cols-3">
         <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
-          <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">Sedes</h2>
-            <span class="text-sm text-um-muted">{{ sedesAsignadas.size }} de {{ sedes.length }}</span>
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 border-b border-um-border bg-um-surface px-6 py-4"
+          >
+            <h2
+              class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-um-ink"
+            >
+              Sedes
+              @if (masivoEnCurso === 'sedes') {
+                <svg
+                  class="animate-spin h-4 w-4 text-um-primary"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              }
+            </h2>
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-um-muted">{{ sedesAsignadas.size }} de {{ sedes.length }}</span>
+              <button
+                type="button"
+                class="um-link-btn"
+                [disabled]="masivoEnCurso !== null || sedes.length === 0 || sedesAsignadas.size === sedes.length"
+                (click)="pedirConfirmacionMasiva('sedes', 'asignar')"
+              >
+                Asignar todas
+              </button>
+              <button
+                type="button"
+                class="um-link-btn text-red-600"
+                [disabled]="masivoEnCurso !== null || sedesAsignadas.size === 0"
+                (click)="pedirConfirmacionMasiva('sedes', 'quitar')"
+              >
+                Quitar todas
+              </button>
+            </div>
           </div>
           <ul class="max-h-[480px] divide-y divide-um-border overflow-y-auto">
             @for (sede of sedes; track sede.geograficaId) {
@@ -182,11 +232,44 @@
         </div>
 
         <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
-          <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 border-b border-um-border bg-um-surface px-6 py-4"
+          >
+            <h2
+              class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-um-ink"
+            >
               Clases de chequera
+              @if (masivoEnCurso === 'clases') {
+                <svg
+                  class="animate-spin h-4 w-4 text-um-primary"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              }
             </h2>
-            <span class="text-sm text-um-muted">{{ clasesAsignadas.size }} de {{ clases.length }}</span>
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-um-muted">{{ clasesAsignadas.size }} de {{ clases.length }}</span>
+              <button
+                type="button"
+                class="um-link-btn"
+                [disabled]="masivoEnCurso !== null || clases.length === 0 || clasesAsignadas.size === clases.length"
+                (click)="pedirConfirmacionMasiva('clases', 'asignar')"
+              >
+                Asignar todas
+              </button>
+              <button
+                type="button"
+                class="um-link-btn text-red-600"
+                [disabled]="masivoEnCurso !== null || clasesAsignadas.size === 0"
+                (click)="pedirConfirmacionMasiva('clases', 'quitar')"
+              >
+                Quitar todas
+              </button>
+            </div>
           </div>
           <ul class="max-h-[480px] divide-y divide-um-border overflow-y-auto">
             @for (clase of clases; track clase.claseChequeraId) {
@@ -225,9 +308,44 @@
         </div>
 
         <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
-          <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">Facultades</h2>
-            <span class="text-sm text-um-muted">{{ facultadesAsignadas.size }} de {{ facultades.length }}</span>
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 border-b border-um-border bg-um-surface px-6 py-4"
+          >
+            <h2
+              class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-um-ink"
+            >
+              Facultades
+              @if (masivoEnCurso === 'facultades') {
+                <svg
+                  class="animate-spin h-4 w-4 text-um-primary"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              }
+            </h2>
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-um-muted">{{ facultadesAsignadas.size }} de {{ facultades.length }}</span>
+              <button
+                type="button"
+                class="um-link-btn"
+                [disabled]="masivoEnCurso !== null || facultades.length === 0 || facultadesAsignadas.size === facultades.length"
+                (click)="pedirConfirmacionMasiva('facultades', 'asignar')"
+              >
+                Asignar todas
+              </button>
+              <button
+                type="button"
+                class="um-link-btn text-red-600"
+                [disabled]="masivoEnCurso !== null || facultadesAsignadas.size === 0"
+                (click)="pedirConfirmacionMasiva('facultades', 'quitar')"
+              >
+                Quitar todas
+              </button>
+            </div>
           </div>
           <ul class="max-h-[480px] divide-y divide-um-border overflow-y-auto">
             @for (facultad of facultades; track facultad.facultadId) {
