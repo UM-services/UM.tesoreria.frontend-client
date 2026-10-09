@@ -30,6 +30,13 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
+    // Dependencias sobre las que cada usuario puede aprobar/rechazar el envío de pedidos.
+    path: 'autorizantes-envio',
+    loadComponent: () =>
+      import('@tesoreria/feature-administrador').then(m => m.AutorizantesEnvioComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
     // Sólo administradores: asignación de roles y permisos a cualquier usuario.
     path: 'permisos',
     loadComponent: () => import('@tesoreria/feature-permisos').then(m => m.PermisosComponent),
