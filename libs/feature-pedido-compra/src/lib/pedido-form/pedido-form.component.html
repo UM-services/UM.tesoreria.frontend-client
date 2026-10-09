@@ -3,9 +3,15 @@
   <div class="um-page-header">
     <div>
       <p class="um-eyebrow">Compras / Pedidos</p>
-      <h1 class="um-page-title">Iniciar pedido de compra</h1>
+      <h1 class="um-page-title">
+        {{ modoEdicion() ? 'Editar pedido de compra' : 'Iniciar pedido de compra' }}
+      </h1>
       <p class="um-page-desc">
-        Complete la solicitud. Puede guardarla como borrador y enviarla más tarde.
+        {{
+          modoEdicion()
+            ? 'Corrija la solicitud y vuelva a presentarla, o guárdela como borrador.'
+            : 'Complete la solicitud. Puede guardarla como borrador y enviarla más tarde.'
+        }}
       </p>
     </div>
     <div class="flex items-center gap-3">
@@ -164,7 +170,7 @@
       [disabled]="isLoading() || sinDependencia()"
       (click)="guardarBorrador()"
     >
-      Guardar borrador
+      {{ modoEdicion() ? 'Guardar cambios' : 'Guardar borrador' }}
     </button>
     <button
       type="button"
@@ -172,7 +178,7 @@
       [disabled]="isLoading() || sinDependencia()"
       (click)="enviar()"
     >
-      Enviar
+      Solicitar Envío
     </button>
   </div>
 </div>

@@ -17,13 +17,13 @@
         end
 
         subgraph "Libraries"
-            SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService y permisoGuard<br/>Models, tokens API_URL y EXTERNO_*"]
+            SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
             UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>PermisoDirective (*uiPermiso)"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
-            FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoDetalleComponent"]
-            FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>AsignacionUsuariosComponent"]
+            FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent"]
+            FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>AsignacionUsuariosComponent<br/>AutorizantesEnvioComponent"]
             FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent, SimuladorComponent"]
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
@@ -145,9 +145,12 @@ correspondan (`errorInterceptor` expulsa la sesión en ese caso).
 efectivo del usuario (`GET /permisoEfectivo/usuario/{userId}`) al iniciar sesión y lo limpia al
 cerrar; si la llamada falla el bundle queda vacío (**fail-closed**). La clave sigue la convención
 `modulo.accion` (p. ej. `compras.iniciar_pedido`). `permisoGuard` espera `ensureLoaded` antes de
-decidir y, al denegar, redirige a `sin-acceso` (nunca a `/login`, para no generar bucles). Cada app
-declara sus rutas gated junto a los guards de acceso: `[authGuard, usuarioInternoGuard,
-administradorGuard, permisoGuard('<clave>')]`.
+decidir y, al denegar, redirige a `sin-acceso` (nunca a `/login`, para no generar bucles).
+`permisoAlgunoGuard(claves)` aplica la misma semántica con alternativa (**OR**): autoriza si el
+usuario tiene al menos una de las claves, para vistas compartidas por roles distintos (p. ej. el
+detalle de un pedido, que ven solicitante y autorizante). Cada app declara sus rutas gated junto a
+los guards de acceso: `[authGuard, usuarioInternoGuard, administradorGuard, permisoGuard('<clave>')]`
+o `permisoAlgunoGuard(['<clave>', ...])`.
 
 En la UI, `@tesoreria/ui-layout` aporta `PermisoDirective` (`*uiPermiso="'modulo.accion'"`) y el
 campo `ShellMenuItem.permiso`; `UiShellComponent.visibleMenuItems` oculta los ítems sin permiso y
@@ -165,11 +168,17 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Blank["Blank Component<br/>Contenedor protegido"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
-    AppRoutes --> Pedidos["PedidoCompra Routes<br/>@tesoreria/feature-pedido-compra<br/>permisoGuard compras.iniciar_pedido"]
+    AppRoutes --> Pedidos["PedidoCompra Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>iniciar, enviar y consultar"]
 
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
+    Pedidos --> Bandeja["PedidoBandeja Component<br/>compras.enviar_pedido"]
+    Pedidos --> Consulta["PedidoConsulta Component<br/>compras.consultar_pedidos"]
+    Pedidos --> Detalle["PedidoDetalle Component<br/>permisoAlgunoGuard"]
     Pedidos --> PedidoAPI["Fachada tesoreria-compras<br/>/compras/pedido"]
+    Bandeja --> PedidoAPI
+    Consulta --> PedidoAPI
+    Detalle --> PedidoAPI
 ```
 
 ## Estructura de Módulos - Administrador
@@ -180,6 +189,7 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
     AppRoutes --> Dependencias["Dependencias Component<br/>@tesoreria/feature-administrador"]
     AppRoutes --> Asignaciones["AsignacionUsuarios Component<br/>@tesoreria/feature-administrador"]
+    AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compraPedidoAutorizante del core"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
     AppRoutes --> Permisos["Permisos Component<br/>@tesoreria/feature-permisos"]
@@ -190,6 +200,7 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
 
     Dependencias --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     Asignaciones --> PermisosAPI["API de seguridad del core<br/>usuario, rol, permiso y overrides"]
+    Autorizantes --> AutorizantesAPI["Slice compraPedidoAutorizante del core<br/>dependencias habilitadas por usuario"]
     Permisos --> PermisosAPI
     Roles --> PermisosAPI
     Catalogo --> PermisosAPI
