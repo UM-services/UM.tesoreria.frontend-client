@@ -69,12 +69,19 @@
               <tr>
                 <td class="font-semibold text-um-ink">{{ pedido.numero || 'Borrador' }}</td>
                 <td>
-                  <span class="um-badge bg-um-surface text-um-text">{{ pedido.estado }}</span>
+                  <span class="um-badge" [ngClass]="estadoBadgeClass(pedido.estado)">
+                    {{ estadoLabel(pedido.estado) }}
+                  </span>
                 </td>
                 <td>{{ pedido.fecha | date: 'short' }}</td>
                 <td>{{ pedido.necesidad }}</td>
                 <td class="text-right">
-                  <a [routerLink]="[pedido.compraPedidoId]" class="um-link-btn">Ver</a>
+                  <div class="flex justify-end gap-3">
+                    <a [routerLink]="[pedido.compraPedidoId]" class="um-link-btn">Ver</a>
+                    @if (pedido.estado === 'BORRADOR' || pedido.estado === 'RECHAZADO') {
+                      <a [routerLink]="[pedido.compraPedidoId, 'editar']" class="um-link-btn">Editar</a>
+                    }
+                  </div>
                 </td>
               </tr>
             }
