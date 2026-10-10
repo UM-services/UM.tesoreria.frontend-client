@@ -47,7 +47,7 @@ export class ProveedoresComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
 
-  private readonly apiUrlBase = '/api/tesoreria/core';
+  private readonly apiUrlBase = '/api/tesoreria/compras';
   private readonly baseUrl = `${this.apiUrlBase}/proveedor`;
   private readonly sheetUrl = `${this.apiUrlBase}/sheet`;
 

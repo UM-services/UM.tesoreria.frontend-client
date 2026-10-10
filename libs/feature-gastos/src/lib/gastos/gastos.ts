@@ -76,9 +76,9 @@ export class GastosComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
 
-  private readonly articuloUrl = '/api/tesoreria/core/articulo';
-  private readonly ubicacionUrl = '/api/tesoreria/core/ubicacion';
-  private readonly ubicacionArticuloUrl = '/api/tesoreria/core/ubicacionArticulo';
+  private readonly articuloUrl = '/api/tesoreria/compras/articulo';
+  private readonly ubicacionUrl = '/api/tesoreria/compras/ubicacion';
+  private readonly ubicacionArticuloUrl = '/api/tesoreria/compras/ubicacionArticulo';
 
   public gastos: Articulo[] = [];
   public filteredGastos: Articulo[] = [];
