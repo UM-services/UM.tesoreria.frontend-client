@@ -1,0 +1,119 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Compras / Autorización</p>
+      <h1 class="um-page-title">Autorización de presupuesto</h1>
+      <p class="um-page-desc">
+        Pedidos pendientes de autorizar el inicio del proceso de pedido de presupuesto.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  <div class="bg-white border border-um-border rounded-lg shadow-sm px-6 py-4">
+    <p class="text-xs font-semibold uppercase tracking-wider text-um-muted">Tu límite de autorización</p>
+    <p class="mt-1 text-sm text-um-ink">{{ textoLimite() }}</p>
+  </div>
+
+  <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+    @if (isLoading()) {
+      <div class="p-6 text-sm text-um-muted">Cargando…</div>
+    } @else if (pedidos().length === 0) {
+      <div class="p-6 text-sm text-um-muted">No hay pedidos pendientes de autorización.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Número</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Dependencia</th>
+              <th scope="col">Monto estimado</th>
+              <th scope="col">Necesidad</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pedido of pedidos(); track pedido.compraPedidoId) {
+              <tr>
+                <td class="font-semibold text-um-ink">{{ pedido.numero || 'Borrador' }}</td>
+                <td>
+                  <span class="um-badge" [ngClass]="estadoBadgeClass(pedido.estado)">
+                    {{ estadoLabel(pedido.estado) }}
+                  </span>
+                </td>
+                <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
+                <td>{{ money(pedido.montoEstimado) }}</td>
+                <td>{{ pedido.necesidad }}</td>
+                <td class="text-right">
+                  <div class="flex justify-end gap-3">
+                    <a [routerLink]="['/pedido', pedido.compraPedidoId]" class="um-link-btn">Ver</a>
+                    @if (pedido.estado === 'PENDIENTE_AUTORIZACION_PRESUPUESTO') {
+                      <button
+                        type="button"
+                        class="um-link-btn"
+                        [disabled]="pendientes().has(pedido.compraPedidoId!)"
+                        (click)="autorizar(pedido)"
+                      >
+                        Autorizar
+                      </button>
+                      <button
+                        type="button"
+                        class="um-link-btn text-red-600"
+                        [disabled]="pendientes().has(pedido.compraPedidoId!)"
+                        (click)="abrirRechazo(pedido)"
+                      >
+                        Rechazar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+              @if (rechazandoId() === pedido.compraPedidoId) {
+                <tr>
+                  <td colspan="6" class="bg-um-surface">
+                    <div class="space-y-2 p-2">
+                      <label class="um-label" [for]="'motivo-' + pedido.compraPedidoId"
+                        >Motivo del rechazo</label
+                      >
+                      <textarea
+                        [id]="'motivo-' + pedido.compraPedidoId"
+                        class="um-input"
+                        rows="2"
+                        [(ngModel)]="motivoRechazo"
+                        placeholder="Explique por qué no se autoriza el inicio del proceso…"
+                      ></textarea>
+                      <div class="flex justify-end gap-3">
+                        <button type="button" class="um-btn-secondary" (click)="cancelarRechazo()">
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          class="um-btn-primary"
+                          [disabled]="pendientes().has(pedido.compraPedidoId!)"
+                          (click)="confirmarRechazo(pedido)"
+                        >
+                          Confirmar rechazo
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,143 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Compras / Revisión</p>
+      <h1 class="um-page-title">Revisión de compras</h1>
+      <p class="um-page-desc">
+        Pedidos enviados a compras. Revise y cargue el valor estimado para habilitar la autorización
+        de presupuesto.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  <div class="flex flex-wrap items-end gap-4">
+    <div>
+      <label class="um-label" for="estado-filtro">Estado</label>
+      <select
+        id="estado-filtro"
+        class="um-input min-w-[280px]"
+        [(ngModel)]="estadoFiltro"
+        (ngModelChange)="cargar()"
+      >
+        <option value="">Todos</option>
+        @for (estado of estados; track estado) {
+          <option [value]="estado">{{ estadoLabel(estado) }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+    @if (isLoading()) {
+      <div class="p-6 text-sm text-um-muted">Cargando…</div>
+    } @else if (pedidos().length === 0) {
+      <div class="p-6 text-sm text-um-muted">No hay pedidos para el filtro seleccionado.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Número</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Dependencia</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Valor estimado</th>
+              <th scope="col">Necesidad</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pedido of pedidos(); track pedido.compraPedidoId) {
+              <tr>
+                <td class="font-semibold text-um-ink">{{ pedido.numero || 'Borrador' }}</td>
+                <td>
+                  <span class="um-badge" [ngClass]="estadoBadgeClass(pedido.estado)">
+                    {{ estadoLabel(pedido.estado) }}
+                  </span>
+                </td>
+                <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
+                <td>{{ pedido.fecha | date: 'short' }}</td>
+                <td>{{ pedido.montoEstimado !== null ? (pedido.montoEstimado | number: '1.2-2') : '—' }}</td>
+                <td>{{ pedido.necesidad }}</td>
+                <td class="text-right">
+                  <div class="flex justify-end gap-3">
+                    <a [routerLink]="['/pedido', pedido.compraPedidoId]" class="um-link-btn">Ver</a>
+                    @if (pedido.estado === 'EN_REVISION_COMPRAS') {
+                      <button
+                        type="button"
+                        class="um-link-btn"
+                        [disabled]="pendientes().has(pedido.compraPedidoId!)"
+                        (click)="abrirEstimacion(pedido)"
+                      >
+                        Estimar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+              @if (estimandoId() === pedido.compraPedidoId) {
+                <tr>
+                  <td colspan="7" class="bg-um-surface">
+                    <div class="space-y-2 p-2">
+                      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div>
+                          <label class="um-label" [for]="'monto-' + pedido.compraPedidoId"
+                            >Valor estimado</label
+                          >
+                          <input
+                            [id]="'monto-' + pedido.compraPedidoId"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="um-input"
+                            [(ngModel)]="montoEstimado"
+                          />
+                        </div>
+                        <div>
+                          <label class="um-label" [for]="'fuente-' + pedido.compraPedidoId"
+                            >Fuente de estimación (opcional)</label
+                          >
+                          <input
+                            [id]="'fuente-' + pedido.compraPedidoId"
+                            type="text"
+                            class="um-input"
+                            [(ngModel)]="fuenteEstimacion"
+                            placeholder="Ej.: cotización del área solicitante…"
+                          />
+                        </div>
+                      </div>
+                      <div class="flex justify-end gap-3">
+                        <button type="button" class="um-btn-secondary" (click)="cancelarEstimacion()">
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          class="um-btn-primary"
+                          [disabled]="pendientes().has(pedido.compraPedidoId!)"
+                          (click)="confirmarEstimacion(pedido)"
+                        >
+                          Guardar valor estimado
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

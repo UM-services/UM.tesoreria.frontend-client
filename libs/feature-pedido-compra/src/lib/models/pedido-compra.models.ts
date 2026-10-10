@@ -94,7 +94,9 @@ export const ESTADOS_PEDIDO = [
   'PENDIENTE_ESTIMACION',
   'PENDIENTE_ENVIO',
   'ACLARACION_REQUERIDA',
-  'ENVIADO',
+  'EN_REVISION_COMPRAS',
+  'PENDIENTE_AUTORIZACION_PRESUPUESTO',
+  'AUTORIZADO_PRESUPUESTO',
   'RECHAZADO',
   'DESCARTADO',
 ] as const;
@@ -105,6 +107,9 @@ const ESTADO_LABEL: Record<string, string> = {
   PENDIENTE_ENVIO: 'Pendiente de envío',
   ACLARACION_REQUERIDA: 'Aclaración requerida',
   ENVIADO: 'Enviado a compras',
+  EN_REVISION_COMPRAS: 'En revisión de compras',
+  PENDIENTE_AUTORIZACION_PRESUPUESTO: 'Pendiente de autorización de presupuesto',
+  AUTORIZADO_PRESUPUESTO: 'Autorizado (presupuesto)',
   RECHAZADO: 'Rechazado',
   DESCARTADO: 'Descartado',
 };
@@ -120,6 +125,7 @@ export function estadoLabel(estado?: string | null): string {
 export function estadoBadgeClass(estado?: string | null): string {
   switch (estado) {
     case 'ENVIADO':
+    case 'EN_REVISION_COMPRAS':
       return 'bg-green-100 text-green-800';
     case 'RECHAZADO':
       return 'bg-red-100 text-red-800';
@@ -130,7 +136,28 @@ export function estadoBadgeClass(estado?: string | null): string {
     case 'PENDIENTE_ESTIMACION':
     case 'ACLARACION_REQUERIDA':
       return 'bg-blue-100 text-blue-800';
+    case 'PENDIENTE_AUTORIZACION_PRESUPUESTO':
+      return 'bg-indigo-100 text-indigo-800';
+    case 'AUTORIZADO_PRESUPUESTO':
+      return 'bg-emerald-100 text-emerald-800';
     default:
       return 'bg-um-surface text-um-text';
   }
+}
+
+/** Límite de autorización por monto del usuario para un ejercicio. */
+export interface LimiteAutorizacion {
+  usuarioId: number | null;
+  ejercicioId: number | null;
+  multiplico: number | null;
+  referencia: number | null;
+  limite: number | null;
+  ilimitado: boolean;
+  tieneAutoridad: boolean;
+}
+
+/** Cuerpo de la revisión de compras (`POST /pedido/{id}/estimar`). */
+export interface EstimarPedidoRequest {
+  montoEstimado: number;
+  fuenteEstimacion: string | null;
 }
