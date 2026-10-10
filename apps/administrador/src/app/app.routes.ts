@@ -24,6 +24,12 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
+    // Sólo administradores: alta, configuración y habilitar/deshabilitar usuarios.
+    path: 'usuarios',
+    loadComponent: () => import('@tesoreria/feature-administrador').then(m => m.UsuariosComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
     path: 'asignaciones',
     loadComponent: () =>
       import('@tesoreria/feature-administrador').then(m => m.AsignacionUsuariosComponent),
