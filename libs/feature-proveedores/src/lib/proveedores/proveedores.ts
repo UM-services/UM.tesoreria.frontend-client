@@ -1,9 +1,13 @@
 import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
-import { BuscadorProveedorComponent, ProveedorSearchResponse } from '@tesoreria/ui-layout';
+import {
+  BuscadorProveedorComponent,
+  PermisoDirective,
+  ProveedorSearchResponse,
+} from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -34,7 +38,7 @@ export interface PaginatedResponse<T> {
 @Component({
   selector: 'app-proveedores',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BuscadorProveedorComponent],
+  imports: [CommonModule, ReactiveFormsModule, BuscadorProveedorComponent, PermisoDirective],
   templateUrl: './proveedores.html',
 })
 export class ProveedoresComponent implements OnInit {
@@ -43,7 +47,7 @@ export class ProveedoresComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
 
-  private readonly apiUrlBase = '/api/tesoreria/core';
+  private readonly apiUrlBase = '/api/tesoreria/compras';
   private readonly baseUrl = `${this.apiUrlBase}/proveedor`;
   private readonly sheetUrl = `${this.apiUrlBase}/sheet`;
 
@@ -97,11 +101,11 @@ export class ProveedoresComponent implements OnInit {
   loadProveedores(page: number) {
     this.isLoading = true;
     this.isSearching = false;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', this.pageSize.toString());
     this.http
-      .get<PaginatedResponse<Proveedor>>(`${this.baseUrl}/page`, { params })
+      .post<PaginatedResponse<Proveedor>>(`${this.baseUrl}/page`, {
+        page,
+        size: this.pageSize,
+      })
       .pipe(
         catchError((err) => {
           this.showError('Error de conexión con el servidor.');

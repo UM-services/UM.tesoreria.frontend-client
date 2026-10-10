@@ -7,11 +7,12 @@ import {
   FormControl,
   FormsModule,
 } from '@angular/forms';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import {
   BuscadorProveedorComponent,
   BuscadorCuentaContableComponent,
   CuentaSearchResponse,
+  PermisoDirective,
   ProveedorSearchResponse,
 } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -64,6 +65,7 @@ export interface UbicacionArticulo {
     FormsModule,
     BuscadorCuentaContableComponent,
     BuscadorProveedorComponent,
+    PermisoDirective,
     CommonModule,
   ],
   templateUrl: './gastos.html',
@@ -74,9 +76,9 @@ export class GastosComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly zone = inject(NgZone);
 
-  private readonly articuloUrl = '/api/tesoreria/core/articulo';
-  private readonly ubicacionUrl = '/api/tesoreria/core/ubicacion';
-  private readonly ubicacionArticuloUrl = '/api/tesoreria/core/ubicacionArticulo';
+  private readonly articuloUrl = '/api/tesoreria/compras/articulo';
+  private readonly ubicacionUrl = '/api/tesoreria/compras/ubicacion';
+  private readonly ubicacionArticuloUrl = '/api/tesoreria/compras/ubicacionArticulo';
 
   public gastos: Articulo[] = [];
   public filteredGastos: Articulo[] = [];
@@ -132,11 +134,11 @@ export class GastosComponent implements OnInit {
   loadGastos(page = 0) {
     this.isLoading = true;
     this.isSearching = false;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', this.pageSize.toString());
     this.http
-      .get<PaginatedResponse<Articulo>>(`${this.articuloUrl}/tipo/gasto/page`, { params })
+      .post<PaginatedResponse<Articulo>>(`${this.articuloUrl}/tipo/gasto/page`, {
+        page,
+        size: this.pageSize,
+      })
       .pipe(
         catchError((err) => {
           console.error('Error al cargar la lista de gastos.', err);

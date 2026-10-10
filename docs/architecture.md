@@ -22,8 +22,8 @@
             UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>PermisoDirective (*uiPermiso)"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
-            FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent"]
-            FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>AsignacionUsuariosComponent<br/>AutorizantesEnvioComponent"]
+            FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoRevisionComponent<br/>PedidoPresupuestoComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent"]
+            FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>UsuariosComponent<br/>AsignacionUsuariosComponent<br/>AutorizantesEnvioComponent<br/>AutoridadesPresupuestoComponent"]
             FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent, SimuladorComponent"]
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
@@ -103,6 +103,7 @@ sequenceDiagram
     API-->>AuthService: LoginResponse {token, userId, login, nombre, sede, administrador, usuarioExterno, ...}
     AuthService->>API: GET /auth/me/{userId} (revalidar flags de acceso)
     AuthService-->>Login: Sesión almacenada con flags del backend
+    Note over Login,Cambio: Si debeCambiarClave = 1, ui-shell abre el modal forzado y no permite cerrarlo hasta cambiar la clave
     Login->>AuthGuard: Navegar a ruta protegida
     AuthGuard->>AuthGuard: Verificar token
     AuthGuard-->>User: Acceso permitido
@@ -123,6 +124,11 @@ sequenceDiagram
     AuthService-->>Cambio: Sesión y storage fusionados con la respuesta
     Cambio-->>User: Mensaje de éxito y cierre automático
 ```
+
+`LoginResponse` incluye `debeCambiarClave` (1 = clave provisoria puesta por un administrador). Cuando la
+sesión lo trae en 1, `ui-shell` (`@tesoreria/ui-layout`) abre el modal de cambio de clave y bloquea su
+cierre hasta que el usuario la cambie; `POST /change-password` actualiza la sesión y limpia el flag, con
+lo que el modal deja de reabrirse.
 
 ### Guards de acceso por módulo
 
@@ -168,15 +174,19 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Blank["Blank Component<br/>Contenedor protegido"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
-    AppRoutes --> Pedidos["PedidoCompra Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>iniciar, enviar y consultar"]
+    AppRoutes --> Pedidos["PedidoCompra Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>iniciar, enviar, revisar,<br/>autorizar presupuesto y consultar"]
 
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     Pedidos --> Bandeja["PedidoBandeja Component<br/>compras.enviar_pedido"]
+    Pedidos --> Revision["PedidoRevision Component<br/>compras.estimar"]
+    Pedidos --> Presupuesto["PedidoPresupuesto Component<br/>compras.presupuesto.autorizar"]
     Pedidos --> Consulta["PedidoConsulta Component<br/>compras.consultar_pedidos"]
     Pedidos --> Detalle["PedidoDetalle Component<br/>permisoAlgunoGuard"]
     Pedidos --> PedidoAPI["Fachada tesoreria-compras<br/>/compras/pedido"]
     Bandeja --> PedidoAPI
+    Revision --> PedidoAPI
+    Presupuesto --> PedidoAPI
     Consulta --> PedidoAPI
     Detalle --> PedidoAPI
 ```
@@ -190,6 +200,8 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Dependencias["Dependencias Component<br/>@tesoreria/feature-administrador"]
     AppRoutes --> Asignaciones["AsignacionUsuarios Component<br/>@tesoreria/feature-administrador"]
     AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compraPedidoAutorizante del core"]
+    AppRoutes --> Usuarios["Usuarios Component<br/>@tesoreria/feature-administrador<br/>alta, configuración y reset de clave"]
+    AppRoutes --> Autoridades["AutoridadesPresupuesto Component<br/>@tesoreria/feature-administrador<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario del core"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
     AppRoutes --> Permisos["Permisos Component<br/>@tesoreria/feature-permisos"]
@@ -201,6 +213,8 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     Dependencias --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     Asignaciones --> PermisosAPI["API de seguridad del core<br/>usuario, rol, permiso y overrides"]
     Autorizantes --> AutorizantesAPI["Slice compraPedidoAutorizante del core<br/>dependencias habilitadas por usuario"]
+    Usuarios --> UsuariosAPI["Slice usuario del core<br/>searchTodos, alta, configuración,<br/>activo y password"]
+    Autoridades --> AutoridadesAPI["Slices de presupuesto del core<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario"]
     Permisos --> PermisosAPI
     Roles --> PermisosAPI
     Catalogo --> PermisosAPI
@@ -268,6 +282,7 @@ classDiagram
         +number administrador
         +number usuarioExterno
         +number activo
+        +number debeCambiarClave
         +number imprimeChequera
         +number numeroOpManual
         +number habilitaOpEliminacion

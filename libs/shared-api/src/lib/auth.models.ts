@@ -23,6 +23,8 @@ export interface LoginResponse {
   usuarioExterno?: number;
   /** 1 = usuario activo dado de alta. */
   activo?: number;
+  /** 1 = debe cambiar la clave antes de operar (clave provisoria puesta por un administrador). */
+  debeCambiarClave?: number;
   /** Flag binario del backend (1/0): impresión de chequera. */
   imprimeChequera?: number;
   /** Flag binario del backend (1/0): numeración de operaciones manual. */

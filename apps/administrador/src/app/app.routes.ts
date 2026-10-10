@@ -24,6 +24,12 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
+    // Sólo administradores: alta, configuración y habilitar/deshabilitar usuarios.
+    path: 'usuarios',
+    loadComponent: () => import('@tesoreria/feature-administrador').then(m => m.UsuariosComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
     path: 'asignaciones',
     loadComponent: () =>
       import('@tesoreria/feature-administrador').then(m => m.AsignacionUsuariosComponent),
@@ -34,6 +40,13 @@ export const appRoutes: Route[] = [
     path: 'autorizantes-envio',
     loadComponent: () =>
       import('@tesoreria/feature-administrador').then(m => m.AutorizantesEnvioComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Referencia por ejercicio, perfiles de autoridad por monto y su asignación a usuarios.
+    path: 'autoridades-presupuesto',
+    loadComponent: () =>
+      import('@tesoreria/feature-administrador').then(m => m.AutoridadesPresupuestoComponent),
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
