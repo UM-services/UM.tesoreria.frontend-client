@@ -43,6 +43,13 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
+    // Referencia por ejercicio, perfiles de autoridad por monto y su asignación a usuarios.
+    path: 'autoridades-presupuesto',
+    loadComponent: () =>
+      import('@tesoreria/feature-administrador').then(m => m.AutoridadesPresupuestoComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
     // Sólo administradores: asignación de roles y permisos a cualquier usuario.
     path: 'permisos',
     loadComponent: () => import('@tesoreria/feature-permisos').then(m => m.PermisosComponent),

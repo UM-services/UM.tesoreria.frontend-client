@@ -17,6 +17,7 @@ export class AppComponent {
     { label: 'Usuarios', path: '/usuarios' },
     { label: 'Asignaciones', path: '/asignaciones' },
     { label: 'Autorizantes de envío', path: '/autorizantes-envio' },
+    { label: 'Autoridades de presupuesto', path: '/autoridades-presupuesto' },
     { label: 'Permisos', path: '/permisos' },
     { label: 'Roles', path: '/roles' },
     { label: 'Catálogo', path: '/catalogo' },
