@@ -7,7 +7,7 @@ import {
   FormControl,
   FormsModule,
 } from '@angular/forms';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import {
   BuscadorProveedorComponent,
   BuscadorCuentaContableComponent,
@@ -132,11 +132,11 @@ export class GastosComponent implements OnInit {
   loadGastos(page = 0) {
     this.isLoading = true;
     this.isSearching = false;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', this.pageSize.toString());
     this.http
-      .get<PaginatedResponse<Articulo>>(`${this.articuloUrl}/tipo/gasto/page`, { params })
+      .post<PaginatedResponse<Articulo>>(`${this.articuloUrl}/tipo/gasto/page`, {
+        page,
+        size: this.pageSize,
+      })
       .pipe(
         catchError((err) => {
           console.error('Error al cargar la lista de gastos.', err);

@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { API_URL } from '@tesoreria/shared-api';
 import { Observable } from 'rxjs';
@@ -34,29 +34,18 @@ export class PedidoCompraService {
 
   /** Pedidos de las dependencias habilitadas del autorizante, con filtro de estado opcional. */
   bandeja(estado?: string | null): Observable<PedidoCompra[]> {
-    const params = estado ? new HttpParams().set('estado', estado) : undefined;
-    return this.http.get<PedidoCompra[]>(`${this.baseUrl}/bandeja`, { params });
+    return this.http.post<PedidoCompra[]>(`${this.baseUrl}/bandeja`, { estado: estado ?? null });
   }
 
   /** Consulta global con filtros. */
   consulta(filtro: PedidoCompraFiltro): Observable<PedidoCompra[]> {
-    let params = new HttpParams();
-    if (filtro.estado) {
-      params = params.set('estado', filtro.estado);
-    }
-    if (filtro.solicitanteId != null) {
-      params = params.set('solicitanteId', filtro.solicitanteId);
-    }
-    if (filtro.dependenciaId != null) {
-      params = params.set('dependenciaId', filtro.dependenciaId);
-    }
-    if (filtro.fechaDesde) {
-      params = params.set('fechaDesde', filtro.fechaDesde);
-    }
-    if (filtro.fechaHasta) {
-      params = params.set('fechaHasta', filtro.fechaHasta);
-    }
-    return this.http.get<PedidoCompra[]>(`${this.baseUrl}/consulta`, { params });
+    return this.http.post<PedidoCompra[]>(`${this.baseUrl}/consulta`, {
+      estado: filtro.estado ?? null,
+      solicitanteId: filtro.solicitanteId ?? null,
+      dependenciaId: filtro.dependenciaId ?? null,
+      fechaDesde: filtro.fechaDesde ?? null,
+      fechaHasta: filtro.fechaHasta ?? null,
+    });
   }
 
   getById(compraPedidoId: number): Observable<PedidoCompra> {

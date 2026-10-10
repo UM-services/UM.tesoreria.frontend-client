@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
 import { BuscadorProveedorComponent, ProveedorSearchResponse } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -97,11 +97,11 @@ export class ProveedoresComponent implements OnInit {
   loadProveedores(page: number) {
     this.isLoading = true;
     this.isSearching = false;
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', this.pageSize.toString());
     this.http
-      .get<PaginatedResponse<Proveedor>>(`${this.baseUrl}/page`, { params })
+      .post<PaginatedResponse<Proveedor>>(`${this.baseUrl}/page`, {
+        page,
+        size: this.pageSize,
+      })
       .pipe(
         catchError((err) => {
           this.showError('Error de conexión con el servidor.');
