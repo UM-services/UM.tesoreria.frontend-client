@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import {
   ContextoInicioPedido,
   DependenciaResumen,
+  LimiteAutorizacion,
   PedidoCompra,
   PedidoCompraFiltro,
   PedidoCompraHistorial,
@@ -95,5 +96,40 @@ export class PedidoCompraService {
 
   dependencias(): Observable<DependenciaResumen[]> {
     return this.http.get<DependenciaResumen[]>(`${this.coreUrl}/dependencia/`);
+  }
+
+  // ---- Etapa de presupuesto: revisión de compras + autoridad por monto ----
+
+  /** Bandeja de revisión del dpto. de compras (por defecto, `EN_REVISION_COMPRAS`). */
+  revision(estado?: string | null): Observable<PedidoCompra[]> {
+    return this.http.post<PedidoCompra[]>(`${this.baseUrl}/revision`, { estado: estado ?? null });
+  }
+
+  /** Carga/confirma el valor estimado del pedido (revisión de compras). */
+  estimar(compraPedidoId: number, montoEstimado: number, fuenteEstimacion: string | null): Observable<PedidoCompra> {
+    return this.http.post<PedidoCompra>(`${this.baseUrl}/${compraPedidoId}/estimar`, {
+      montoEstimado,
+      fuenteEstimacion,
+    });
+  }
+
+  /** Bandeja de la autoridad de presupuesto (pendientes de autorizar el inicio del proceso). */
+  presupuestoBandeja(): Observable<PedidoCompra[]> {
+    return this.http.get<PedidoCompra[]>(`${this.baseUrl}/presupuesto/bandeja`);
+  }
+
+  /** Límite efectivo del usuario para un ejercicio (`multiplico × referencia`). */
+  limite(ejercicioId: number): Observable<LimiteAutorizacion> {
+    return this.http.get<LimiteAutorizacion>(`${this.baseUrl}/presupuesto/limite/${ejercicioId}`);
+  }
+
+  /** Autoriza el inicio del proceso de pedido de presupuesto (fail-closed por monto). */
+  autorizarPresupuesto(compraPedidoId: number): Observable<PedidoCompra> {
+    return this.http.post<PedidoCompra>(`${this.baseUrl}/${compraPedidoId}/autorizar-presupuesto`, {});
+  }
+
+  /** Rechaza la autorización de presupuesto; vuelve al solicitante. */
+  rechazarPresupuesto(compraPedidoId: number, motivo: string): Observable<PedidoCompra> {
+    return this.http.post<PedidoCompra>(`${this.baseUrl}/${compraPedidoId}/rechazar-presupuesto`, { motivo });
   }
 }

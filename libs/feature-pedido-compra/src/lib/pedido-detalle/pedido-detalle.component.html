@@ -29,7 +29,7 @@
   @if (isLoading()) {
     <div class="p-6 text-sm text-um-muted">Cargando…</div>
   } @else if (pedido(); as p) {
-    @if (puedePresentar() || puedeDecidir()) {
+    @if (puedePresentar() || puedeDecidir() || puedeEstimar() || puedeDecidirPresupuesto()) {
       <section class="um-card">
         <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Acciones</h2>
 
@@ -118,6 +118,112 @@
             </div>
           </div>
         }
+
+        @if (puedeEstimar()) {
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              class="um-btn-primary"
+              [disabled]="enCurso()"
+              (click)="abrirEstimacion()"
+            >
+              Cargar valor estimado
+            </button>
+          </div>
+        }
+
+        @if (estimando()) {
+          <div class="mt-4 space-y-2">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <label class="um-label" for="monto-estimado">Valor estimado</label>
+                <input
+                  id="monto-estimado"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="um-input"
+                  [(ngModel)]="montoEstimado"
+                />
+              </div>
+              <div>
+                <label class="um-label" for="fuente-estimacion">Fuente de estimación (opcional)</label>
+                <input
+                  id="fuente-estimacion"
+                  type="text"
+                  class="um-input"
+                  [(ngModel)]="fuenteEstimacion"
+                />
+              </div>
+            </div>
+            <div class="flex justify-end gap-3">
+              <button type="button" class="um-btn-secondary" (click)="estimando.set(false)">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="um-btn-primary"
+                [disabled]="enCurso()"
+                (click)="confirmarEstimacion()"
+              >
+                Guardar valor estimado
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (puedeDecidirPresupuesto()) {
+          <div class="mt-4 rounded-md border border-um-border bg-um-surface px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-um-muted">
+              Tu límite de autorización
+            </p>
+            <p class="mt-1 text-sm text-um-ink">{{ textoLimite() }}</p>
+          </div>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              class="um-btn-primary"
+              [disabled]="enCurso()"
+              (click)="autorizarPresupuesto()"
+            >
+              Autorizar presupuesto
+            </button>
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [disabled]="enCurso()"
+              (click)="rechazandoPresupuesto.set(true)"
+            >
+              Rechazar
+            </button>
+          </div>
+        }
+
+        @if (rechazandoPresupuesto()) {
+          <div class="mt-4 space-y-2">
+            <label class="um-label" for="motivo-rechazo-presupuesto">Motivo del rechazo</label>
+            <textarea
+              id="motivo-rechazo-presupuesto"
+              class="um-input"
+              rows="2"
+              [(ngModel)]="motivoRechazoPresupuesto"
+              placeholder="Explique por qué no se autoriza el inicio del proceso…"
+            ></textarea>
+            <div class="flex justify-end gap-3">
+              <button type="button" class="um-btn-secondary" (click)="rechazandoPresupuesto.set(false)">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="um-btn-primary"
+                [disabled]="enCurso()"
+                (click)="confirmarRechazoPresupuesto()"
+              >
+                Confirmar rechazo
+              </button>
+            </div>
+          </div>
+        }
       </section>
     }
 
@@ -140,6 +246,18 @@
             {{ p.fechaEnvio ? (p.fechaEnvio | date: 'short') : '—' }}
           </p>
         </div>
+        @if (p.montoEstimado !== null && p.montoEstimado !== undefined) {
+          <div>
+            <label class="um-label">Valor estimado</label>
+            <p class="text-sm text-um-text">{{ p.montoEstimado | number: '1.2-2' }}</p>
+          </div>
+        }
+        @if (p.fuenteEstimacion) {
+          <div>
+            <label class="um-label">Fuente de estimación</label>
+            <p class="text-sm text-um-text">{{ p.fuenteEstimacion }}</p>
+          </div>
+        }
         <div class="md:col-span-3">
           <label class="um-label">Fundamento / necesidad</label>
           <p class="text-sm text-um-text">{{ p.necesidad }}</p>

@@ -5,11 +5,14 @@ import { PedidoConsultaComponent } from './pedido-consulta/pedido-consulta.compo
 import { PedidoDetalleComponent } from './pedido-detalle/pedido-detalle.component';
 import { PedidoFormComponent } from './pedido-form/pedido-form.component';
 import { PedidoListaComponent } from './pedido-lista/pedido-lista.component';
+import { PedidoPresupuestoComponent } from './pedido-presupuesto/pedido-presupuesto.component';
+import { PedidoRevisionComponent } from './pedido-revision/pedido-revision.component';
 
 /**
  * Rutas del circuito de pedidos de compra. Los guards van por ruta (no en el padre)
- * porque cada pantalla atiende a un permiso distinto: iniciar, enviar (autorizante)
- * o consultar. El detalle lo comparten todos, por eso usa el guard alternativo.
+ * porque cada pantalla atiende a un permiso distinto: iniciar, enviar (autorizante),
+ * revisar/estimar (compras), autorizar el presupuesto (autoridad por monto) o consultar.
+ * El detalle lo comparten todos, por eso usa el guard alternativo.
  */
 export const pedidoCompraRoutes: Routes = [
   {
@@ -28,6 +31,16 @@ export const pedidoCompraRoutes: Routes = [
     canActivate: [permisoGuard('compras.enviar_pedido')],
   },
   {
+    path: 'revision',
+    component: PedidoRevisionComponent,
+    canActivate: [permisoGuard('compras.estimar')],
+  },
+  {
+    path: 'presupuesto',
+    component: PedidoPresupuestoComponent,
+    canActivate: [permisoGuard('compras.presupuesto.autorizar')],
+  },
+  {
     path: 'consulta',
     component: PedidoConsultaComponent,
     canActivate: [permisoGuard('compras.consultar_pedidos')],
@@ -44,6 +57,8 @@ export const pedidoCompraRoutes: Routes = [
       permisoAlgunoGuard([
         'compras.iniciar_pedido',
         'compras.enviar_pedido',
+        'compras.estimar',
+        'compras.presupuesto.autorizar',
         'compras.consultar_pedidos',
       ]),
     ],
