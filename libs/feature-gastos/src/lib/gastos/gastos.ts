@@ -12,6 +12,7 @@ import {
   BuscadorProveedorComponent,
   BuscadorCuentaContableComponent,
   CuentaSearchResponse,
+  PermisoDirective,
   ProveedorSearchResponse,
 } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -64,6 +65,7 @@ export interface UbicacionArticulo {
     FormsModule,
     BuscadorCuentaContableComponent,
     BuscadorProveedorComponent,
+    PermisoDirective,
     CommonModule,
   ],
   templateUrl: './gastos.html',

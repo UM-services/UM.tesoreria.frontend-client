@@ -3,7 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
-import { BuscadorProveedorComponent, ProveedorSearchResponse } from '@tesoreria/ui-layout';
+import {
+  BuscadorProveedorComponent,
+  PermisoDirective,
+  ProveedorSearchResponse,
+} from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -34,7 +38,7 @@ export interface PaginatedResponse<T> {
 @Component({
   selector: 'app-proveedores',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BuscadorProveedorComponent],
+  imports: [CommonModule, ReactiveFormsModule, BuscadorProveedorComponent, PermisoDirective],
   templateUrl: './proveedores.html',
 })
 export class ProveedoresComponent implements OnInit {

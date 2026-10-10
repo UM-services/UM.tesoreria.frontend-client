@@ -6,7 +6,12 @@
       <p class="mt-1 text-sm text-um-muted">Gestión de artículos y conceptos de gasto.</p>
     </div>
     <div class="flex items-center gap-3">
-      <button type="button" (click)="abrirModal()" class="um-btn-primary inline-flex items-center">
+      <button
+        type="button"
+        *uiPermiso="'compras.gastos.crear'"
+        (click)="abrirModal()"
+        class="um-btn-primary inline-flex items-center"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="mr-2 h-4 w-4"
@@ -266,10 +271,15 @@
                 }
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button (click)="abrirModal(g)" class="um-btn-secondary mr-2 px-3 py-1 text-xs">
+                <button
+                  *uiPermiso="'compras.gastos.editar'"
+                  (click)="abrirModal(g)"
+                  class="um-btn-secondary mr-2 px-3 py-1 text-xs"
+                >
                   Editar
                 </button>
                 <button
+                  *uiPermiso="'compras.gastos.eliminar'"
                   (click)="eliminar(g)"
                   class="rounded bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
                 >
@@ -495,6 +505,7 @@
                       <div class="md:col-span-2">
                         <button
                           type="button"
+                          *uiPermiso="'compras.gastos.imputar'"
                           (click)="asignarUbicacion()"
                           [disabled]="!selectedUbicacionId || !selectedImputacionCuenta"
                           class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none disabled:opacity-50 transition-colors"
