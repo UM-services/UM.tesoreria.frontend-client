@@ -1,6 +1,6 @@
 # UM Tesorería - Frontend Client
 
-Sistema de gestión de tesorería construido con Angular 21 y Nx Workspace.
+Sistema de gestión de tesorería construido con Angular 22 y Nx Workspace.
 
 ## Estructura del Proyecto
 
@@ -21,7 +21,8 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard` y `permisoAlgunoGuard`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`), buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona) y la directiva `*uiPermiso`
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`), buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el render de solo lectura `ui-texto-enriquecido` y la directiva `*uiPermiso`
+- `@tesoreria/ui-rich-text` - Editor de texto enriquecido (WYSIWYG) compartido (`ui-editor-enriquecido`, Quill 2 vía `ngx-quill@31`); vive en su propia lib para mantener Quill en chunks lazy
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta, edición, bandeja de envío, revisión de compras, autorización de presupuesto, consulta y detalle) montado por la app compras en `/pedido`
@@ -210,10 +211,10 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 
 | Tecnología   | Versión                       |
 | ------------ | ----------------------------- |
-| Angular      | 21.2.0                        |
-| Nx           | 22.7.1                        |
+| Angular      | 22.1.8                        |
+| Nx           | 23.3.0                        |
 | Tailwind CSS | 4.2.4                         |
-| TypeScript   | 5.9.2                         |
+| TypeScript   | 6.0.3                         |
 | Vitest       | 4.0.8                         |
 | Docker       | node:24-alpine + nginx:alpine |
 
@@ -262,7 +263,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.30.0**
+Versión actual: **0.31.0**
 
 ## Licencia
 

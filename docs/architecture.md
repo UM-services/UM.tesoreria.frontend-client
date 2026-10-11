@@ -19,7 +19,8 @@
         subgraph "Libraries"
             SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>PermisoDirective (*uiPermiso)"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>TextoEnriquecidoComponent<br/>PermisoDirective (*uiPermiso)"]
+            UIRichText["@tesoreria/ui-rich-text<br/>EditorEnriquecidoComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
             FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoRevisionComponent<br/>PedidoPresupuestoComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent"]
@@ -76,6 +77,8 @@
     ExternoConsulta -->|"loadComponent"| FeatureExterno
     FeatureExterno --> SharedAPI
     FeatureExterno --> UILayout
+
+    FeaturePedidoCompra --> UIRichText
 
     UILayout -->|"modal cambio de clave"| UIAuth
 
@@ -183,6 +186,8 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     Pedidos --> Presupuesto["PedidoPresupuesto Component<br/>compras.presupuesto.autorizar"]
     Pedidos --> Consulta["PedidoConsulta Component<br/>compras.consultar_pedidos"]
     Pedidos --> Detalle["PedidoDetalle Component<br/>permisoAlgunoGuard"]
+    Pedidos --> Editor["EditorEnriquecido Component<br/>@tesoreria/ui-rich-text"]
+    Pedidos --> Texto["TextoEnriquecido Component<br/>@tesoreria/ui-layout"]
     Pedidos --> PedidoAPI["Fachada tesoreria-compras<br/>/compras/pedido"]
     Bandeja --> PedidoAPI
     Revision --> PedidoAPI
