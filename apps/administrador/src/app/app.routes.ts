@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import {
   administradorGuard,
   authGuard,
+  permisoGuard,
   SIN_ACCESO_RUTA,
   usuarioInternoGuard,
 } from '@tesoreria/shared-api';
@@ -48,6 +49,18 @@ export const appRoutes: Route[] = [
     loadComponent: () =>
       import('@tesoreria/feature-administrador').then(m => m.AutoridadesPresupuestoComponent),
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Tramos de cotizaciones mínimas por monto (configuración del proceso de compras).
+    path: 'cotizaciones-minimas',
+    loadComponent: () =>
+      import('@tesoreria/feature-administrador').then(m => m.CotizacionesMinimasComponent),
+    canActivate: [
+      authGuard,
+      usuarioInternoGuard,
+      administradorGuard,
+      permisoGuard('compras.cotizaciones.configurar'),
+    ],
   },
   {
     // Sólo administradores: asignación de roles y permisos a cualquier usuario.

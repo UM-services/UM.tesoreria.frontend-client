@@ -1,0 +1,107 @@
+<div class="mx-auto max-w-6xl p-4">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Compras</p>
+    <h1 class="um-page-title">Nuevo proceso de cotización</h1>
+    <p class="um-page-desc">Combiná ítems de uno o varios pedidos autorizados en presupuesto y agregá proveedores.</p>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="um-alert-error mb-4">{{ errorMessage() }}</div>
+  }
+
+  <section class="um-card mb-4">
+    <h2 class="um-section">Ítems disponibles</h2>
+    @if (isLoading()) {
+      <div class="p-4 text-sm text-um-muted">Cargando ítems disponibles...</div>
+    } @else if (grupos().length === 0) {
+      <div class="p-4 text-sm text-um-muted">No hay ítems de pedidos autorizados pendientes de cotizar.</div>
+    } @else {
+      @for (grupo of grupos(); track grupo.compraPedidoId) {
+        <div class="mb-4 rounded border border-um-line p-3">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="font-semibold text-um-ink">Pedido {{ grupo.numero || grupo.compraPedidoId }}</p>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" [checked]="pedidoCompleto(grupo)" (change)="togglePedido(grupo)" />
+              Pedido completo
+            </label>
+          </div>
+          <table class="um-table">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Ítem</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Unidad</th>
+                <th scope="col">Especificaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of grupo.items; track item.compraPedidoItemId) {
+                <tr>
+                  <td>
+                    <input
+                      type="checkbox"
+                      [checked]="estaSeleccionado(item.compraPedidoItemId)"
+                      (change)="toggle(item.compraPedidoItemId)"
+                    />
+                  </td>
+                  <td>{{ item.descripcion }}</td>
+                  <td>{{ item.cantidad }}</td>
+                  <td>{{ item.unidad }}</td>
+                  <td class="text-sm text-um-muted">{{ item.especificaciones || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </section>
+
+  <section class="um-card mb-4">
+    <h2 class="um-section">Proveedores</h2>
+    <ui-buscador-proveedor (proveedorSelected)="agregarProveedor($event)" />
+    @if (proveedores().length > 0) {
+      <ul class="mt-3 space-y-1">
+        @for (proveedor of proveedores(); track proveedor.proveedorId) {
+          <li class="flex items-center justify-between rounded border border-um-line px-3 py-2">
+            <span>{{ proveedor.razonSocial }}</span>
+            <button type="button" class="um-link-btn" (click)="quitarProveedor(proveedor.proveedorId)">
+              Quitar
+            </button>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="mt-3 text-sm text-um-muted">Todavía no agregaste proveedores.</p>
+    }
+  </section>
+
+  <section class="um-card mb-4">
+    <h2 class="um-section">Datos del proceso</h2>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div>
+        <label class="um-label" for="observacion">Observación (opcional)</label>
+        <input id="observacion" type="text" class="um-input" [(ngModel)]="observacion" />
+      </div>
+      <div>
+        <label class="um-label" for="excepcion">Motivo de excepción (si se solicitan menos del mínimo)</label>
+        <input id="excepcion" type="text" class="um-input" [(ngModel)]="excepcionMotivo" />
+      </div>
+    </div>
+    <p class="mt-3 text-sm text-um-muted">
+      El monto estimado del proceso y el mínimo de cotizaciones se calculan con la suma de los montos
+      estimados de los pedidos seleccionados.
+    </p>
+  </section>
+
+  <div class="flex justify-end gap-3">
+    <button type="button" class="um-btn-secondary" (click)="cancelar()">Cancelar</button>
+    <button type="button" class="um-btn-secondary" [disabled]="guardando()" (click)="guardar(false)">
+      Guardar borrador
+    </button>
+    <button type="button" class="um-btn-primary" [disabled]="guardando()" (click)="guardar(true)">
+      Guardar y enviar
+    </button>
+  </div>
+</div>

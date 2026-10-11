@@ -4,3 +4,5 @@ export * from './lib/asignacion-usuarios/asignacion-usuarios';
 export * from './lib/asignacion-usuarios/usuario-chequera.service';
 export * from './lib/autorizantes-envio/autorizantes-envio';
 export * from './lib/autoridades-presupuesto/autoridades-presupuesto';
+export * from './lib/cotizaciones-minimas/cotizaciones-minimas';
+export * from './lib/cotizaciones-minimas/cotizacion-tramo.service';

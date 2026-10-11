@@ -29,6 +29,11 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
+    path: 'cotizacion',
+    loadChildren: () => import('@tesoreria/feature-pedido-compra').then(m => m.cotizacionRoutes),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
     path: 'gastos',
     loadComponent: () => import('@tesoreria/feature-gastos').then(m => m.GastosComponent),
     canActivate: [authGuard, usuarioInternoGuard, permisoGuard('compras.gastos')],

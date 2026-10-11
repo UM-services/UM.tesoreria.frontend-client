@@ -19,6 +19,7 @@ export class AppComponent {
     { label: 'Asignaciones', path: '/asignaciones' },
     { label: 'Autorizantes de envío', path: '/autorizantes-envio' },
     { label: 'Autoridades de presupuesto', path: '/autoridades-presupuesto' },
+    { label: 'Cotizaciones mínimas', path: '/cotizaciones-minimas', permiso: 'compras.cotizaciones.configurar' },
     { label: 'Permisos', path: '/permisos' },
     { label: 'Roles', path: '/roles' },
     { label: 'Catálogo', path: '/catalogo' },
