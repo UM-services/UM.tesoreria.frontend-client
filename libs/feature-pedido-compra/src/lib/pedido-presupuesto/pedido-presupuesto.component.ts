@@ -46,10 +46,10 @@ export class PedidoPresupuestoComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.pedidoCompraService.presupuestoBandeja().subscribe({
-      next: pedidos => {
+      next: (pedidos) => {
         this.pedidos.set(pedidos ?? []);
         this.isLoading.set(false);
-        this.cargarLimite(pedidos ?? []);
+        this.cargarLimite();
       },
       error: () => {
         this.errorMessage.set('No se pudieron cargar los pedidos pendientes de autorización.');
@@ -60,7 +60,10 @@ export class PedidoPresupuestoComponent implements OnInit {
 
   textoLimite(): string {
     const l = this.limite();
-    if (!l || !l.tieneAutoridad) {
+    if (!l) {
+      return 'No se pudo determinar tu límite de autorización.';
+    }
+    if (!l.tieneAutoridad) {
       return 'No tenés un perfil de autoridad asignado para el ejercicio en curso.';
     }
     if (l.ilimitado) {
@@ -86,7 +89,7 @@ export class PedidoPresupuestoComponent implements OnInit {
     }
     this.marcarPendiente(id, true);
     this.pedidoCompraService.autorizarPresupuesto(id).subscribe({
-      next: actualizado => {
+      next: (actualizado) => {
         this.marcarPendiente(id, false);
         this.reemplazar(actualizado);
         this.showSuccess(`Pedido ${actualizado.numero ?? id} autorizado para presupuesto.`);
@@ -120,7 +123,7 @@ export class PedidoPresupuestoComponent implements OnInit {
     }
     this.marcarPendiente(id, true);
     this.pedidoCompraService.rechazarPresupuesto(id, this.motivoRechazo.trim()).subscribe({
-      next: actualizado => {
+      next: (actualizado) => {
         this.marcarPendiente(id, false);
         this.cancelarRechazo();
         this.reemplazar(actualizado);
@@ -133,21 +136,18 @@ export class PedidoPresupuestoComponent implements OnInit {
     });
   }
 
-  private cargarLimite(pedidos: PedidoCompra[]): void {
-    const ejercicioId = pedidos.find(p => p.ejercicioId != null)?.ejercicioId;
-    if (ejercicioId == null) {
-      this.limite.set(null);
-      return;
-    }
-    this.pedidoCompraService.limite(ejercicioId).subscribe({
-      next: limite => this.limite.set(limite),
+  private cargarLimite(): void {
+    this.pedidoCompraService.limiteActual().subscribe({
+      next: (limite) => this.limite.set(limite),
       error: () => this.limite.set(null),
     });
   }
 
   private reemplazar(actualizado: PedidoCompra): void {
     this.pedidos.set(
-      this.pedidos().map(p => (p.compraPedidoId === actualizado.compraPedidoId ? actualizado : p)),
+      this.pedidos().map((p) =>
+        p.compraPedidoId === actualizado.compraPedidoId ? actualizado : p,
+      ),
     );
   }
 
