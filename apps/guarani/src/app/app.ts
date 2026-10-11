@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ShellMenuItem, UiShellComponent } from '@tesoreria/ui-layout';
 import { AuthService } from '@tesoreria/shared-api';
 
@@ -6,6 +6,7 @@ import { AuthService } from '@tesoreria/shared-api';
   standalone: true,
   imports: [UiShellComponent],
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `<ui-shell moduleName="Guaraní" [menuItems]="menuItems()" />`,
 })
 export class AppComponent {

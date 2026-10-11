@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
@@ -19,6 +19,7 @@ import {
   selector: 'app-pedido-consulta',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-consulta.component.html',
 })
 export class PedidoConsultaComponent implements OnInit {
