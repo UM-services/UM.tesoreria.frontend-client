@@ -27,6 +27,7 @@ export interface PedidoCompra {
   montoConocido?: boolean;
   montoEstimado?: number | null;
   fuenteEstimacion?: string | null;
+  cantidadCotizacionesMinima?: number | null;
   fechaEnvio?: string | null;
   rechazoMotivo?: string | null;
   descartadoMotivo?: string | null;

@@ -271,6 +271,12 @@
             <p class="text-sm text-um-text">{{ p.fuenteEstimacion }}</p>
           </div>
         }
+        @if (p.cantidadCotizacionesMinima !== null && p.cantidadCotizacionesMinima !== undefined) {
+          <div>
+            <label class="um-label">Cotizaciones mínimas requeridas</label>
+            <p class="text-sm text-um-text">{{ p.cantidadCotizacionesMinima }}</p>
+          </div>
+        }
         <div class="md:col-span-3">
           <label class="um-label">Fundamento / necesidad</label>
           <ui-texto-enriquecido [texto]="p.necesidad" />

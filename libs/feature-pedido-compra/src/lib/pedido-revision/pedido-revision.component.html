@@ -53,6 +53,7 @@
               <th scope="col">Dependencia</th>
               <th scope="col">Fecha</th>
               <th scope="col">Valor estimado</th>
+              <th scope="col" class="text-right">Cotizaciones mín.</th>
               <th scope="col">Necesidad</th>
               <th scope="col" class="text-right">Acciones</th>
             </tr>
@@ -69,6 +70,7 @@
                 <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
                 <td>{{ pedido.fecha | date: 'short' }}</td>
                 <td>{{ pedido.montoEstimado !== null ? (pedido.montoEstimado | number: '1.2-2') : '—' }}</td>
+                <td class="text-right">{{ pedido.cantidadCotizacionesMinima ?? '—' }}</td>
                 <td>{{ pedido.necesidad }}</td>
                 <td class="text-right">
                   <div class="flex justify-end gap-3">
@@ -88,7 +90,7 @@
               </tr>
               @if (estimandoId() === pedido.compraPedidoId) {
                 <tr>
-                  <td colspan="7" class="bg-um-surface">
+                  <td colspan="8" class="bg-um-surface">
                     <div class="space-y-2 p-2">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
