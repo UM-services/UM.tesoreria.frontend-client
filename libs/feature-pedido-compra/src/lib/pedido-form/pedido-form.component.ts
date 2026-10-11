@@ -158,6 +158,14 @@ export class PedidoFormComponent implements OnInit {
     });
   }
 
+  alCambiarMontoConocido(conocido: boolean): void {
+    this.montoConocido = conocido;
+    if (!conocido) {
+      this.montoEstimado = null;
+      this.fuenteEstimacion = '';
+    }
+  }
+
   private volcar(pedido: PedidoCompra): void {
     this.necesidad = pedido.necesidad ?? '';
     this.fechaRequerida = pedido.fechaRequerida ? pedido.fechaRequerida.substring(0, 10) : '';
@@ -186,8 +194,8 @@ export class PedidoFormComponent implements OnInit {
       urgente: this.urgente,
       urgenciaMotivo: this.urgenciaMotivo || null,
       montoConocido: this.montoConocido,
-      montoEstimado: this.montoEstimado,
-      fuenteEstimacion: this.fuenteEstimacion || null,
+      montoEstimado: this.montoConocido ? this.montoEstimado : null,
+      fuenteEstimacion: this.montoConocido ? this.fuenteEstimacion || null : null,
       items: this.items.map((item, index) => ({ ...item, orden: index + 1 })),
       enviar,
     };

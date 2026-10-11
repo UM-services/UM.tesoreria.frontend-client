@@ -181,17 +181,24 @@
     </div>
     <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="flex items-center gap-2">
-        <input id="montoConocido" type="checkbox" [(ngModel)]="montoConocido" />
+        <input
+          id="montoConocido"
+          type="checkbox"
+          [ngModel]="montoConocido"
+          (ngModelChange)="alCambiarMontoConocido($event)"
+        />
         <label for="montoConocido" class="um-label mb-0">¿Conoce el monto estimado?</label>
       </div>
-      <div>
-        <label class="um-label">Monto estimado</label>
-        <input class="um-input" type="number" [(ngModel)]="montoEstimado" />
-      </div>
-      <div>
-        <label class="um-label">Fuente de estimación</label>
-        <input class="um-input" [(ngModel)]="fuenteEstimacion" />
-      </div>
+      @if (montoConocido) {
+        <div>
+          <label class="um-label">Monto estimado</label>
+          <input class="um-input" type="number" [(ngModel)]="montoEstimado" />
+        </div>
+        <div>
+          <label class="um-label">Fuente de estimación</label>
+          <input class="um-input" [(ngModel)]="fuenteEstimacion" />
+        </div>
+      }
     </div>
   </section>
 
