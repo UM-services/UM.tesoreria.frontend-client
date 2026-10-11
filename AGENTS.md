@@ -37,6 +37,14 @@
 - Every screen that looks up a person, provider, or accounting account MUST reuse the shared widgets from `@tesoreria/ui-layout`: `<ui-buscador-persona>` (with `persona-busqueda` helpers), `<ui-buscador-proveedor>`, and `<ui-buscador-cuenta-contable>`. Do not re-implement search pipelines (debounce/keyboard/dropdown wiring) inside feature libraries or apps, and do not add persona/proveedor/account search methods to feature services.
 - Exact-key lookups (legajo/DNI) belong in their own editable form fields firing on ENTER and blur, not inside the search widget. Exception: the external portal's person search (`feature-externo-consulta`) queries by assigned-faculty semantics via its own `ChequerasService`; keep that backend contract as-is and route its UI through the shared `BuscadorPersonaComponent`.
 
+## Rich Text Editors (Texto Enriquecido)
+
+- **Convention:** any view that needs **rich/long-form text** (specifications, descriptions, notes, observations, etc.) MUST use the shared WYSIWYG editor **`<ui-editor-enriquecido>`** from `@tesoreria/ui-rich-text` (Quill 2 via `ngx-quill@31`) instead of ad-hoc `<textarea>`, `contenteditable`, or a hand-rolled Markdown editor. Do not re-implement toolbars in feature libraries. This applies **everywhere it is needed across the workspace**.
+- For **read-only** rendering of stored rich text use **`<ui-texto-enriquecido>`** from `@tesoreria/ui-layout` (renders sanitized HTML, collapses long content). Do not bind stored HTML with `[innerHTML]` directly.
+- **Storage format is HTML** in the existing text column; it is sanitized with DOMPurify (the render component already does it). Legacy plain text keeps working (line breaks preserved).
+- `<ui-editor-enriquecido>` exposes `[(html)]`. It lazily loads `quill`/`ngx-quill` (~205 kB): import it **only from lazy feature libraries**, never from an eagerly-loaded app shell, so it stays out of the initial bundle. Its theme CSS (`node_modules/quill/dist/quill.snow.css`) must be added to the consuming app's global `styles`.
+- **Do not** store HTML in short, structured, or backend-constrained fields (e.g., rejection/discard reasons stored as `varchar(500)` and rendered in notifications): those stay as plain inputs.
+
 ## Nomenclature & Legacy VB6 Strict Ban (Limpieza de UI)
 
 - NEVER expose Visual Basic 6 legacy artifacts in user-facing UI: no `.frm`/`.vbp` extensions in titles, tables, or badges, and no phrases like "migración desde VB6", "formulario VB6", or legacy project names (`prjGestion.vbp`, `prjChequera.vbp`).

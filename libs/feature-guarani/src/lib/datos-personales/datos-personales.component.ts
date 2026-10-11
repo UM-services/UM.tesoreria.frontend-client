@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, viewChild } from '@angular/core';
+import { Component, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { BuscadorPersonaComponent, PersonaBusqueda } from '@tesoreria/ui-layout';
 import { DatosPersonalesModalComponent } from './datos-personales-modal.component';
 
@@ -7,6 +7,7 @@ import { DatosPersonalesModalComponent } from './datos-personales-modal.componen
   selector: 'app-datos-personales',
   standalone: true,
   imports: [CommonModule, DatosPersonalesModalComponent, BuscadorPersonaComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="text-um-ink">
       <div class="um-page-header">

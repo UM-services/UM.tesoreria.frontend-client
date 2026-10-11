@@ -139,7 +139,7 @@ jobs:
               '    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">' +
               '      <div>' +
               '        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Tesoreria Frontend</h1>' +
-              '        <p class="mt-1 text-sm text-gray-500">Monorepo Nx &middot; Angular 21 &middot; Tailwind CSS 4</p>' +
+              '        <p class="mt-1 text-sm text-gray-500">Monorepo Nx &middot; Angular 22 &middot; Tailwind CSS 4</p>' +
               '      </div>' +
               '      <div class="flex items-center gap-3">' +
               '        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800 shadow-sm">v' + version + '</span>' +

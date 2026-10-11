@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
@@ -18,6 +18,7 @@ import {
   selector: 'app-pedido-bandeja',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-bandeja.component.html',
 })
 export class PedidoBandejaComponent implements OnInit {

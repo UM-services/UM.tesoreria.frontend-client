@@ -1,0 +1,8 @@
+<quill-editor
+  [ngModel]="html()"
+  (ngModelChange)="html.set($event)"
+  [modules]="$any(modules())"
+  [readOnly]="readOnly()"
+  [placeholder]="placeholder()"
+  [styles]="estilos()"
+></quill-editor>

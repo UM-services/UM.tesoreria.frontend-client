@@ -33,5 +33,14 @@ export default [
             "**/*.html"
         ],
         rules: {}
-    }
+    },
+
+  {
+    files: ['**/*.ts'],
+    rules: {
+      // Angular 22 cambió el default a OnPush; la migración conservó el comportamiento
+      // previo con ChangeDetectionStrategy.Eager. Migrar a OnPush es una tarea aparte.
+      '@angular-eslint/prefer-on-push-component-change-detection': 'warn',
+    },
+  },
 ];

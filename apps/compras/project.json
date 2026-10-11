@@ -8,9 +8,7 @@
   "targets": {
     "build": {
       "executor": "@angular/build:application",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/compras",
         "browser": "apps/compras/src/main.ts",
@@ -26,9 +24,7 @@
             "output": "/assets"
           }
         ],
-        "styles": [
-          "apps/compras/src/styles.css"
-        ]
+        "styles": ["node_modules/quill/dist/quill.snow.css", "apps/compras/src/styles.css"]
       },
       "configurations": {
         "production": {

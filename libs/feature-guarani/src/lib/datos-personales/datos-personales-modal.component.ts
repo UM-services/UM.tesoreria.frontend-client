@@ -9,6 +9,7 @@ import {
   Output,
   SimpleChanges,
   inject,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { finalize, forkJoin } from 'rxjs';
 import { DatosPersonalesService } from './datos-personales.service';
@@ -18,6 +19,7 @@ import { DatosPersonalesAlumno, GuaraniBeneficio } from './datos-personales.mode
   selector: 'app-datos-personales-modal',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (documento !== null || persona !== null) {
       <div

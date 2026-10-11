@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '@tesoreria/shared-api';
 
@@ -11,6 +11,7 @@ import { AuthService } from '@tesoreria/shared-api';
 @Component({
   selector: 'ui-no-acceso',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="mx-auto max-w-md py-14">
       <div class="um-card text-center">

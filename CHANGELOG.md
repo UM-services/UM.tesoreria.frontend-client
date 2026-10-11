@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.31.0] - 2026-10-10
+
+### Added
+
+- feat(compras/ui-rich-text): **Especificaciones enriquecidas de los ítems del pedido** con **editor WYSIWYG**. Nueva lib `@tesoreria/ui-rich-text` con `ui-editor-enriquecido`, un editor de texto enriquecido (Quill 2 vía `ngx-quill@31`) con barra estilo procesador de textos (títulos, negrita/itálica/subrayado, listas, indentación, alineación, cita y enlaces). `feature-pedido-compra` edita las especificaciones de cada ítem y el campo *necesidad* en un **modal** con ese editor; la celda de especificaciones del formulario es un **bloque clickeable** con vista previa (o placeholder «Agregar especificaciones…» si está vacía) y el detalle muestra el preview. El contenido se guarda como **HTML** y se renderiza con el componente **`ui-texto-enriquecido`** de `@tesoreria/ui-layout`, que **sanitiza con DOMPurify** antes de inyectarlo (y respeta el texto plano legacy convirtiendo sus saltos de línea). El editor vive en una lib propia para que `quill`/`ngx-quill` (~205 kB) y DOMPurify queden en **chunks lazy** y no en el bundle inicial. Sin cambios de esquema ni de backend. Plan: `tesoreria-compras/specs/2026-10-10-especificaciones-item-pedido/`.
+
+### Changed
+
+- chore(deps): **Actualización mayor del frontend a Angular 22.1.8 + Nx 23.3 + TypeScript 6.0** (vía `nx migrate latest`). Paquetes: `@angular/*`, `@angular/build`, `@angular-devkit/*`, `@angular/cli` 21 → 22; `nx` y `@nx/*` 22.7 → 23.3; `typescript` 5.9 → 6.0; `angular-eslint` 21 → 22.5; `@analogjs/vite-plugin-angular`/`vitest-angular` 2.1 → 2.6; `typescript-eslint` y `@typescript-eslint/utils` 8.40 → 8.71. La migración: (a) reescribió `ChangeDetectionStrategy.Default` → `ChangeDetectionStrategy.Eager` en los componentes con estrategia explícita (Angular 22 cambió el default a **OnPush**; `Eager` preserva el comportamiento previo), (b) agregó `withXhr()` a `provideHttpClient` (Angular 22), (c) reemplazó `vitest.workspace.ts` por `vitest.config.ts` (Nx 23) y (d) ajustó imports de plugins. La regla nueva `@angular-eslint/prefer-on-push-component-change-detection` se deja en **`warn`** (migrar los componentes afectados a OnPush es una tarea aparte). Verificado con `nx run-many -t lint test build` (8 apps + libs) en verde.
+- feat(compras): en el formulario de inicio de pedido, **Monto estimado** y **Fuente de estimación** sólo se muestran si está marcado «¿Conoce el monto estimado?»; al desmarcarlo se limpian y se envían como `null`.
+- docs: `README.md` registra la versión actual **0.31.0**, actualiza la tabla de tecnologías (Angular 22.1.8, Nx 23.3.0, TypeScript 6.0.3) y suma la lib `@tesoreria/ui-rich-text` y el render `ui-texto-enriquecido`; `docs/architecture.md` agrega `@tesoreria/ui-rich-text` a los diagramas de componentes y de los módulos Compras, y el pipeline de documentación (`generate-docs.yml`) cita Angular 22.
+
 ## [0.30.0] - 2026-10-10
 
 ### Changed

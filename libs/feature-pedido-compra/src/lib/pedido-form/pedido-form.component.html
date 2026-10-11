@@ -95,7 +95,27 @@
               <td><input class="um-input" type="number" min="0" [(ngModel)]="item.cantidad" /></td>
               <td><input class="um-input" [(ngModel)]="item.unidad" /></td>
               <td><input class="um-input" [(ngModel)]="item.descripcion" /></td>
-              <td><input class="um-input" [(ngModel)]="item.especificaciones" /></td>
+              <td class="align-top">
+                <div
+                  role="button"
+                  tabindex="0"
+                  class="block w-full max-w-xs cursor-pointer rounded border border-dashed border-um-border-strong bg-um-surface px-3 py-2 text-left hover:border-um-primary hover:bg-um-selected focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
+                  (click)="abrirEditorItem(i)"
+                  (keydown.enter)="abrirEditorItem(i)"
+                  (keydown.space)="abrirEditorItem(i)"
+                >
+                  @if (item.especificaciones) {
+                    <div class="pointer-events-none max-h-16 overflow-hidden">
+                      <ui-texto-enriquecido
+                        [texto]="item.especificaciones"
+                        [permitirColapso]="false"
+                      />
+                    </div>
+                  } @else {
+                    <span class="text-xs text-um-muted">Agregar especificaciones…</span>
+                  }
+                </div>
+              </td>
               <td><input class="um-input" [(ngModel)]="item.referenciaWeb" /></td>
               <td class="text-right">
                 <button type="button" class="um-link-btn" (click)="quitarItem(i)">Quitar</button>
@@ -105,7 +125,11 @@
         </tbody>
       </table>
     </div>
-    <button type="button" class="um-btn-secondary mt-3 inline-flex items-center" (click)="agregarItem()">
+    <button
+      type="button"
+      class="um-btn-secondary mt-3 inline-flex items-center"
+      (click)="agregarItem()"
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="mr-2 h-4 w-4"
@@ -127,7 +151,16 @@
     <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
       <div>
         <label class="um-label">Fundamento / necesidad</label>
-        <textarea class="um-input" rows="4" [(ngModel)]="necesidad"></textarea>
+        <div class="um-input min-h-[6rem]">
+          @if (necesidad) {
+            <ui-texto-enriquecido [texto]="necesidad" [permitirColapso]="false" />
+          } @else {
+            <span class="text-um-muted">Sin contenido. Presioná «Editar» para completarlo.</span>
+          }
+        </div>
+        <button type="button" class="um-link-btn mt-1 text-xs" (click)="abrirEditorNecesidad()">
+          Editar
+        </button>
       </div>
       <div class="space-y-4">
         <div>
@@ -148,17 +181,24 @@
     </div>
     <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="flex items-center gap-2">
-        <input id="montoConocido" type="checkbox" [(ngModel)]="montoConocido" />
+        <input
+          id="montoConocido"
+          type="checkbox"
+          [ngModel]="montoConocido"
+          (ngModelChange)="alCambiarMontoConocido($event)"
+        />
         <label for="montoConocido" class="um-label mb-0">¿Conoce el monto estimado?</label>
       </div>
-      <div>
-        <label class="um-label">Monto estimado</label>
-        <input class="um-input" type="number" [(ngModel)]="montoEstimado" />
-      </div>
-      <div>
-        <label class="um-label">Fuente de estimación</label>
-        <input class="um-input" [(ngModel)]="fuenteEstimacion" />
-      </div>
+      @if (montoConocido) {
+        <div>
+          <label class="um-label">Monto estimado</label>
+          <input class="um-input" type="number" [(ngModel)]="montoEstimado" />
+        </div>
+        <div>
+          <label class="um-label">Fuente de estimación</label>
+          <input class="um-input" [(ngModel)]="fuenteEstimacion" />
+        </div>
+      }
     </div>
   </section>
 
@@ -181,4 +221,33 @@
       Solicitar Envío
     </button>
   </div>
+
+  <!-- Editor de texto largo (especificaciones / necesidad) -->
+  @if (editorAbierto) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        class="absolute inset-0 cursor-default bg-black/40"
+        aria-label="Cerrar editor"
+        (click)="cerrarEditor()"
+      ></button>
+      <div
+        class="relative w-full max-w-4xl rounded-lg border border-um-border bg-white p-6 shadow-xl"
+      >
+        <h3 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">
+          {{ editorTitulo }}
+        </h3>
+        <p class="mt-1 text-xs text-um-muted">{{ editorAyuda }}</p>
+
+        <div class="mt-3">
+          <ui-editor-enriquecido [(html)]="editorValor" [placeholder]="editorAyuda" />
+        </div>
+
+        <div class="mt-4 flex justify-end gap-3">
+          <button type="button" class="um-btn-secondary" (click)="cerrarEditor()">Cancelar</button>
+          <button type="button" class="um-btn-primary" (click)="confirmarEditor()">Listo</button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, NgZone, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -154,6 +154,7 @@ export function ubicacionesDeGeografica(
   selector: 'app-pendientes-pre-guarani',
   standalone: true,
   imports: [CommonModule, FormsModule, DatosPersonalesModalComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="text-um-ink">
       <div class="um-page-header">

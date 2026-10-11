@@ -7,36 +7,22 @@
     "module": "preserve",
     "skipLibCheck": true,
     "paths": {
-      "@tesoreria/ui-layout": [
-        "./libs/ui-layout/src/index.ts"
-      ],
-      "@tesoreria/shared-api": [
-        "./libs/shared-api/src/index.ts"
-      ],
-      "@tesoreria/ui-auth": [
-        "./libs/ui-auth/src/index.ts"
-      ],
-      "@tesoreria/feature-proveedores": [
-        "./libs/feature-proveedores/src/index.ts"
-      ],
-      "@tesoreria/feature-gastos": [
-        "./libs/feature-gastos/src/index.ts"
-      ],
-      "@tesoreria/feature-pedido-compra": [
-        "./libs/feature-pedido-compra/src/index.ts"
-      ],
-      "@tesoreria/feature-guarani": [
-        "./libs/feature-guarani/src/index.ts"
-      ],
-      "@tesoreria/feature-externo-consulta": [
-        "./libs/feature-externo-consulta/src/index.ts"
-      ],
-      "@tesoreria/feature-administrador": [
-        "./libs/feature-administrador/src/index.ts"
-      ],
-      "@tesoreria/feature-permisos": [
-        "./libs/feature-permisos/src/index.ts"
-      ]
-    }
+      "@tesoreria/ui-layout": ["./libs/ui-layout/src/index.ts"],
+      "@tesoreria/shared-api": ["./libs/shared-api/src/index.ts"],
+      "@tesoreria/ui-auth": ["./libs/ui-auth/src/index.ts"],
+      "@tesoreria/feature-proveedores": ["./libs/feature-proveedores/src/index.ts"],
+      "@tesoreria/feature-gastos": ["./libs/feature-gastos/src/index.ts"],
+      "@tesoreria/feature-pedido-compra": ["./libs/feature-pedido-compra/src/index.ts"],
+      "@tesoreria/feature-guarani": ["./libs/feature-guarani/src/index.ts"],
+      "@tesoreria/feature-externo-consulta": ["./libs/feature-externo-consulta/src/index.ts"],
+      "@tesoreria/feature-administrador": ["./libs/feature-administrador/src/index.ts"],
+      "@tesoreria/feature-permisos": ["./libs/feature-permisos/src/index.ts"],
+      "@tesoreria/ui-rich-text": ["./libs/ui-rich-text/src/index.ts"]
+    },
+    "strict": false,
+    "noUncheckedSideEffectImports": false,
+    "types": ["*"],
+    "esModuleInterop": false,
+    "ignoreDeprecations": "6.0"
   }
 }

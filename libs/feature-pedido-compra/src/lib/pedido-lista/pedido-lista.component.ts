@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PermisoDirective } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
@@ -9,6 +9,7 @@ import { PedidoCompra, estadoBadgeClass, estadoLabel } from '../models/pedido-co
   selector: 'app-pedido-lista',
   standalone: true,
   imports: [CommonModule, RouterLink, PermisoDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-lista.component.html',
 })
 export class PedidoListaComponent implements OnInit {

@@ -8,6 +8,7 @@ import {
   NgZone,
   OnInit,
   OnDestroy,
+  ChangeDetectionStrategy
 } from '@angular/core';
 
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -25,6 +26,7 @@ export interface CuentaSearchResponse {
   selector: 'ui-buscador-cuenta-contable',
   standalone: true,
   imports: [ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './buscador-cuenta-contable.html',
 })
 export class BuscadorCuentaContableComponent implements OnInit, OnDestroy {

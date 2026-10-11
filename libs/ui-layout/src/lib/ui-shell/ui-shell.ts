@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, Input, signal } from '@angular/core';
+import { Component, computed, effect, inject, Input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import {
@@ -41,6 +41,7 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
   selector: 'ui-shell',
   standalone: true,
   imports: [CommonModule, RouterModule, CambioClaveModalComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (isLoggedIn$ | async) {
       <div class="flex min-h-screen bg-um-canvas text-um-ink">
