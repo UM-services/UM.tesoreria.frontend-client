@@ -1,7 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { EditorEnriquecidoComponent } from '@tesoreria/ui-rich-text';
+import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
   ContextoInicioPedido,
@@ -18,7 +27,14 @@ import {
 @Component({
   selector: 'app-pedido-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    TextoEnriquecidoComponent,
+    EditorEnriquecidoComponent,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-form.component.html',
 })
 export class PedidoFormComponent implements OnInit {
@@ -45,6 +61,13 @@ export class PedidoFormComponent implements OnInit {
   fuenteEstimacion = '';
   items: PedidoCompraItem[] = [this.nuevoItem()];
 
+  // Editor modal de texto largo (especificaciones de ítem y necesidad).
+  editorAbierto = false;
+  editorTitulo = '';
+  editorAyuda = '';
+  editorValor = '';
+  private editorDestino: { tipo: 'necesidad' } | { tipo: 'item'; index: number } | null = null;
+
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
@@ -66,6 +89,44 @@ export class PedidoFormComponent implements OnInit {
       return;
     }
     this.items = this.items.filter((_, position) => position !== index);
+  }
+
+  abrirEditorItem(index: number): void {
+    this.editorDestino = { tipo: 'item', index };
+    this.editorTitulo = `Especificaciones del ítem ${index + 1}`;
+    this.editorAyuda =
+      'Detallá las especificaciones del bien o servicio. Podés usar saltos de línea y viñetas.';
+    this.editorValor = this.items[index]?.especificaciones ?? '';
+    this.editorAbierto = true;
+  }
+
+  abrirEditorNecesidad(): void {
+    this.editorDestino = { tipo: 'necesidad' };
+    this.editorTitulo = 'Fundamento / necesidad';
+    this.editorAyuda = 'Describí el fundamento de la compra. Podés usar saltos de línea y viñetas.';
+    this.editorValor = this.necesidad;
+    this.editorAbierto = true;
+  }
+
+  confirmarEditor(): void {
+    const destino = this.editorDestino;
+    if (destino?.tipo === 'necesidad') {
+      this.necesidad = this.editorValor;
+    } else if (destino?.tipo === 'item') {
+      const item = this.items[destino.index];
+      if (item) {
+        item.especificaciones = this.editorValor;
+      }
+    }
+    this.cerrarEditor();
+  }
+
+  cerrarEditor(): void {
+    this.editorAbierto = false;
+    this.editorTitulo = '';
+    this.editorAyuda = '';
+    this.editorValor = '';
+    this.editorDestino = null;
   }
 
   guardarBorrador(): void {
@@ -107,7 +168,9 @@ export class PedidoFormComponent implements OnInit {
     this.fuenteEstimacion = pedido.fuenteEstimacion ?? '';
     const items = pedido.items ?? [];
     this.items =
-      items.length > 0 ? items.map((item, index) => ({ ...item, orden: index + 1 })) : [this.nuevoItem()];
+      items.length > 0
+        ? items.map((item, index) => ({ ...item, orden: index + 1 }))
+        : [this.nuevoItem()];
   }
 
   private guardar(enviar: boolean): void {
@@ -148,6 +211,13 @@ export class PedidoFormComponent implements OnInit {
   }
 
   private nuevoItem(): PedidoCompraItem {
-    return { orden: 1, cantidad: 1, unidad: 'Unidad', descripcion: '', especificaciones: '', referenciaWeb: '' };
+    return {
+      orden: 1,
+      cantidad: 1,
+      unidad: 'Unidad',
+      descripcion: '',
+      especificaciones: '',
+      referenciaWeb: '',
+    };
   }
 }

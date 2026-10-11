@@ -6,7 +6,9 @@
       <div class="mt-1 flex items-center gap-3">
         <span class="um-page-desc">Detalle del pedido de compra.</span>
         @if (pedido()?.estado; as estado) {
-          <span class="um-badge" [ngClass]="estadoBadgeClass(estado)">{{ estadoLabel(estado) }}</span>
+          <span class="um-badge" [ngClass]="estadoBadgeClass(estado)">{{
+            estadoLabel(estado)
+          }}</span>
         }
       </div>
     </div>
@@ -35,7 +37,12 @@
 
         @if (puedePresentar()) {
           <div class="mt-4 flex flex-wrap items-center gap-3">
-            <button type="button" class="um-btn-primary" [disabled]="enCurso()" (click)="presentar()">
+            <button
+              type="button"
+              class="um-btn-primary"
+              [disabled]="enCurso()"
+              (click)="presentar()"
+            >
               Presentar para envío
             </button>
             <a [routerLink]="['/pedido', p.compraPedidoId, 'editar']" class="um-btn-secondary">
@@ -147,7 +154,9 @@
                 />
               </div>
               <div>
-                <label class="um-label" for="fuente-estimacion">Fuente de estimación (opcional)</label>
+                <label class="um-label" for="fuente-estimacion"
+                  >Fuente de estimación (opcional)</label
+                >
                 <input
                   id="fuente-estimacion"
                   type="text"
@@ -210,7 +219,11 @@
               placeholder="Explique por qué no se autoriza el inicio del proceso…"
             ></textarea>
             <div class="flex justify-end gap-3">
-              <button type="button" class="um-btn-secondary" (click)="rechazandoPresupuesto.set(false)">
+              <button
+                type="button"
+                class="um-btn-secondary"
+                (click)="rechazandoPresupuesto.set(false)"
+              >
                 Cancelar
               </button>
               <button
@@ -260,7 +273,7 @@
         }
         <div class="md:col-span-3">
           <label class="um-label">Fundamento / necesidad</label>
-          <p class="text-sm text-um-text">{{ p.necesidad }}</p>
+          <ui-texto-enriquecido [texto]="p.necesidad" />
         </div>
         @if (p.rechazoMotivo) {
           <div class="md:col-span-3">
@@ -296,7 +309,7 @@
                 <td>{{ item.cantidad }}</td>
                 <td>{{ item.unidad }}</td>
                 <td>{{ item.descripcion }}</td>
-                <td>{{ item.especificaciones }}</td>
+                <td class="align-top"><ui-texto-enriquecido [texto]="item.especificaciones" /></td>
                 <td>{{ item.referenciaWeb }}</td>
               </tr>
             }
