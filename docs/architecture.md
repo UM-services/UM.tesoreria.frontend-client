@@ -179,6 +179,7 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
     AppRoutes --> Pedidos["PedidoCompra Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>iniciar, enviar, revisar,<br/>autorizar presupuesto y consultar"]
     AppRoutes --> Cotizaciones["Cotizacion Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>gestionar cotizaciones<br/>y autorizar adjudicación"]
+    AppRoutes --> Formalizacion["Formalizacion Routes<br/>@tesoreria/feature-pedido-compra<br/>guard por ruta: formalizar<br/>(emitir Orden de Compra)"]
 
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
@@ -207,6 +208,10 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     CotizacionDetalle --> CotizacionAPI
     CotizacionPedidas --> CotizacionAPI
     CotizacionAdjudicacion --> CotizacionAPI
+    Formalizacion --> FormalizacionLista["FormalizacionLista Component<br/>compras.formalizar"]
+    Formalizacion --> FormalizacionDetalle["FormalizacionDetalle Component<br/>compras.formalizar"]
+    FormalizacionLista --> FormalizacionAPI["Fachada tesoreria-compras<br/>/compras/formalizacion"]
+    FormalizacionDetalle --> FormalizacionAPI
 ```
 
 ## Estructura de Módulos - Administrador
