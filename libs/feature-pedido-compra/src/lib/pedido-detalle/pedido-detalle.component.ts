@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PermisosService } from '@tesoreria/shared-api';
+import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { Observable } from 'rxjs';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
@@ -21,7 +22,8 @@ import {
 @Component({
   selector: 'app-pedido-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-detalle.component.html',
 })
 export class PedidoDetalleComponent implements OnInit {
@@ -61,7 +63,7 @@ export class PedidoDetalleComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.pedidoCompraService.getById(this.compraPedidoId).subscribe({
-      next: pedido => {
+      next: (pedido) => {
         this.pedido.set(pedido);
         this.isLoading.set(false);
         this.cargarHistorial();
@@ -76,7 +78,7 @@ export class PedidoDetalleComponent implements OnInit {
 
   cargarHistorial(): void {
     this.pedidoCompraService.historial(this.compraPedidoId).subscribe({
-      next: historial => this.historial.set(historial ?? []),
+      next: (historial) => this.historial.set(historial ?? []),
       error: () => this.historial.set([]),
     });
   }
@@ -98,8 +100,7 @@ export class PedidoDetalleComponent implements OnInit {
 
   puedeEstimar(): boolean {
     return (
-      this.permisos.hasPermiso('compras.estimar') &&
-      this.pedido()?.estado === 'EN_REVISION_COMPRAS'
+      this.permisos.hasPermiso('compras.estimar') && this.pedido()?.estado === 'EN_REVISION_COMPRAS'
     );
   }
 
@@ -182,7 +183,10 @@ export class PedidoDetalleComponent implements OnInit {
   }
 
   aprobar(): void {
-    this.accion(() => this.pedidoCompraService.aprobar(this.compraPedidoId), 'Pedido enviado a compras.');
+    this.accion(
+      () => this.pedidoCompraService.aprobar(this.compraPedidoId),
+      'Pedido enviado a compras.',
+    );
   }
 
   confirmarRechazo(): void {
@@ -212,7 +216,7 @@ export class PedidoDetalleComponent implements OnInit {
       return;
     }
     this.pedidoCompraService.limite(ejercicioId).subscribe({
-      next: limite => this.limite.set(limite),
+      next: (limite) => this.limite.set(limite),
       error: () => this.limite.set(null),
     });
   }
@@ -229,7 +233,7 @@ export class PedidoDetalleComponent implements OnInit {
     this.successMessage.set('');
     this.enCurso.set(true);
     peticion().subscribe({
-      next: pedido => {
+      next: (pedido) => {
         this.pedido.set(pedido);
         this.successMessage.set(mensaje);
         alFinalizar?.();

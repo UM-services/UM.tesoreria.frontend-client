@@ -19,11 +19,12 @@
         subgraph "Libraries"
             SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>PermisoDirective (*uiPermiso)"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>TextoEnriquecidoComponent<br/>PermisoDirective (*uiPermiso)"]
+            UIRichText["@tesoreria/ui-rich-text<br/>EditorEnriquecidoComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
-            FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoRevisionComponent<br/>PedidoPresupuestoComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent"]
-            FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>UsuariosComponent<br/>AsignacionUsuariosComponent<br/>AutorizantesEnvioComponent<br/>AutoridadesPresupuestoComponent"]
+            FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoRevisionComponent<br/>PedidoPresupuestoComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent<br/>CotizacionProcesoListaComponent<br/>CotizacionProcesoFormComponent<br/>CotizacionProcesoDetalleComponent<br/>CotizacionProcesoPedidasComponent<br/>CotizacionAdjudicacionComponent"]
+            FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>UsuariosComponent<br/>AsignacionUsuariosComponent<br/>AutorizantesEnvioComponent<br/>AutoridadesPresupuestoComponent<br/>CotizacionesMinimasComponent"]
             FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent, SimuladorComponent"]
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
@@ -76,6 +77,8 @@
     ExternoConsulta -->|"loadComponent"| FeatureExterno
     FeatureExterno --> SharedAPI
     FeatureExterno --> UILayout
+
+    FeaturePedidoCompra --> UIRichText
 
     UILayout -->|"modal cambio de clave"| UIAuth
 
@@ -175,6 +178,8 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
     AppRoutes --> Pedidos["PedidoCompra Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>iniciar, enviar, revisar,<br/>autorizar presupuesto y consultar"]
+    AppRoutes --> Cotizaciones["Cotizacion Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>gestionar cotizaciones<br/>y autorizar adjudicación"]
+    AppRoutes --> Formalizacion["Formalizacion Routes<br/>@tesoreria/feature-pedido-compra<br/>guard por ruta: formalizar<br/>(emitir Orden de Compra)"]
 
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
@@ -183,12 +188,30 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     Pedidos --> Presupuesto["PedidoPresupuesto Component<br/>compras.presupuesto.autorizar"]
     Pedidos --> Consulta["PedidoConsulta Component<br/>compras.consultar_pedidos"]
     Pedidos --> Detalle["PedidoDetalle Component<br/>permisoAlgunoGuard"]
+    Pedidos --> Editor["EditorEnriquecido Component<br/>@tesoreria/ui-rich-text"]
+    Pedidos --> Texto["TextoEnriquecido Component<br/>@tesoreria/ui-layout"]
     Pedidos --> PedidoAPI["Fachada tesoreria-compras<br/>/compras/pedido"]
     Bandeja --> PedidoAPI
     Revision --> PedidoAPI
     Presupuesto --> PedidoAPI
     Consulta --> PedidoAPI
     Detalle --> PedidoAPI
+
+    Cotizaciones --> CotizacionLista["CotizacionProcesoLista Component<br/>compras.cotizaciones.gestionar"]
+    Cotizaciones --> CotizacionForm["CotizacionProcesoForm Component<br/>compras.cotizaciones.gestionar"]
+    Cotizaciones --> CotizacionDetalle["CotizacionProcesoDetalle Component<br/>compras.cotizaciones.gestionar"]
+    Cotizaciones --> CotizacionPedidas["CotizacionProcesoPedidas Component<br/>compras.cotizaciones.gestionar"]
+    Cotizaciones --> CotizacionAdjudicacion["CotizacionAdjudicacion Component<br/>compras.adjudicacion.autorizar"]
+    Cotizaciones --> BuscadorProveedor
+    CotizacionLista --> CotizacionAPI["Fachada tesoreria-compras<br/>/compras/cotizacion"]
+    CotizacionForm --> CotizacionAPI
+    CotizacionDetalle --> CotizacionAPI
+    CotizacionPedidas --> CotizacionAPI
+    CotizacionAdjudicacion --> CotizacionAPI
+    Formalizacion --> FormalizacionLista["FormalizacionLista Component<br/>compras.formalizar"]
+    Formalizacion --> FormalizacionDetalle["FormalizacionDetalle Component<br/>compras.formalizar"]
+    FormalizacionLista --> FormalizacionAPI["Fachada tesoreria-compras<br/>/compras/formalizacion"]
+    FormalizacionDetalle --> FormalizacionAPI
 ```
 
 ## Estructura de Módulos - Administrador
@@ -202,6 +225,7 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compraPedidoAutorizante del core"]
     AppRoutes --> Usuarios["Usuarios Component<br/>@tesoreria/feature-administrador<br/>alta, configuración y reset de clave"]
     AppRoutes --> Autoridades["AutoridadesPresupuesto Component<br/>@tesoreria/feature-administrador<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario del core"]
+    AppRoutes --> CotizacionesMinimas["CotizacionesMinimas Component<br/>@tesoreria/feature-administrador<br/>compras.cotizaciones.configurar"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
     AppRoutes --> Permisos["Permisos Component<br/>@tesoreria/feature-permisos"]
@@ -215,6 +239,7 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     Autorizantes --> AutorizantesAPI["Slice compraPedidoAutorizante del core<br/>dependencias habilitadas por usuario"]
     Usuarios --> UsuariosAPI["Slice usuario del core<br/>searchTodos, alta, configuración,<br/>activo y password"]
     Autoridades --> AutoridadesAPI["Slices de presupuesto del core<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario"]
+    CotizacionesMinimas --> TramosAPI["Fachada tesoreria-compras<br/>/compras/cotizacion/tramos"]
     Permisos --> PermisosAPI
     Roles --> PermisosAPI
     Catalogo --> PermisosAPI

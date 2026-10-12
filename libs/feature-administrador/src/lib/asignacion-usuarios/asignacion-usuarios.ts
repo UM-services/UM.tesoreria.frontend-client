@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, Observable, of, Subject } from 'rxjs';
@@ -23,6 +23,7 @@ type AccionMasiva = 'asignar' | 'quitar';
   selector: 'app-asignacion-usuarios',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './asignacion-usuarios.html',
 })
 export class AsignacionUsuariosComponent implements OnInit, OnDestroy {

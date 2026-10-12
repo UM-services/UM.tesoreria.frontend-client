@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, NgZone, OnInit, inject } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { API_URL } from '@tesoreria/shared-api';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -27,6 +27,7 @@ export interface GuaraniUbicacion {
   selector: 'app-guarani-ubicaciones',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="text-um-ink">
       <div class="um-page-header">

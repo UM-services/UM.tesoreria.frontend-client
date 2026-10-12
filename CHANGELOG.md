@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.33.0] - 2026-10-12
+
+### Added
+
+- feat(compras): pantalla **Formalización** (`/formalizacion`) en `feature-pedido-compra` (etapa 8 — `PLANIFICACION_COMPRAS.md` §17): **bandeja** de adjudicaciones pendientes de emitir la Orden de Compra (proveedor, monto, condiciones e ítems de la oferta adjudicada) y **alta** de la OC con condiciones editables, número externo opcional y objeto/alcance; debajo, el **listado de órdenes emitidas** con acceso al detalle. Nueva pantalla de **detalle de la OC** (`/formalizacion/:id`) con condiciones e ítems. Servicio `FormalizacionService` (`/api/tesoreria/compras/formalizacion`); ruta y ítem de menú (`7. Formalización`) gateados con `permisoGuard`/`ShellMenuItem.permiso = 'compras.formalizar'`.
+
+## [0.32.0] - 2026-10-11
+
+### Added
+
+- feat(administrador): pantalla **Cotizaciones mínimas por monto** (`/cotizaciones-minimas`) en `feature-administrador`. Configura los **tramos** que definen cuántas cotizaciones deben solicitarse según el monto estimado del pedido: cada tramo fija un **tope en múltiplos de la referencia del ejercicio** (sin tope = último tramo) y una **cantidad mínima**. ABM completo (alta, edición en línea, baja) con validación de cliente (cantidad 1..10, topes únicos, un solo tramo sin tope) y **vista previa** del mínimo resultante para una referencia dada. Consume la fachada gateada `compras-service` (`/api/tesoreria/compras/cotizacion/tramos`, permiso `compras.cotizaciones.configurar`); la ruta y el ítem de menú se gatean con `permisoGuard` y `ShellMenuItem.permiso` respectivamente.
+- feat(compras): el **mínimo de cotizaciones** del pedido se muestra en la **revisión de compras** (columna «Cotizaciones mín.») y en el **detalle** («Cotizaciones mínimas requeridas»), a partir del `cantidadCotizacionesMinima` que expone la fachada (snapshot al estimar, §14 fase 6A de `PLANIFICACION_COMPRAS.md`).
+- feat(compras): pantalla **Cotizaciones** (`/cotizacion`) en `feature-pedido-compra` (etapa 6, fase B): **lista** de procesos, **armado** (selección de ítems de uno o varios pedidos —por pedido completo o sueltos— y alta de proveedores con el buscador compartido `ui-buscador-proveedor`) y **detalle** (ítems, documentos por proveedor, enviar/anular). El monto estimado y el mínimo se calculan en el backend por la suma de los pedidos combinados. Ruta y ítem de menú con `permisoGuard`/`ShellMenuItem.permiso = 'compras.cotizaciones.gestionar'`.
+- feat(compras): en el detalle del proceso de cotización (etapa 6, fase C) se agrega la **carga de respuestas** por proveedor (cabecera + precio por ítem), el **No cotiza**, la **matriz de comparación** (ítems × proveedores) y la **recomendación** (proveedor + fundamento) con el cierre del proceso.
+- feat(compras): pantalla **Cotizaciones pedidas** (`/cotizacion/pedidas`) en `feature-pedido-compra` (etapa 7, pieza A — `PLANIFICACION_COMPRAS.md` §15): **bandeja transversal** de los documentos de proveedor en estado `ENVIADA` de todos los procesos, para cargar sus valores sin entrar proceso por proceso. Reutiliza el endpoint de respuestas de la etapa 6C (cabecera + precio por ítem) y el «No cotiza», y ofrece el enlace al proceso. Consume el nuevo `GET /api/tesoreria/compras/cotizacion/proveedores-pendientes`; ruta e ítem de menú con `ShellMenuItem.permiso = 'compras.cotizaciones.gestionar'`.
+- feat(compras): pantalla **Adjudicación** (`/cotizacion/adjudicacion`) en `feature-pedido-compra` (etapa 7, pieza B): bandeja de procesos `RECOMENDADA` con la cotización recomendada y su total, el **límite** visible y las acciones **Adjudicar** (elegir la oferta), **Devolver** y **No adjudicar**, con fundamento. Consume `/api/tesoreria/compras/cotizacion/adjudicacion/...`; ruta e ítem de menú (`6. Adjudicación`) con `permisoGuard`/`ShellMenuItem.permiso = 'compras.adjudicacion.autorizar'`. El `403` de límite excedido se muestra como aviso.
+
+### Changed
+
+- chore(compras): el **menú del módulo** se ordena según el **proceso temporal** del circuito y los pasos van **numerados**: `1. Pedidos`, `2. Bandeja de envío`, `3. Revisión de compras`, `4. Autorización de presupuesto`, `5. Cotizaciones`, `6. Adjudicación`. La consulta global y los maestros (`Consulta de pedidos`, `Gastos`, `Proveedores`) quedan al final, sin número. Se agrega **`Cotizaciones pedidas`** (bandeja transversal, sin número) junto a `5. Cotizaciones`.
+- docs: `README.md` registra la versión actual **0.32.0** y suma las pantallas de cotizaciones y adjudicación a `@tesoreria/feature-pedido-compra` (montada también en `/cotizacion`) y la administración de cotizaciones mínimas a `@tesoreria/feature-administrador`; `docs/architecture.md` agrega los componentes de cotizaciones a los diagramas de componentes y de los módulos Compras y Administrador.
+
+### Fixed
+
+- fix(compras): la pantalla **Autorización de presupuesto** resuelve el límite del usuario para el **ejercicio en curso** con el nuevo `GET /pedido/presupuesto/limite` de la fachada (antes lo derivaba de los pedidos pendientes y, con la bandeja vacía, ni consultaba el límite y mostraba "no tenés un perfil de autoridad"). Ahora muestra el límite real aunque no haya pendientes, y distingue "no hay pedidos pendientes" de "sin perfil".
+
+## [0.31.0] - 2026-10-10
+
+### Added
+
+- feat(compras/ui-rich-text): **Especificaciones enriquecidas de los ítems del pedido** con **editor WYSIWYG**. Nueva lib `@tesoreria/ui-rich-text` con `ui-editor-enriquecido`, un editor de texto enriquecido (Quill 2 vía `ngx-quill@31`) con barra estilo procesador de textos (títulos, negrita/itálica/subrayado, listas, indentación, alineación, cita y enlaces). `feature-pedido-compra` edita las especificaciones de cada ítem y el campo *necesidad* en un **modal** con ese editor; la celda de especificaciones del formulario es un **bloque clickeable** con vista previa (o placeholder «Agregar especificaciones…» si está vacía) y el detalle muestra el preview. El contenido se guarda como **HTML** y se renderiza con el componente **`ui-texto-enriquecido`** de `@tesoreria/ui-layout`, que **sanitiza con DOMPurify** antes de inyectarlo (y respeta el texto plano legacy convirtiendo sus saltos de línea). El editor vive en una lib propia para que `quill`/`ngx-quill` (~205 kB) y DOMPurify queden en **chunks lazy** y no en el bundle inicial. Sin cambios de esquema ni de backend. Plan: `tesoreria-compras/specs/2026-10-10-especificaciones-item-pedido/`.
+
+### Changed
+
+- chore(deps): **Actualización mayor del frontend a Angular 22.1.8 + Nx 23.3 + TypeScript 6.0** (vía `nx migrate latest`). Paquetes: `@angular/*`, `@angular/build`, `@angular-devkit/*`, `@angular/cli` 21 → 22; `nx` y `@nx/*` 22.7 → 23.3; `typescript` 5.9 → 6.0; `angular-eslint` 21 → 22.5; `@analogjs/vite-plugin-angular`/`vitest-angular` 2.1 → 2.6; `typescript-eslint` y `@typescript-eslint/utils` 8.40 → 8.71. La migración: (a) reescribió `ChangeDetectionStrategy.Default` → `ChangeDetectionStrategy.Eager` en los componentes con estrategia explícita (Angular 22 cambió el default a **OnPush**; `Eager` preserva el comportamiento previo), (b) agregó `withXhr()` a `provideHttpClient` (Angular 22), (c) reemplazó `vitest.workspace.ts` por `vitest.config.ts` (Nx 23) y (d) ajustó imports de plugins. La regla nueva `@angular-eslint/prefer-on-push-component-change-detection` se deja en **`warn`** (migrar los componentes afectados a OnPush es una tarea aparte). Verificado con `nx run-many -t lint test build` (8 apps + libs) en verde.
+- feat(compras): en el formulario de inicio de pedido, **Monto estimado** y **Fuente de estimación** sólo se muestran si está marcado «¿Conoce el monto estimado?»; al desmarcarlo se limpian y se envían como `null`.
+- docs: `README.md` registra la versión actual **0.31.0**, actualiza la tabla de tecnologías (Angular 22.1.8, Nx 23.3.0, TypeScript 6.0.3) y suma la lib `@tesoreria/ui-rich-text` y el render `ui-texto-enriquecido`; `docs/architecture.md` agrega `@tesoreria/ui-rich-text` a los diagramas de componentes y de los módulos Compras, y el pipeline de documentación (`generate-docs.yml`) cita Angular 22.
+
 ## [0.30.0] - 2026-10-10
 
 ### Changed

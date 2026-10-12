@@ -1,0 +1,107 @@
+<div class="mx-auto max-w-6xl p-4">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Compras</p>
+    <h1 class="um-page-title">Orden de Compra</h1>
+  </header>
+
+  @if (isLoading()) {
+    <div class="um-card p-6 text-sm text-um-muted">Cargando la Orden de Compra...</div>
+  } @else if (errorMessage()) {
+    <div class="um-card"><div class="um-alert-error m-4">{{ errorMessage() }}</div></div>
+  } @else if (oc(); as oc) {
+    <section class="um-card">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="um-section">OC {{ oc.numero || '—' }}</h2>
+          <p class="um-page-desc">
+            {{ oc.numeroExterno ? 'Nº externo: ' + oc.numeroExterno + ' · ' : '' }}
+            Emitida {{ oc.fecha ? (oc.fecha | date: 'short') : '—' }}
+          </p>
+        </div>
+        <a [routerLink]="['/formalizacion']" class="um-link-btn">← Volver</a>
+      </div>
+
+      <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div>
+          <label class="um-label">Proveedor</label>
+          <div class="text-um-ink">{{ oc.proveedorId ?? '—' }}</div>
+        </div>
+        <div>
+          <label class="um-label">Monto</label>
+          <div class="text-um-ink">
+            {{ oc.monto !== null ? (oc.monto | number: '1.2-2') : '—' }} {{ oc.moneda || '' }}
+          </div>
+        </div>
+        <div>
+          <label class="um-label">Condición de pago</label>
+          <div class="text-um-ink">{{ oc.condicionPago || '—' }}</div>
+        </div>
+        <div>
+          <label class="um-label">Plazo de entrega</label>
+          <div class="text-um-ink">{{ oc.plazoEntrega || '—' }}</div>
+        </div>
+        <div>
+          <label class="um-label">Garantía</label>
+          <div class="text-um-ink">{{ oc.garantia || '—' }}</div>
+        </div>
+        <div>
+          <label class="um-label">Ejercicio</label>
+          <div class="text-um-ink">{{ oc.ejercicioId ?? '—' }}</div>
+        </div>
+      </div>
+
+      @if (oc.objeto) {
+        <div class="mt-3">
+          <label class="um-label">Objeto / alcance</label>
+          <div class="text-um-ink">{{ oc.objeto }}</div>
+        </div>
+      }
+      @if (oc.observacion) {
+        <div class="mt-3">
+          <label class="um-label">Observación</label>
+          <div class="text-um-ink">{{ oc.observacion }}</div>
+        </div>
+      }
+    </section>
+
+    <section class="um-card mt-4">
+      <h2 class="um-section">Ítems</h2>
+      @if ((oc.items?.length ?? 0) === 0) {
+        <div class="p-6 text-sm text-um-muted">La Orden de Compra no tiene ítems.</div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="um-table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Descripción</th>
+                <th scope="col" class="text-right">Cantidad</th>
+                <th scope="col">Unidad</th>
+                <th scope="col" class="text-right">Precio unitario</th>
+                <th scope="col" class="text-right">Subtotal</th>
+                <th scope="col">Marca</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of oc.items ?? []; track item.compraFormalizacionItemId ?? $index) {
+                <tr>
+                  <td>{{ item.orden ?? '—' }}</td>
+                  <td>{{ item.descripcion || '—' }}</td>
+                  <td class="text-right">{{ item.cantidad ?? '—' }}</td>
+                  <td>{{ item.unidad || '—' }}</td>
+                  <td class="text-right">
+                    {{ item.precioUnitario !== null ? (item.precioUnitario | number: '1.2-2') : '—' }}
+                  </td>
+                  <td class="text-right">
+                    {{ item.subtotal !== null ? (item.subtotal | number: '1.2-2') : '—' }}
+                  </td>
+                  <td>{{ item.marca || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>

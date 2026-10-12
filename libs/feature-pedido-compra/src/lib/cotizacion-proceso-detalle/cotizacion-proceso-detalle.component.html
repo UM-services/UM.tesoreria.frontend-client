@@ -1,0 +1,287 @@
+<div class="mx-auto max-w-6xl p-4">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Compras</p>
+    <h1 class="um-page-title">
+      Proceso {{ proceso()?.numero || 'Borrador' }}
+      @if (proceso()?.estado) {
+        <span class="um-badge" [ngClass]="estadoBadgeClass(proceso()?.estado)">
+          {{ estadoLabel(proceso()?.estado) }}
+        </span>
+      }
+    </h1>
+    <p class="um-page-desc">
+      <a class="um-link-btn" routerLink="/cotizacion">← Volver a la lista</a>
+    </p>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="um-alert-error mb-4">{{ errorMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="um-card p-6 text-sm text-um-muted">Cargando proceso...</div>
+  } @else if (proceso(); as p) {
+    <section class="um-card mb-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div>
+          <label class="um-label">Monto estimado (suma de pedidos)</label>
+          <p class="text-sm text-um-text">
+            {{ p.montoEstimado !== null && p.montoEstimado !== undefined ? (p.montoEstimado | number: '1.2-2') : '—' }}
+          </p>
+        </div>
+        <div>
+          <label class="um-label">Cotizaciones mínimas requeridas</label>
+          <p class="text-sm text-um-text">{{ p.cantidadMinima ?? '—' }}</p>
+        </div>
+        <div>
+          <label class="um-label">Fecha de envío</label>
+          <p class="text-sm text-um-text">{{ p.fechaEnvio ? (p.fechaEnvio | date: 'short') : '—' }}</p>
+        </div>
+        @if (p.excepcionMotivo) {
+          <div class="md:col-span-3">
+            <label class="um-label">Excepción</label>
+            <p class="text-sm text-um-text">{{ p.excepcionMotivo }}</p>
+          </div>
+        }
+        @if (p.fundamentoRecomendacion) {
+          <div class="md:col-span-3">
+            <label class="um-label">Fundamento de la recomendación</label>
+            <p class="text-sm text-um-text">{{ p.fundamentoRecomendacion }}</p>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="um-card mb-4">
+      <h2 class="um-section">Ítems ({{ p.items?.length ?? 0 }})</h2>
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Orden</th>
+              <th scope="col">Ítem del pedido</th>
+              <th scope="col" class="text-right">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of p.items ?? []; track item.compraCotizacionItemId) {
+              <tr>
+                <td>{{ item.orden }}</td>
+                <td>#{{ item.compraPedidoItemId }}</td>
+                <td class="text-right">{{ item.cantidad }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="um-card mb-4">
+      <h2 class="um-section">Proveedores ({{ p.proveedores?.length ?? 0 }})</h2>
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Proveedor</th>
+              <th scope="col">Estado</th>
+              <th scope="col" class="text-right">Total</th>
+              <th scope="col">Entrega</th>
+              <th scope="col">Pago</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (proveedor of p.proveedores ?? []; track proveedor.compraCotizacionProveedorId) {
+              <tr>
+                <td>{{ proveedor.proveedorId }}</td>
+                <td>
+                  <span class="um-badge" [ngClass]="estadoBadgeClass(proveedor.estado)">
+                    {{ estadoLabel(proveedor.estado) }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  {{ proveedor.total !== null && proveedor.total !== undefined ? (proveedor.total | number: '1.2-2') : '—' }}
+                </td>
+                <td>{{ proveedor.plazoEntrega || '—' }}</td>
+                <td>{{ proveedor.condicionPago || '—' }}</td>
+                <td class="text-right">
+                  @if (esEnviada) {
+                    <button type="button" class="um-link-btn" (click)="abrirRespuesta(proveedor)">
+                      Cargar respuesta
+                    </button>
+                    <button type="button" class="um-link-btn" (click)="marcarNoCotiza(proveedor)">No cotiza</button>
+                  }
+                </td>
+              </tr>
+              @if (respondiendoId() === proveedor.compraCotizacionProveedorId) {
+                <tr>
+                  <td colspan="6" class="bg-um-surface">
+                    <div class="space-y-3 p-3">
+                      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <div>
+                          <label class="um-label">Moneda</label>
+                          <input class="um-input" [(ngModel)]="moneda" />
+                        </div>
+                        <div>
+                          <label class="um-label">Total ofertado</label>
+                          <input type="number" class="um-input" [(ngModel)]="total" />
+                        </div>
+                        <div>
+                          <label class="um-label">Plazo de entrega</label>
+                          <input class="um-input" [(ngModel)]="plazoEntrega" />
+                        </div>
+                        <div>
+                          <label class="um-label">Condición de pago</label>
+                          <input class="um-input" [(ngModel)]="condicionPago" />
+                        </div>
+                        <div>
+                          <label class="um-label">Garantía</label>
+                          <input class="um-input" [(ngModel)]="garantia" />
+                        </div>
+                        <div>
+                          <label class="um-label">Validez de la oferta</label>
+                          <input class="um-input" [(ngModel)]="validezOferta" />
+                        </div>
+                      </div>
+
+                      <table class="um-table">
+                        <thead>
+                          <tr>
+                            <th scope="col">Ítem</th>
+                            <th scope="col">Cotiza</th>
+                            <th scope="col" class="text-right">Precio unitario</th>
+                            <th scope="col">Marca</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (item of itemsRespuesta(); track item.compraCotizacionItemId; let i = $index) {
+                            <tr>
+                              <td>#{{ item.compraCotizacionItemId }}</td>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  [checked]="item.cotiza"
+                                  (change)="actualizarItem(i, 'cotiza', $any($event.target).checked)"
+                                />
+                              </td>
+                              <td class="text-right">
+                                <input
+                                  type="number"
+                                  class="um-input"
+                                  [ngModel]="item.precioUnitario"
+                                  (ngModelChange)="actualizarItem(i, 'precioUnitario', $event)"
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  class="um-input"
+                                  [ngModel]="item.marca"
+                                  (ngModelChange)="actualizarItem(i, 'marca', $event)"
+                                />
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+
+                      <div class="flex justify-end gap-3">
+                        <button type="button" class="um-btn-secondary" (click)="cancelarRespuesta()">Cancelar</button>
+                        <button type="button" class="um-btn-primary" (click)="guardarRespuesta()">
+                          Guardar respuesta
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="um-card mb-4">
+      <h2 class="um-section">Comparación</h2>
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Ítem del pedido</th>
+              <th scope="col" class="text-right">Cantidad</th>
+              @for (proveedor of p.proveedores ?? []; track proveedor.compraCotizacionProveedorId) {
+                <th scope="col" class="text-right">Prov. {{ proveedor.proveedorId }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of p.items ?? []; track item.compraCotizacionItemId) {
+              <tr>
+                <td>#{{ item.compraPedidoItemId }}</td>
+                <td class="text-right">{{ item.cantidad }}</td>
+                @for (proveedor of p.proveedores ?? []; track proveedor.compraCotizacionProveedorId) {
+                  <td class="text-right">{{ precio(proveedor, item.compraCotizacionItemId) }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    @if (esEnviada) {
+      <section class="um-card mb-4">
+        <h2 class="um-section">Recomendación</h2>
+        @if (proveedoresRespondidos.length > 0) {
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <label class="um-label">Proveedor recomendado</label>
+              <select
+                class="um-input"
+                [ngModel]="recomendandoId()"
+                (ngModelChange)="recomendandoId.set($event)"
+              >
+                <option [ngValue]="null">Seleccione...</option>
+                @for (proveedor of proveedoresRespondidos; track proveedor.compraCotizacionProveedorId) {
+                  <option [ngValue]="proveedor.compraCotizacionProveedorId">
+                    Proveedor {{ proveedor.proveedorId }} — {{ proveedor.total | number: '1.2-2' }}
+                  </option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="um-label">Fundamento</label>
+              <input class="um-input" [(ngModel)]="fundamento" />
+            </div>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <button type="button" class="um-btn-primary" (click)="recomendar()">Recomendar</button>
+          </div>
+        } @else {
+          <p class="text-sm text-um-muted">Todavía no hay respuestas de proveedores.</p>
+        }
+      </section>
+    }
+
+    @if (esEditable || esAnulable) {
+      <section class="um-card mb-4">
+        <div class="flex flex-wrap items-center justify-end gap-3">
+          @if (esAnulable) {
+            <input class="um-input max-w-xs" placeholder="Motivo de anulación" [(ngModel)]="motivoAnulacion" />
+            <button type="button" class="um-btn-secondary" (click)="anular()">Anular</button>
+          }
+          @if (esEditable) {
+            <button type="button" class="um-btn-primary" (click)="enviar()">Enviar a proveedores</button>
+          }
+        </div>
+      </section>
+    }
+
+    @if (esRecomendada) {
+      <section class="um-card mb-4">
+        <div class="flex justify-end">
+          <button type="button" class="um-btn-primary" (click)="cerrar()">Cerrar proceso</button>
+        </div>
+      </section>
+    }
+  }
+</div>

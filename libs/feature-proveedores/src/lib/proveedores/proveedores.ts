@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, NgZone, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -39,6 +39,7 @@ export interface PaginatedResponse<T> {
   selector: 'app-proveedores',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, BuscadorProveedorComponent, PermisoDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './proveedores.html',
 })
 export class ProveedoresComponent implements OnInit {
