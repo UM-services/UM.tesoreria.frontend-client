@@ -5,6 +5,8 @@ import { CotizacionProcesoFormComponent } from './cotizacion-proceso-form/cotiza
 import { CotizacionProcesoListaComponent } from './cotizacion-proceso-lista/cotizacion-proceso-lista.component';
 import { CotizacionProcesoPedidasComponent } from './cotizacion-proceso-pedidas/cotizacion-proceso-pedidas.component';
 import { CotizacionAdjudicacionComponent } from './cotizacion-adjudicacion/cotizacion-adjudicacion.component';
+import { FormalizacionDetalleComponent } from './formalizacion-detalle/formalizacion-detalle.component';
+import { FormalizacionListaComponent } from './formalizacion-lista/formalizacion-lista.component';
 import { PedidoBandejaComponent } from './pedido-bandeja/pedido-bandeja.component';
 import { PedidoConsultaComponent } from './pedido-consulta/pedido-consulta.component';
 import { PedidoDetalleComponent } from './pedido-detalle/pedido-detalle.component';
@@ -101,5 +103,22 @@ export const cotizacionRoutes: Routes = [
     path: ':id',
     component: CotizacionProcesoDetalleComponent,
     canActivate: [permisoGuard('compras.cotizaciones.gestionar')],
+  },
+];
+
+/**
+ * Rutas de la formalización (etapa 8): emisión de la Orden de Compra desde una adjudicación.
+ * Permiso propio {@code compras.formalizar}.
+ */
+export const formalizacionRoutes: Routes = [
+  {
+    path: '',
+    component: FormalizacionListaComponent,
+    canActivate: [permisoGuard('compras.formalizar')],
+  },
+  {
+    path: ':id',
+    component: FormalizacionDetalleComponent,
+    canActivate: [permisoGuard('compras.formalizar')],
   },
 ];

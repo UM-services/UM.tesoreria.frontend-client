@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.33.0] - 2026-10-12
+
+### Added
+
+- feat(compras): pantalla **Formalización** (`/formalizacion`) en `feature-pedido-compra` (etapa 8 — `PLANIFICACION_COMPRAS.md` §17): **bandeja** de adjudicaciones pendientes de emitir la Orden de Compra (proveedor, monto, condiciones e ítems de la oferta adjudicada) y **alta** de la OC con condiciones editables, número externo opcional y objeto/alcance; debajo, el **listado de órdenes emitidas** con acceso al detalle. Nueva pantalla de **detalle de la OC** (`/formalizacion/:id`) con condiciones e ítems. Servicio `FormalizacionService` (`/api/tesoreria/compras/formalizacion`); ruta y ítem de menú (`7. Formalización`) gateados con `permisoGuard`/`ShellMenuItem.permiso = 'compras.formalizar'`.
+
 ## [0.32.0] - 2026-10-11
 
 ### Added
