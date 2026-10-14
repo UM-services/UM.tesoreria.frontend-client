@@ -10,6 +10,7 @@ import {
   OnDestroy,
   ElementRef,
   HostListener,
+  ChangeDetectionStrategy
 } from '@angular/core';
 
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -28,6 +29,7 @@ export interface ProveedorSearchResponse {
   selector: 'ui-buscador-proveedor',
   standalone: true,
   imports: [ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './buscador-proveedor.html',
 })
 export class BuscadorProveedorComponent implements OnInit, OnDestroy {

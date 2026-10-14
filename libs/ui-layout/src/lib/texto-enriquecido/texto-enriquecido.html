@@ -1,0 +1,15 @@
+@if (vacio()) {
+  <span class="text-sm text-um-muted">—</span>
+} @else {
+  <div
+    class="texto-enriquecido text-sm text-um-text"
+    [class.max-h-24]="!mostrarTodo()"
+    [class.overflow-hidden]="!mostrarTodo()"
+    [innerHTML]="html()"
+  ></div>
+  @if (colapsable()) {
+    <button type="button" class="um-link-btn mt-1 text-xs" (click)="alternar()">
+      {{ mostrarTodo() ? 'Mostrar menos' : 'Mostrar más' }}
+    </button>
+  }
+}

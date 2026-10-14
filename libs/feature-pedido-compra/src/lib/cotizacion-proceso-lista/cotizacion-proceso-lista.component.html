@@ -1,0 +1,60 @@
+<div class="mx-auto max-w-6xl p-4">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Compras</p>
+    <h1 class="um-page-title">Procesos de cotización</h1>
+    <p class="um-page-desc">
+      Pedidos de cotización a proveedores a partir de los pedidos autorizados en presupuesto.
+    </p>
+  </header>
+
+  <div class="mb-4 flex justify-end">
+    <a class="um-btn-primary" routerLink="/cotizacion/nuevo">Nuevo proceso</a>
+  </div>
+
+  <section class="um-card">
+    @if (isLoading()) {
+      <div class="p-6 text-sm text-um-muted">Cargando procesos...</div>
+    } @else if (errorMessage()) {
+      <div class="um-alert-error m-4">{{ errorMessage() }}</div>
+    } @else if (procesos().length === 0) {
+      <div class="p-6 text-sm text-um-muted">No hay procesos de cotización.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Número</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Fecha</th>
+              <th scope="col" class="text-right">Monto estimado</th>
+              <th scope="col" class="text-right">Cotizaciones mín.</th>
+              <th scope="col" class="text-right">Proveedores</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (proceso of procesos(); track proceso.compraCotizacionId) {
+              <tr>
+                <td class="font-semibold text-um-ink">{{ proceso.numero || 'Borrador' }}</td>
+                <td>
+                  <span class="um-badge" [ngClass]="estadoBadgeClass(proceso.estado)">
+                    {{ estadoLabel(proceso.estado) }}
+                  </span>
+                </td>
+                <td>{{ proceso.fecha | date: 'short' }}</td>
+                <td class="text-right">
+                  {{ proceso.montoEstimado !== null && proceso.montoEstimado !== undefined ? (proceso.montoEstimado | number: '1.2-2') : '—' }}
+                </td>
+                <td class="text-right">{{ proceso.cantidadMinima ?? '—' }}</td>
+                <td class="text-right">{{ proceso.proveedores?.length ?? 0 }}</td>
+                <td class="text-right">
+                  <a [routerLink]="['/cotizacion', proceso.compraCotizacionId]" class="um-link-btn">Ver</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

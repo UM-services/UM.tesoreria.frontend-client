@@ -1,6 +1,6 @@
 # UM Tesorería - Frontend Client
 
-Sistema de gestión de tesorería construido con Angular 21 y Nx Workspace.
+Sistema de gestión de tesorería construido con Angular 22 y Nx Workspace.
 
 ## Estructura del Proyecto
 
@@ -21,11 +21,12 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard` y `permisoAlgunoGuard`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`), buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona) y la directiva `*uiPermiso`
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`), buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el render de solo lectura `ui-texto-enriquecido` y la directiva `*uiPermiso`
+- `@tesoreria/ui-rich-text` - Editor de texto enriquecido (WYSIWYG) compartido (`ui-editor-enriquecido`, Quill 2 vía `ngx-quill@31`); vive en su propia lib para mantener Quill en chunks lazy
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
-- `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta, edición, bandeja de envío, consulta y detalle) montado por la app compras en `/pedido`
-- `@tesoreria/feature-administrador` - Módulo administrativo: dependencias, asignaciones de usuario y autorizantes de envío
+- `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta, edición, bandeja de envío, revisión de compras, autorización de presupuesto, consulta y detalle) montado por la app compras en `/pedido`, y de los procesos de cotización (lista, armado, detalle, bandeja «Cotizaciones pedidas» y adjudicación) montados en `/cotizacion`
+- `@tesoreria/feature-administrador` - Módulo administrativo: dependencias, usuarios, asignaciones de usuario, autorizantes de envío, autoridades de presupuesto y cotizaciones mínimas por monto
 - `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` y `/simulador` (app administrador)
 - `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
 - `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
@@ -127,12 +128,12 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
 
     subgraph Libs["Librerías compartidas"]
         API["shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Tokens API_URL y EXTERNO_*"]
-        AUTH["ui-auth<br/>Login y modal de cambio de clave"]
+        AUTH["ui-auth<br/>Login y modal de cambio de clave<br/>(forzado con clave provisoria)"]
         LAYOUT["ui-layout<br/>Shell J2, buscadores y *uiPermiso"]
         FPROV["feature-proveedores"]
         FGAST["feature-gastos"]
-        FPED["feature-pedido-compra<br/>Lista, alta, edición, bandeja,<br/>consulta y detalle de pedido"]
-        FADM["feature-administrador<br/>Dependencias, asignaciones<br/>y autorizantes de envío"]
+        FPED["feature-pedido-compra<br/>Lista, alta, edición, bandeja, revisión,<br/>presupuesto, consulta y detalle de pedido<br/>Cotizaciones (armado, detalle y pedidas)<br/>y adjudicación"]
+        FADM["feature-administrador<br/>Dependencias, usuarios, asignaciones,<br/>autorizantes, autoridades de presupuesto<br/>y cotizaciones mínimas"]
         FPERM["feature-permisos<br/>Permisos, roles, catálogo y simulador"]
         FGUAR["feature-guarani<br/>GUARANI_ROUTES y vistas"]
         FEXT["feature-externo-consulta<br/>Vista chequeras del portal externo"]
@@ -210,10 +211,10 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 
 | Tecnología   | Versión                       |
 | ------------ | ----------------------------- |
-| Angular      | 21.2.0                        |
-| Nx           | 22.7.1                        |
+| Angular      | 22.1.8                        |
+| Nx           | 23.3.0                        |
 | Tailwind CSS | 4.2.4                         |
-| TypeScript   | 5.9.2                         |
+| TypeScript   | 6.0.3                         |
 | Vitest       | 4.0.8                         |
 | Docker       | node:24-alpine + nginx:alpine |
 
@@ -262,7 +263,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.29.0**
+Versión actual: **0.32.0**
 
 ## Licencia
 

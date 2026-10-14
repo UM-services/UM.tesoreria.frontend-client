@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, NgZone, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -23,6 +23,7 @@ export interface Dependencia {
   selector: 'app-dependencias',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, BuscadorCuentaContableComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './dependencias.html'
 })
 export class DependenciasComponent implements OnInit {

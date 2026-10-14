@@ -1,0 +1,365 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Administración / Usuarios</p>
+      <h1 class="um-page-title">Usuarios</h1>
+      <p class="um-page-desc">
+        Alta de usuarios, configuración de datos y flags, habilitar/deshabilitar y reset de clave.
+      </p>
+    </div>
+    @if (modo() === 'lista') {
+      <button type="button" class="um-btn-primary" (click)="nuevoUsuario()">Nuevo usuario</button>
+    } @else {
+      <button type="button" class="um-btn-secondary" (click)="cancelarForm()">Volver al listado</button>
+    }
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  @if (estadoPendiente(); as pendiente) {
+    <div class="um-alert um-alert-warn">
+      <p class="text-sm text-amber-800">
+        ¿{{ pendiente.activo === 1 ? 'Deshabilitar' : 'Habilitar' }} al usuario
+        <strong>{{ pendiente.nombre }}</strong> ({{ pendiente.login }})?
+      </p>
+      <div class="mt-3 flex justify-end gap-3">
+        <button type="button" class="um-btn-secondary" (click)="cancelarCambioEstado()">Cancelar</button>
+        <button type="button" class="um-btn-primary" (click)="confirmarCambioEstado()">Confirmar</button>
+      </div>
+    </div>
+  }
+
+  @if (modo() === 'lista') {
+    <div class="um-card p-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div class="w-full max-w-lg">
+          <label for="buscar-usuario" class="um-label">Buscar usuario</label>
+          <input
+            id="buscar-usuario"
+            type="search"
+            class="um-input mt-2 w-full"
+            [(ngModel)]="textoBusqueda"
+            (ngModelChange)="onBuscar()"
+            placeholder="Login o nombre (mínimo 2 caracteres)"
+            autocomplete="off"
+          />
+        </div>
+        <label class="flex items-center gap-2 text-sm text-um-ink">
+          <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="incluirInactivos" />
+          Incluir inactivos
+        </label>
+      </div>
+
+      <div class="mt-6 overflow-x-auto">
+        @if (cargando()) {
+          <p class="py-8 text-center text-sm text-um-muted">Cargando usuarios...</p>
+        } @else {
+          <table class="um-table w-full text-sm">
+            <thead>
+              <tr class="text-left text-um-muted">
+                <th class="px-3 py-2">Usuario</th>
+                <th class="px-3 py-2">Nombre</th>
+                <th class="px-3 py-2">Sede</th>
+                <th class="px-3 py-2">Estado</th>
+                <th class="px-3 py-2">Tipo</th>
+                <th class="px-3 py-2 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (usuario of filtrados; track usuario.userId) {
+                <tr class="border-t border-um-border">
+                  <td class="px-3 py-2 font-medium text-um-ink">{{ usuario.login }}</td>
+                  <td class="px-3 py-2 text-um-ink">{{ usuario.nombre }}</td>
+                  <td class="px-3 py-2 text-um-muted">{{ nombreSede(usuario.geograficaId) }}</td>
+                  <td class="px-3 py-2">
+                    <span class="um-badge" [class]="usuario.activo === 1 ? 'text-green-700' : 'text-red-700'">
+                      {{ usuario.activo === 1 ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-2 text-um-muted">
+                    @if (usuario.administrador === 1) {
+                      <span class="um-badge">Administrador</span>
+                    }
+                    @if (usuario.usuarioExterno === 1) {
+                      <span class="um-badge">Externo</span>
+                    }
+                    @if (usuario.debeCambiarClave === 1) {
+                      <span class="um-badge text-amber-700">Debe cambiar clave</span>
+                    }
+                  </td>
+                  <td class="px-3 py-2">
+                    <div class="flex justify-end gap-3">
+                      <button type="button" class="um-link-btn" (click)="configurar(usuario)">
+                        Configurar
+                      </button>
+                      <button
+                        type="button"
+                        class="um-link-btn"
+                        [class]="usuario.activo === 1 ? 'text-red-600' : 'text-green-700'"
+                        (click)="pedirCambioEstado(usuario)"
+                      >
+                        {{ usuario.activo === 1 ? 'Deshabilitar' : 'Habilitar' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="px-3 py-8 text-center text-um-muted">
+                    No hay usuarios para mostrar.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  }
+
+  @if (modo() === 'alta') {
+    <div class="um-card p-6">
+      <h2 class="text-base font-semibold text-um-ink">Nuevo usuario</h2>
+      <div class="mt-4 grid gap-5 md:grid-cols-2">
+        <div>
+          <label class="um-label" for="alta-login">Usuario (login)</label>
+          <input id="alta-login" class="um-input mt-2 w-full" [(ngModel)]="altaForm.login" autocomplete="off" />
+        </div>
+        <div>
+          <label class="um-label" for="alta-nombre">Nombre</label>
+          <input id="alta-nombre" class="um-input mt-2 w-full" [(ngModel)]="altaForm.nombre" autocomplete="off" />
+        </div>
+        <div>
+          <label class="um-label" for="alta-clave">Clave</label>
+          <input id="alta-clave" type="password" class="um-input mt-2 w-full" [(ngModel)]="altaForm.password" autocomplete="new-password" />
+        </div>
+        <div>
+          <label class="um-label" for="alta-reclave">Re - Clave</label>
+          <input id="alta-reclave" type="password" class="um-input mt-2 w-full" [(ngModel)]="altaForm.reClave" autocomplete="new-password" />
+        </div>
+        <div>
+          <label class="um-label" for="alta-sede">Sede</label>
+          <select id="alta-sede" class="um-input mt-2 w-full" [(ngModel)]="altaForm.geograficaId">
+            <option [ngValue]="null">Seleccione una sede</option>
+            @for (sede of sedes(); track sede.geograficaId) {
+              <option [ngValue]="sede.geograficaId">{{ sede.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="um-label" for="alta-dependencia">Dependencia (opcional)</label>
+          <select id="alta-dependencia" class="um-input mt-2 w-full" [(ngModel)]="altaForm.dependenciaId">
+            <option [ngValue]="null">Sin dependencia</option>
+            @for (dependencia of dependencias(); track dependencia.dependenciaId) {
+              <option [ngValue]="dependencia.dependenciaId">{{ dependencia.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="um-label" for="alta-mail">Correo (Google Mail, opcional)</label>
+          <input id="alta-mail" class="um-input mt-2 w-full" [(ngModel)]="altaForm.googleMail" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <p class="um-label">Flags de chequera</p>
+        <div class="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <label class="flex items-center gap-2 text-sm text-um-ink">
+            <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="altaForm.imprimeChequera" />
+            Imprime chequera
+          </label>
+          <label class="flex items-center gap-2 text-sm text-um-ink">
+            <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="altaForm.numeroOpManual" />
+            Número OP manual
+          </label>
+          <label class="flex items-center gap-2 text-sm text-um-ink">
+            <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="altaForm.habilitaOpEliminacion" />
+            Habilita eliminación de OP
+          </label>
+          <label class="flex items-center gap-2 text-sm text-um-ink">
+            <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="altaForm.eliminaChequera" />
+            Elimina chequera
+          </label>
+          <label class="flex items-center gap-2 text-sm text-um-ink">
+            <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="altaForm.modificaChequera" />
+            Modifica chequera
+          </label>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <p class="um-label">Acceso</p>
+        <div class="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <label class="flex items-center gap-2 text-sm text-um-ink">
+            <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="altaForm.activo" />
+            Activo
+          </label>
+          <label class="flex items-center gap-2 text-sm text-um-ink">
+            <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="altaForm.administrador" />
+            Administrador
+          </label>
+          <label class="flex items-center gap-2 text-sm text-um-ink">
+            <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="altaForm.usuarioExterno" />
+            Usuario externo
+          </label>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" class="um-btn-secondary" (click)="cancelarForm()">Cancelar</button>
+        <button type="button" class="um-btn-primary" [disabled]="guardando()" (click)="guardarAlta()">
+          Crear usuario
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (modo() === 'config') {
+    @if (usuarioSeleccionado(); as usuario) {
+      <div class="um-card p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-um-muted">Usuario</p>
+            <p class="mt-1 text-lg font-semibold text-um-ink">
+              {{ usuario.nombre }} <span class="text-sm font-normal text-um-muted">({{ usuario.login }})</span>
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="um-badge" [class]="usuario.activo === 1 ? 'text-green-700' : 'text-red-700'">
+              {{ usuario.activo === 1 ? 'Activo' : 'Inactivo' }}
+            </span>
+            <button
+              type="button"
+              class="um-btn-secondary"
+              (click)="pedirCambioEstado(usuario)"
+            >
+              {{ usuario.activo === 1 ? 'Deshabilitar' : 'Habilitar' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-md bg-um-surface p-3 text-sm text-um-muted">
+          La asignación de <strong>roles y permisos</strong> y de <strong>sedes/clases de chequera</strong> se
+          administra en pantallas aparte:
+          <a class="um-link-btn" [routerLink]="['/permisos']">Permisos</a>
+          <span class="px-1">·</span>
+          <a class="um-link-btn" [routerLink]="['/asignaciones']">Asignaciones</a>
+        </div>
+
+        <div class="mt-6 grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="um-label" for="cfg-login">Usuario (login)</label>
+            <input id="cfg-login" class="um-input mt-2 w-full" [ngModel]="usuario.login" disabled />
+          </div>
+          <div>
+            <label class="um-label" for="cfg-nombre">Nombre</label>
+            <input id="cfg-nombre" class="um-input mt-2 w-full" [(ngModel)]="configForm.nombre" />
+          </div>
+          <div>
+            <label class="um-label" for="cfg-sede">Sede</label>
+            <select id="cfg-sede" class="um-input mt-2 w-full" [(ngModel)]="configForm.geograficaId">
+              <option [ngValue]="null">Seleccione una sede</option>
+              @for (sede of sedes(); track sede.geograficaId) {
+                <option [ngValue]="sede.geograficaId">{{ sede.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="um-label" for="cfg-dependencia">Dependencia (opcional)</label>
+            <select id="cfg-dependencia" class="um-input mt-2 w-full" [(ngModel)]="configForm.dependenciaId">
+              <option [ngValue]="null">Sin dependencia</option>
+              @for (dependencia of dependencias(); track dependencia.dependenciaId) {
+                <option [ngValue]="dependencia.dependenciaId">{{ dependencia.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="um-label" for="cfg-mail">Correo (Google Mail, opcional)</label>
+            <input id="cfg-mail" class="um-input mt-2 w-full" [(ngModel)]="configForm.googleMail" />
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <p class="um-label">Flags de chequera</p>
+          <div class="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label class="flex items-center gap-2 text-sm text-um-ink">
+              <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="configForm.imprimeChequera" />
+              Imprime chequera
+            </label>
+            <label class="flex items-center gap-2 text-sm text-um-ink">
+              <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="configForm.numeroOpManual" />
+              Número OP manual
+            </label>
+            <label class="flex items-center gap-2 text-sm text-um-ink">
+              <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="configForm.habilitaOpEliminacion" />
+              Habilita eliminación de OP
+            </label>
+            <label class="flex items-center gap-2 text-sm text-um-ink">
+              <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="configForm.eliminaChequera" />
+              Elimina chequera
+            </label>
+            <label class="flex items-center gap-2 text-sm text-um-ink">
+              <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="configForm.modificaChequera" />
+              Modifica chequera
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <p class="um-label">Acceso</p>
+          <div class="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label class="flex items-center gap-2 text-sm text-um-ink">
+              <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="configForm.activo" />
+              Activo
+            </label>
+            <label class="flex items-center gap-2 text-sm text-um-ink">
+              <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="configForm.administrador" />
+              Administrador
+            </label>
+            <label class="flex items-center gap-2 text-sm text-um-ink">
+              <input type="checkbox" class="h-4 w-4 rounded border-um-border text-um-primary" [(ngModel)]="configForm.usuarioExterno" />
+              Usuario externo
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" class="um-btn-secondary" (click)="cancelarForm()">Cancelar</button>
+          <button type="button" class="um-btn-primary" [disabled]="guardando()" (click)="guardarConfig()">
+            Guardar configuración
+          </button>
+        </div>
+      </div>
+
+      <div class="um-card p-6">
+        <h2 class="text-base font-semibold text-um-ink">Resetear clave</h2>
+        <p class="mt-1 text-sm text-um-muted">
+          Asigna una clave nueva al usuario. No requiere la clave anterior.
+        </p>
+        <div class="mt-4 grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="um-label" for="reset-clave">Clave nueva</label>
+            <input id="reset-clave" type="password" class="um-input mt-2 w-full" [(ngModel)]="resetPassword" autocomplete="new-password" />
+          </div>
+          <div>
+            <label class="um-label" for="reset-reclave">Re - Clave</label>
+            <input id="reset-reclave" type="password" class="um-input mt-2 w-full" [(ngModel)]="resetReClave" autocomplete="new-password" />
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end">
+          <button type="button" class="um-btn-primary" (click)="guardarReset()">Resetear clave</button>
+        </div>
+      </div>
+    }
+  }
+</div>

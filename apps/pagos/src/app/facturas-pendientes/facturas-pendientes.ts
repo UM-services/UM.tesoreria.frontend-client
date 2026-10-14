@@ -1,4 +1,4 @@
-import { Component, inject, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, NgZone, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -10,6 +10,7 @@ import { of } from 'rxjs';
   selector: 'app-facturas-pendientes',
   standalone: true,
   imports: [ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './facturas-pendientes.html',
 })
 export class FacturasPendientesComponent {

@@ -10,6 +10,7 @@ import {
   output,
   signal,
   viewChild,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -52,6 +53,7 @@ type Carga<T> =
   standalone: true,
   imports: [CurrencyPipe, DecimalPipe],
   host: { '(document:keydown)': 'alPresionarTecla($event)' },
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (chequera(); as chequera) {
       <div

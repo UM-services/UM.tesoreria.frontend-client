@@ -7,6 +7,7 @@ import {
   OnInit,
   Output,
   SimpleChanges,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,6 +18,7 @@ import { AuthService } from '@tesoreria/shared-api';
   selector: 'lib-cambio-clave-modal',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './cambio-clave-modal.html',
 })
 export class CambioClaveModalComponent implements OnInit, OnChanges {

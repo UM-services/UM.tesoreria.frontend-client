@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, signal } from '@angular/core';
+import { Component, computed, effect, inject, Input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import {
@@ -41,6 +41,7 @@ const ENV_BADGE_CLASSES: Record<EnvDisplayKey, string> = {
   selector: 'ui-shell',
   standalone: true,
   imports: [CommonModule, RouterModule, CambioClaveModalComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (isLoggedIn$ | async) {
       <div class="flex min-h-screen bg-um-canvas text-um-ink">
@@ -210,11 +211,25 @@ export class UiShellComponent {
 
   readonly isCambioClaveOpen = signal(false);
 
+  constructor() {
+    // Cambio forzado: con una clave provisoria puesta por un administrador se
+    // fuerza el cambio antes de operar; la modal se reabre mientras el flag siga en 1.
+    effect(() => {
+      if (this.usuario()?.debeCambiarClave === 1) {
+        this.isCambioClaveOpen.set(true);
+      }
+    });
+  }
+
   abrirCambioClave(): void {
     this.isCambioClaveOpen.set(true);
   }
 
   cerrarCambioClave(): void {
+    // No se puede cerrar mientras haya un cambio de clave forzado pendiente.
+    if (this.usuario()?.debeCambiarClave === 1) {
+      return;
+    }
     this.isCambioClaveOpen.set(false);
   }
 
