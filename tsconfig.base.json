@@ -17,7 +17,8 @@
       "@tesoreria/feature-externo-consulta": ["./libs/feature-externo-consulta/src/index.ts"],
       "@tesoreria/feature-administrador": ["./libs/feature-administrador/src/index.ts"],
       "@tesoreria/feature-permisos": ["./libs/feature-permisos/src/index.ts"],
-      "@tesoreria/ui-rich-text": ["./libs/ui-rich-text/src/index.ts"]
+      "@tesoreria/ui-rich-text": ["./libs/ui-rich-text/src/index.ts"],
+       "@tesoreria/feature-personas": ["./libs/feature-personas/src/index.ts"]
     },
     "strict": false,
     "noUncheckedSideEffectImports": false,
