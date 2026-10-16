@@ -76,11 +76,11 @@ describe('ChequerasService', () => {
     req.flush({ content: [] });
   });
 
-  it('pide cuotas con pagos y deuda de la chequera', () => {
-    service.cuotasConPagos(chequera).subscribe();
+  it('pide el estado y la deuda de la chequera al core', () => {
+    service.estado(chequera).subscribe();
     service.deuda(chequera).subscribe();
 
-    http.expectOne((r) => r.url.endsWith('/core/chequera/cuotas/pagos/1/2/300/4')).flush([]);
+    http.expectOne((r) => r.url.endsWith('/core/chequera/estado/1/2/300/4')).flush({});
     http.expectOne((r) => r.url.endsWith('/core/chequeraCuota/deuda/1/2/300')).flush({});
   });
 
