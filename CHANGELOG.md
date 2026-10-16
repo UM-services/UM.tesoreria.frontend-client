@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.34.0] - 2026-10-16
+
+### Added
+
+- feat(compras): pantalla **Recepción** (`/recepcion`) en `feature-pedido-compra` (etapa 9 — `PLANIFICACION_COMPRAS.md` §18): **bandeja** de Órdenes de Compra con saldo pendiente (proveedor, monto e ítems con saldo) y **alta** de la entrega inline (fecha, remito, intervención de Patrimonio, observación general y, por ítem, cantidad recibida, resultado y observación), con el **tipo calculado** (Total cuando cubre todos los saldos) y validación de cliente (no exceder el saldo, al menos una cantidad mayor a cero); debajo, el **listado de recepciones registradas**. Nueva pantalla de **detalle** (`/recepcion/:compraFormalizacionId`) con el **saldo por ítem**, las entregas registradas y el **cierre manual con motivo** cuando el proveedor no completará el saldo. Servicio `RecepcionService` (`/api/tesoreria/compras/recepcion`); ruta y ítem de menú (`8. Recepción`) gateados con `permisoGuard`/`ShellMenuItem.permiso = 'compras.recepcionar'`.
+
 ## [0.33.0] - 2026-10-12
 
 ### Added

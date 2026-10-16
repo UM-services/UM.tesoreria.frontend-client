@@ -1,0 +1,149 @@
+<div class="mx-auto max-w-6xl p-4">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Compras</p>
+    <h1 class="um-page-title">
+      Recepción de la orden de compra {{ pendiente()?.numero || '' }}
+    </h1>
+    <p class="um-page-desc">
+      Saldo por ítem contratado, entregas registradas y cierre manual de la recepción.
+    </p>
+  </header>
+
+  <div class="mb-3">
+    <a routerLink="/recepcion" class="um-link-btn">← Volver a recepción</a>
+  </div>
+
+  @if (isLoading()) {
+    <div class="um-card p-6 text-sm text-um-muted">Cargando orden de compra...</div>
+  } @else if (errorMessage() && !pendiente()) {
+    <div class="um-alert-error">{{ errorMessage() }}</div>
+  } @else if (pendiente(); as oc) {
+    @if (errorMessage()) {
+      <div class="um-alert-error mb-3">{{ errorMessage() }}</div>
+    }
+
+    <section class="um-card">
+      <h2 class="um-section">Orden de compra</h2>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div><span class="um-label">Número</span><div>{{ oc.numero || '—' }}</div></div>
+        <div><span class="um-label">Externo</span><div>{{ oc.numeroExterno || '—' }}</div></div>
+        <div><span class="um-label">Proveedor</span><div>{{ oc.proveedorId ?? '—' }}</div></div>
+        <div>
+          <span class="um-label">Monto</span>
+          <div>
+            {{ oc.monto !== null && oc.monto !== undefined ? (oc.monto | number: '1.2-2') : '—' }}
+            {{ oc.moneda || '' }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="um-card mt-4">
+      <h2 class="um-section">Saldo por ítem</h2>
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Descripción</th>
+              <th scope="col">Unidad</th>
+              <th scope="col" class="text-right">Contratado</th>
+              <th scope="col" class="text-right">Recibido</th>
+              <th scope="col" class="text-right">Saldo</th>
+              <th scope="col">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of oc.items ?? []; track item.compraFormalizacionItemId ?? $index) {
+              <tr>
+                <td>{{ item.orden ?? '—' }}</td>
+                <td>{{ item.descripcion || '—' }}</td>
+                <td>{{ item.unidad || '—' }}</td>
+                <td class="text-right">
+                  {{ item.cantidad !== null && item.cantidad !== undefined ? (item.cantidad | number: '1.0-2') : '—' }}
+                </td>
+                <td class="text-right">
+                  {{ item.recibido !== null && item.recibido !== undefined ? (item.recibido | number: '1.0-2') : '—' }}
+                </td>
+                <td class="text-right">
+                  {{ item.saldo !== null && item.saldo !== undefined ? (item.saldo | number: '1.0-2') : '—' }}
+                </td>
+                <td>
+                  <span class="um-badge" [ngClass]="badgeSaldo(item.completo)">
+                    {{ item.completo ? 'Completo' : 'Pendiente' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="um-card mt-4">
+      <h2 class="um-section">Recepciones registradas</h2>
+      @if ((oc.recepciones ?? []).length === 0) {
+        <div class="p-6 text-sm text-um-muted">Todavía no se registró ninguna entrega.</div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="um-table">
+            <thead>
+              <tr>
+                <th scope="col">Número</th>
+                <th scope="col">Fecha</th>
+                <th scope="col">Remito</th>
+                <th scope="col">Resultado</th>
+                <th scope="col">Patrimonio</th>
+                <th scope="col">Observación</th>
+                <th scope="col" class="text-right">Ítems</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (recepcion of oc.recepciones ?? []; track recepcion.compraRecepcionId) {
+                <tr>
+                  <td class="font-semibold text-um-ink">{{ recepcion.numero || '—' }}</td>
+                  <td>{{ recepcion.fecha ? (recepcion.fecha | date: 'short') : '—' }}</td>
+                  <td>{{ recepcion.remito || '—' }}</td>
+                  <td>
+                    <span class="um-badge" [ngClass]="badgeResultado(recepcion.resultado)">
+                      {{ resultadoDe(recepcion) }}
+                    </span>
+                  </td>
+                  <td>{{ etiquetaPatrimonio(recepcion.patrimonio) }}</td>
+                  <td>{{ recepcion.observacion || '—' }}</td>
+                  <td class="text-right">{{ recepcion.items?.length ?? 0 }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (tieneSaldoAbierto()) {
+      <section class="um-card mt-4">
+        <h2 class="um-section">Cierre manual de la recepción</h2>
+        <p class="text-sm text-um-muted">
+          Deja la orden de compra como recepcionada aunque quede saldo, por ejemplo cuando el
+          proveedor no completará el resto. El motivo queda registrado en el historial del pedido.
+        </p>
+        <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div class="md:col-span-2">
+            <label class="um-label">Motivo</label>
+            <input class="um-input" [(ngModel)]="motivo" />
+          </div>
+          <div class="flex items-end justify-end">
+            <button
+              type="button"
+              class="um-btn-primary"
+              [disabled]="cerrando() || !motivo.trim()"
+              (click)="cerrarRecepcion()"
+            >
+              Cerrar recepción
+            </button>
+          </div>
+        </div>
+      </section>
+    }
+  }
+</div>

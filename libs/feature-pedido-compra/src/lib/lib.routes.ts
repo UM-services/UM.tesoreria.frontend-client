@@ -14,6 +14,8 @@ import { PedidoFormComponent } from './pedido-form/pedido-form.component';
 import { PedidoListaComponent } from './pedido-lista/pedido-lista.component';
 import { PedidoPresupuestoComponent } from './pedido-presupuesto/pedido-presupuesto.component';
 import { PedidoRevisionComponent } from './pedido-revision/pedido-revision.component';
+import { RecepcionDetalleComponent } from './recepcion-detalle/recepcion-detalle.component';
+import { RecepcionListaComponent } from './recepcion-lista/recepcion-lista.component';
 
 /**
  * Rutas del circuito de pedidos de compra. Los guards van por ruta (no en el padre)
@@ -120,5 +122,23 @@ export const formalizacionRoutes: Routes = [
     path: ':id',
     component: FormalizacionDetalleComponent,
     canActivate: [permisoGuard('compras.formalizar')],
+  },
+];
+
+/**
+ * Rutas de la recepción y conformidad (etapa 9): entregas totales o parciales contra una Orden de
+ * Compra y cierre manual con motivo. Permiso propio {@code compras.recepcionar}.
+ */
+export const recepcionRoutes: Routes = [
+  {
+    path: '',
+    component: RecepcionListaComponent,
+    canActivate: [permisoGuard('compras.recepcionar')],
+  },
+  {
+    // El parámetro es el id de la Orden de Compra: muestra sus saldos y sus entregas.
+    path: ':compraFormalizacionId',
+    component: RecepcionDetalleComponent,
+    canActivate: [permisoGuard('compras.recepcionar')],
   },
 ];
