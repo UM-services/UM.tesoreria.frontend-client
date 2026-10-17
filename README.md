@@ -87,7 +87,7 @@ NODE_OPTIONS=--no-webstorage nx test externo-consulta
 
 `environment.development.ts` usa `BACKEND_URL_PLACEHOLDER/core/auth` como ruta relativa: `nx serve` necesita un proxy que la reenvíe al gateway. El script de preview de Conductor (`externo-consulta`) levanta Consul, el gateway y el core en Docker (Colima) y ejecuta `nx serve externo-consulta --proxy-config .conductor/proxy.json`, que mapea `/BACKEND_URL_PLACEHOLDER` → `http://127.0.0.1:8301/api/tesoreria`. Para usar la vista `/chequeras`:
 
-El script de preview no levanta `report`: hay que iniciarlo por separado para descargar el PDF. La versión nueva de `report` requiere además que el core exponga `GET chequera/estado/{facultadId}/{tipoChequeraId}/{chequeraSerieId}/{alternativaId}`.
+El script de preview no levanta `report`: hay que iniciarlo por separado para descargar el PDF. La versión nueva de `report` requiere además que el core exponga `GET chequera/estado/{facultadId}/{tipoChequeraId}/{chequeraSerieId}/{alternativaId}`, el mismo endpoint que alimenta la lista de cuotas del detalle de chequera.
 
 1. Tener el gateway en el puerto 8301 —incluido el servicio `report`, que sirve el "Estado (PDF)" vía `GET report/chequeras/estado/facultad/{facultadId}/tipoChequera/{tipoChequeraId}/chequeraSerie/{chequeraSerieId}/alternativa/{alternativaId}` e incluye los débitos automáticos de todos los tipos— y un core que incluya `GET chequeraSerie/usuario/{userId}/lectivo/{lectivoId}/asignaciones`, `GET usuarioChequeraGeografica/user/{userId}`, `GET usuarioChequeraClaseChequera/user/{userId}` y el alias `api/tesoreria/core/documento`.
 2. Usar un usuario que tenga filas en las tres tablas de asignaciones: `usuario_chequera_facultad`, `usuario_chequera_geografica` y `usuario_chequera_clase_chequera`. Sin asignaciones en alguna dimensión, la vista muestra "Su usuario no tiene facultades/sedes/clases de chequera asignadas para consultar chequeras" (la primera dimensión faltante, con prioridad facultad > sede > clase).
@@ -101,7 +101,7 @@ curl -s -H "Authorization: Bearer $TOKEN" $BASE/usuarioChequeraFacultad/user/<us
 curl -s -H "Authorization: Bearer $TOKEN" $BASE/usuarioChequeraGeografica/user/<userId>
 curl -s -H "Authorization: Bearer $TOKEN" $BASE/usuarioChequeraClaseChequera/user/<userId>
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/chequeraSerie/usuario/<userId>/lectivo/<lectivoId>/asignaciones?personaId=<dni>&documentoId=<id>&page=0&size=100"
-curl -s -H "Authorization: Bearer $TOKEN" $BASE/chequera/cuotas/pagos/<facultadId>/<tipoChequeraId>/<chequeraSerieId>/<alternativaId>
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/chequera/estado/<facultadId>/<tipoChequeraId>/<chequeraSerieId>/<alternativaId>
 curl -s -H "Authorization: Bearer $TOKEN" $BASE/chequeraCuota/deuda/<facultadId>/<tipoChequeraId>/<chequeraSerieId>
 ```
 
@@ -263,7 +263,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.35.0**
+Versión actual: **0.36.0**
 
 ## Licencia
 
