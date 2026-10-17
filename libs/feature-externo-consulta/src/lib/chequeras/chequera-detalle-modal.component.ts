@@ -24,19 +24,23 @@ import {
   Subject,
   switchMap,
 } from 'rxjs';
-import { ChequeraEstado, CuotaConPagos, DeudaChequera } from './chequeras.models';
+import {
+  ChequeraEstado,
+  CuotaEstado,
+  DeudaChequera,
+  EstadoCuota,
+  ProductoEstado,
+} from './chequeras.models';
 import { ChequerasService } from './chequeras.service';
 import {
-  agruparPorProducto,
   descargarBlob,
   esDeudaCentinela,
   esPdfValido,
-  estadoCuota,
+  etiquetaEstado,
   formatearFecha,
   mensajeError,
   mensajeErrorPdf,
   nombreArchivoEstadoPdf,
-  ordenarCuotas,
   primeraCuotaVencida,
   proximaCuota,
 } from './chequeras.utils';
@@ -201,8 +205,8 @@ type Carga<T> =
                         </p>
                         <p class="text-lg font-bold text-amber-900">
                           @if (primeraVencida(); as vencida) {
-                            {{ fecha(vencida.vencimiento1) }} ·
-                            {{ vencida.importe1 | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}
+                            {{ fecha(vencida.primerVencimiento) }} ·
+                            {{ vencida.importe | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}
                           } @else {
                             —
                           }
@@ -290,7 +294,7 @@ type Carga<T> =
                         <p class="text-sm text-um-muted">
                           Subtotal producto:
                           <span class="font-semibold tabular-nums text-um-ink">{{
-                            producto.subtotalProducto | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
+                            producto.total | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
                           }}</span>
                         </p>
                       </div>
@@ -342,14 +346,16 @@ type Carga<T> =
                             </tr>
                           </thead>
                           <tbody class="divide-y divide-[#E0E6EC]">
-                            @for (fila of producto.cuotas; track fila.cuota.chequeraCuotaId) {
-                              <tr [class.bg-um-selected]="fila.cuota === proxima()">
+                            @for (fila of producto.cuotas; track fila.cuotaId) {
+                              <tr [class.bg-um-selected]="fila === proxima()">
                                 <td class="whitespace-nowrap px-2 py-3 align-top text-um-ink">
-                                  <span class="block font-semibold">{{ fila.numero }}</span>
+                                  <span class="block font-semibold">{{
+                                    producto.tituloCuota ? producto.tituloCuota + ': ' : ''
+                                  }}{{ fila.cuotaId }}/{{ producto.totalCuotas }}</span>
                                   <span class="text-xs text-um-muted">{{
-                                    estado(fila.cuota)
+                                    etiqueta(fila.estado)
                                   }}</span>
-                                  @if (fila.cuota === proxima()) {
+                                  @if (fila === proxima()) {
                                     <span class="ml-1 text-xs font-semibold text-um-primary"
                                       >Próxima</span
                                     >
@@ -358,20 +364,20 @@ type Carga<T> =
                                 <td
                                   class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-um-text"
                                 >
-                                  {{ periodo(fila.cuota) }}
+                                  {{ periodo(fila) }}
                                 </td>
                                 <td
                                   class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-um-text"
                                 >
-                                  {{ fecha(fila.cuota.vencimiento1) }}
+                                  {{ fecha(fila.primerVencimiento) }}
                                 </td>
                                 <td
                                   class="whitespace-nowrap px-2 py-3 text-right align-top font-semibold tabular-nums text-um-ink"
                                 >
                                   {{
-                                    fila.aPagar === 0
+                                    fila.estado === 'A_DEFINIR'
                                       ? 'A definir'
-                                      : (fila.aPagar | currency: 'ARS' : 'symbol-narrow' : '1.2-2')
+                                      : (fila.importe | currency: 'ARS' : 'symbol-narrow' : '1.2-2')
                                   }}
                                 </td>
                                 <td
@@ -382,13 +388,13 @@ type Carga<T> =
                                 <td
                                   class="whitespace-nowrap px-2 py-3 text-right align-top tabular-nums"
                                 >
-                                  @if (fila.pagado) {
+                                  @if (fila.importePagado) {
                                     <span class="block font-semibold text-um-ink">{{
-                                      fila.pagado | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
+                                      fila.importePagado | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
                                     }}</span>
                                     <span
                                       class="block break-all whitespace-normal text-xs text-um-muted"
-                                      >{{ fila.referencia }}</span
+                                      >{{ fila.referenciaPago }}</span
                                     >
                                   } @else {
                                     <span class="text-um-muted">—</span>
@@ -409,13 +415,13 @@ type Carga<T> =
                         <p>
                           Subtotal pagado:
                           <span class="font-semibold text-um-ink">{{
-                            producto.subtotalPagado | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
+                            producto.pagado | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
                           }}</span>
                         </p>
                         <p>
                           Subtotal deuda:
                           <span class="font-semibold text-um-ink">{{
-                            producto.subtotalDeuda | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
+                            producto.deuda | currency: 'ARS' : 'symbol-narrow' : '1.2-2'
                           }}</span>
                         </p>
                       </div>
@@ -436,8 +442,6 @@ export class ChequeraDetalleModalComponent {
 
   readonly chequera = input<ChequeraEstado | null>(null);
   readonly inline = input(false);
-  /** Permite fijar "hoy" en los tests. */
-  readonly hoy = input<Date>(new Date());
   readonly closed = output<void>();
 
   private readonly dialogo = viewChild<ElementRef<HTMLElement>>('dialogo');
@@ -445,21 +449,17 @@ export class ChequeraDetalleModalComponent {
   private readonly reintentos$ = new Subject<void>();
   private opener: HTMLElement | null = null;
 
-  readonly cuotas = signal<Carga<CuotaConPagos[]>>({ tipo: 'cargando' });
+  readonly cuotas = signal<Carga<ProductoEstado[]>>({ tipo: 'cargando' });
   readonly deuda = signal<Carga<DeudaChequera>>({ tipo: 'cargando' });
   readonly pdfPendiente = signal<ReadonlySet<string>>(new Set());
   readonly pdfErrores = signal<Record<string, string>>({});
 
   readonly productos = computed(() => {
     const carga = this.cuotas();
-    return carga.tipo === 'listo' ? agruparPorProducto(carga.datos) : [];
+    return carga.tipo === 'listo' ? carga.datos : [];
   });
-  readonly cuotasOrdenadas = computed(() => {
-    const carga = this.cuotas();
-    return carga.tipo === 'listo' ? ordenarCuotas(carga.datos) : [];
-  });
-  readonly proxima = computed(() => proximaCuota(this.cuotasOrdenadas(), this.hoy()));
-  readonly primeraVencida = computed(() => primeraCuotaVencida(this.cuotasOrdenadas(), this.hoy()));
+  readonly proxima = computed(() => proximaCuota(this.productos()));
+  readonly primeraVencida = computed(() => primeraCuotaVencida(this.productos()));
   readonly datosDeuda = computed(() => {
     const carga = this.deuda();
     return carga.tipo === 'listo' ? carga.datos : null;
@@ -532,15 +532,15 @@ export class ChequeraDetalleModalComponent {
     this.reintentos$.next();
   }
 
-  estado(cuota: CuotaConPagos): string {
-    return estadoCuota(cuota, this.hoy());
+  etiqueta(estado: EstadoCuota): string {
+    return etiquetaEstado(estado);
   }
 
   fecha(valor: string | null | undefined): string {
     return formatearFecha(valor);
   }
 
-  periodo(cuota: CuotaConPagos): string {
+  periodo(cuota: CuotaEstado): string {
     return cuota.mes && cuota.anho ? `${String(cuota.mes).padStart(2, '0')}/${cuota.anho}` : '-';
   }
 
@@ -589,20 +589,22 @@ export class ChequeraDetalleModalComponent {
     this.pdfPendiente.set(siguiente);
   }
 
-  private cargarCuotas(chequera: ChequeraEstado): Observable<Carga<CuotaConPagos[]>> {
-    return this.service.cuotasConPagos(chequera).pipe(
-      map(
-        (datos): Carga<CuotaConPagos[]> =>
-          datos.length ? { tipo: 'listo', datos } : { tipo: 'vacio' },
-      ),
+  private cargarCuotas(chequera: ChequeraEstado): Observable<Carga<ProductoEstado[]>> {
+    return this.service.estado(chequera).pipe(
+      map((estado): Carga<ProductoEstado[]> => {
+        const datos = estado.productos ?? [];
+        return datos.some((producto) => producto.cuotas?.length)
+          ? { tipo: 'listo', datos }
+          : { tipo: 'vacio' };
+      }),
       catchError((error: unknown) =>
-        of<Carga<CuotaConPagos[]>>(
+        of<Carga<ProductoEstado[]>>(
           esNoEncontrado(error)
             ? { tipo: 'vacio' }
             : { tipo: 'error', mensaje: mensajeError(error, 'cargar las cuotas') },
         ),
       ),
-      startWith<Carga<CuotaConPagos[]>>({ tipo: 'cargando' }),
+      startWith<Carga<ProductoEstado[]>>({ tipo: 'cargando' }),
     );
   }
 

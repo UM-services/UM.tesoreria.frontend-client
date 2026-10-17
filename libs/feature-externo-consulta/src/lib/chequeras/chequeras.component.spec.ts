@@ -71,7 +71,7 @@ describe('ChequerasComponent', () => {
       chequerasPorUsuario: vi.fn().mockReturnValue(of({ content: chequeras, totalElements: 1 })),
       chequeraPorNumero: vi.fn(),
       chequerasPorSerie: vi.fn(),
-      cuotasConPagos: vi.fn().mockReturnValue(NEVER),
+      estado: vi.fn().mockReturnValue(NEVER),
       deuda: vi.fn().mockReturnValue(NEVER),
     };
     TestBed.configureTestingModule({
@@ -166,7 +166,7 @@ describe('ChequerasComponent', () => {
     expect(fixture.nativeElement.querySelector('app-chequera-detalle-modal')).not.toBeNull();
     expect(texto(fixture)).toContain('Beca: 50%');
     expect(boton?.getAttribute('aria-pressed')).toBe('true');
-    expect(servicio['cuotasConPagos']).toHaveBeenCalledWith(chequeras[0]);
+    expect(servicio['estado']).toHaveBeenCalledWith(chequeras[0]);
   });
 
   it('cambia el detalle al seleccionar otra chequera del listado', async () => {
@@ -195,7 +195,7 @@ describe('ChequerasComponent', () => {
     await fixture.whenStable();
 
     expect(botonPosgrado?.getAttribute('aria-pressed')).toBe('true');
-    expect(servicio['cuotasConPagos']).toHaveBeenCalledWith(segunda);
+    expect(servicio['estado']).toHaveBeenCalledWith(segunda);
   });
 
   it('muestra el número de chequera como facultad/tipo/serie', async () => {

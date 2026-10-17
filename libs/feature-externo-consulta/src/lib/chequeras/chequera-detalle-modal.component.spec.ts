@@ -6,7 +6,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
 import { ChequeraDetalleModalComponent } from './chequera-detalle-modal.component';
-import { ChequeraEstado, CuotaConPagos, DeudaChequera } from './chequeras.models';
+import {
+  ChequeraEstado,
+  CuotaEstado,
+  DeudaChequera,
+  EstadoChequera,
+  ProductoEstado,
+} from './chequeras.models';
 import { ChequerasService } from './chequeras.service';
 
 registerLocaleData(localeEsAr);
@@ -25,27 +31,41 @@ const chequeraA = {
 } as ChequeraEstado;
 const chequeraB = { ...chequeraA, chequeraId: 2, chequeraSerieId: 200 } as ChequeraEstado;
 
-function cuota(parcial: Partial<CuotaConPagos> = {}): CuotaConPagos {
+function cuota(parcial: Partial<CuotaEstado> = {}): CuotaEstado {
   return {
-    chequeraCuotaId: 1,
-    productoId: 1,
-    alternativaId: 1,
     cuotaId: 1,
     mes: 9,
     anho: 2026,
-    vencimiento1: '2026-10-10T00:00:00Z',
-    importe1: 45000,
-    vencimiento2: null,
-    importe2: null,
-    vencimiento3: null,
-    importe3: null,
-    pagado: 0,
-    baja: 0,
-    compensada: 0,
-    producto: { productoId: 1, nombre: 'Arancel' },
-    chequeraPagos: [],
+    primerVencimiento: '2026-10-10',
+    importe: 45000,
+    ordenPago: null,
+    fechaPago: null,
+    importePagado: null,
+    referenciaPago: null,
+    estado: 'PENDIENTE',
     ...parcial,
   };
+}
+
+function producto(
+  cuotas: CuotaEstado[] = [cuota()],
+  parcial: Partial<ProductoEstado> = {},
+): ProductoEstado {
+  return {
+    productoId: 1,
+    nombre: 'Arancel',
+    tituloCuota: 'Arancel Mensual',
+    totalCuotas: 10,
+    total: 450000,
+    pagado: 0,
+    deuda: 0,
+    cuotas,
+    ...parcial,
+  };
+}
+
+function estado(productos: ProductoEstado[] = [producto()]): EstadoChequera {
+  return { productos, debitos: [] } as unknown as EstadoChequera;
 }
 
 const deuda = (parcial: Partial<DeudaChequera> = {}): DeudaChequera => ({
@@ -68,7 +88,7 @@ describe('ChequeraDetalleModalComponent', () => {
 
   beforeEach(() => {
     servicio = {
-      cuotasConPagos: vi.fn().mockReturnValue(of([cuota()])),
+      estado: vi.fn().mockReturnValue(of(estado())),
       deuda: vi.fn().mockReturnValue(of(deuda())),
       descargarPdfEstado: vi.fn(),
     };
@@ -80,7 +100,6 @@ describe('ChequeraDetalleModalComponent', () => {
       ],
     });
     fixture = TestBed.createComponent(ChequeraDetalleModalComponent);
-    fixture.componentRef.setInput('hoy', new Date(2026, 8, 23));
   });
 
   const abrir = async (chequera: ChequeraEstado | null = chequeraA) => {
@@ -102,7 +121,7 @@ describe('ChequeraDetalleModalComponent', () => {
     expect(contenido).toContain('HPUM');
     expect(contenido).toContain('Sin deuda vencida');
     expect(contenido).toContain('$ 540.000,00');
-    expect(contenido).toContain('1/1');
+    expect(contenido).toContain('Arancel Mensual: 1/10');
     expect(contenido).toContain('Pendiente');
     expect(contenido).toContain('Próxima');
   });
@@ -134,24 +153,21 @@ describe('ChequeraDetalleModalComponent', () => {
         deuda({ deuda: 90000, cuotas: 2, vencimiento1: '2026-03-22T00:00:00Z', importe1: 331000 }),
       ),
     );
-    servicio['cuotasConPagos'].mockReturnValue(
-      of([
-        cuota({
-          chequeraCuotaId: 1,
-          cuotaId: 1,
-          mes: 3,
-          vencimiento1: '2026-03-22T00:00:00Z',
-          importe1: 331000,
-          pagado: 1,
-        }),
-        cuota({
-          chequeraCuotaId: 2,
-          cuotaId: 2,
-          mes: 8,
-          vencimiento1: '2026-08-10T00:00:00Z',
-          importe1: 45000,
-        }),
-      ]),
+    servicio['estado'].mockReturnValue(
+      of(
+        estado([
+          producto([
+            cuota({
+              cuotaId: 1,
+              mes: 3,
+              primerVencimiento: '2026-03-22',
+              importe: 331000,
+              estado: 'PAGADA',
+            }),
+            cuota({ cuotaId: 2, mes: 8, primerVencimiento: '2026-08-10', estado: 'VENCIDA' }),
+          ]),
+        ]),
+      ),
     );
     await abrir();
     const contenido = texto(fixture);
@@ -177,19 +193,19 @@ describe('ChequeraDetalleModalComponent', () => {
   });
 
   it('sin cuotas muestra el mensaje vacío', async () => {
-    servicio['cuotasConPagos'].mockReturnValue(of([]));
+    servicio['estado'].mockReturnValue(of(estado([])));
     await abrir();
     expect(texto(fixture)).toContain('Esta chequera no tiene cuotas');
   });
 
   it('una respuesta tardía de otra chequera no pisa la actual', async () => {
-    const cuotasA = new Subject<CuotaConPagos[]>();
-    servicio['cuotasConPagos'].mockImplementation((c: ChequeraEstado) =>
-      c.chequeraId === 1 ? cuotasA : of([cuota({ producto: { productoId: 1, nombre: 'De B' } })]),
+    const estadoA = new Subject<EstadoChequera>();
+    servicio['estado'].mockImplementation((c: ChequeraEstado) =>
+      c.chequeraId === 1 ? estadoA : of(estado([producto([cuota()], { nombre: 'De B' })])),
     );
     await abrir(chequeraA);
     await abrir(chequeraB);
-    cuotasA.next([cuota({ producto: { productoId: 1, nombre: 'De A' } })]);
+    estadoA.next(estado([producto([cuota()], { nombre: 'De A' })]));
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -197,28 +213,30 @@ describe('ChequeraDetalleModalComponent', () => {
     expect(texto(fixture)).not.toContain('De A');
   });
 
-  it('agrupa por producto con primer vencimiento, importes, pagos y subtotales', async () => {
-    servicio['cuotasConPagos'].mockReturnValue(
-      of([
-        cuota({
-          chequeraCuotaId: 1,
-          cuotaId: 1,
-          pagado: 1,
-          importe1: 45000,
-          chequeraPagos: [
-            {
-              chequeraPagoId: 9,
-              fecha: '2026-09-01T00:00:00Z',
-              acreditacion: null,
-              importe: 45000,
-              archivo: 'D2026090101_305',
-              tipoPagoId: 3,
-              tipoPago: { tipoPagoId: 3, nombre: 'Banco' },
-            },
-          ],
-        }),
-        cuota({ chequeraCuotaId: 2, cuotaId: 2, importe1: 50000 }),
-      ]),
+  it('muestra productos, cuotas, subtotales y estados tal como vienen del backend', async () => {
+    servicio['estado'].mockReturnValue(
+      of(
+        estado([
+          producto(
+            [
+              cuota({
+                cuotaId: 1,
+                estado: 'PAGADA',
+                importe: 45000,
+                fechaPago: '2026-09-01',
+                importePagado: 45000,
+                referenciaPago: 'D2026090101_305',
+              }),
+              cuota({ cuotaId: 2, estado: 'VENCIDA', importe: 50000 }),
+              cuota({ cuotaId: 3, estado: 'COMPENSADA', importe: 50000 }),
+              cuota({ cuotaId: 4, estado: 'BAJA', importe: 50000 }),
+              cuota({ cuotaId: 5, estado: 'A_DEFINIR', importe: 0 }),
+            ],
+            // Valores deliberadamente no derivables de las filas: el front no recalcula.
+            { total: 777000, pagado: 123000, deuda: 456000 },
+          ),
+        ]),
+      ),
     );
     await abrir();
     const contenido = texto(fixture);
@@ -236,12 +254,15 @@ describe('ChequeraDetalleModalComponent', () => {
     const primeraFila = fixture.nativeElement.querySelector('tbody tr') as HTMLTableRowElement;
     expect(primeraFila.cells[2].textContent?.trim()).toBe('10/10/2026');
     expect(contenido).toContain('Producto: Arancel');
-    expect(contenido).toContain('1/2');
+    expect(contenido).toContain('Arancel Mensual: 1/10');
+    for (const etiqueta of ['Pagada', 'Vencida', 'Compensada', 'Baja', 'A definir']) {
+      expect(contenido).toContain(etiqueta);
+    }
     expect(contenido).toContain('01/09/2026');
     expect(contenido).toContain('D2026090101_305');
-    expect(contenido).toContain('Subtotal producto: $ 95.000,00');
-    expect(contenido).toContain('Subtotal pagado: $ 45.000,00');
-    expect(contenido).toContain('Subtotal deuda: $ 50.000,00');
+    expect(contenido).toContain('Subtotal producto: $ 777.000,00');
+    expect(contenido).toContain('Subtotal pagado: $ 123.000,00');
+    expect(contenido).toContain('Subtotal deuda: $ 456.000,00');
   });
 
   it('Esc cierra el modal', async () => {

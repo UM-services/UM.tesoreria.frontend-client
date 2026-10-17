@@ -11,9 +11,9 @@ import {
   ChequeraEstado,
   ChequeraPorNumero,
   ClaseChequeraAsignada,
-  CuotaConPagos,
   DeudaChequera,
   Documento,
+  EstadoChequera,
   FacultadAsignada,
   Lectivo,
   Pagina,
@@ -99,13 +99,12 @@ export class ChequerasService {
     );
   }
 
-  cuotasConPagos(chequera: ChequeraEstado): Observable<CuotaConPagos[]> {
+  /** Misma fuente que el PDF "Estado de Chequera": productos, cuotas, subtotales y estados. */
+  estado(chequera: ChequeraEstado): Observable<EstadoChequera> {
     const { facultadId, tipoChequeraId, chequeraSerieId, alternativaId } = chequera;
-    return this.http
-      .get<
-        CuotaConPagos[]
-      >(`${this.coreBaseUrl}/chequera/cuotas/pagos/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}`)
-      .pipe(map((data) => normalizarLista<CuotaConPagos>(data)));
+    return this.http.get<EstadoChequera>(
+      `${this.coreBaseUrl}/chequera/estado/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}`,
+    );
   }
 
   deuda(chequera: ChequeraEstado): Observable<DeudaChequera> {
