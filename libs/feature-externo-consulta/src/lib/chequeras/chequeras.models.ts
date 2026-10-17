@@ -66,6 +66,8 @@ export interface ChequeraEstado {
   geograficaId: number | null;
   alternativaId: number;
   becaPorcentaje?: number | null;
+  /** Marca HPUM de la chequera (`chequera_serie.hpum`), ya resuelta a booleano por el core. */
+  hpum?: boolean | null;
   importeDeuda: number;
   cuotasDeuda: number;
   estadoDeuda: EstadoDeuda;

@@ -61,3 +61,17 @@
   2. Wire it: route with `permisoGuard('<clave>')`, menu item with `permiso: '<clave>'`, button with `*uiPermiso="'<clave>'"`.
 - **Legacy rule:** never add or change gating on existing routes/screens, and never alter behavior the legacy system relies on. Gating applies to new features only; when in doubt, stop and ask.
 - Anti-pattern "phantom permission": do not register keys that no code reads; declare the key in the same change that wires the feature.
+
+## graphify
+
+This project has a knowledge graph at `graphify-out/` with god nodes, community structure, and cross-file relationships covering the Nx apps, the `libs/` feature libraries and the shared design system.
+
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- When `graphify-out/graph.json` exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than `GRAPH_REPORT.md` or raw grep output.
+- Dirty `graphify-out/` files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If `graphify-out/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
+- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- The graph rebuilds itself; do not add a file watcher. Git hooks installed with `graphify hook install` (post-commit, post-merge, post-checkout, post-rewrite) re-derive the graph **only** on commit, merge, branch switch and rebase, detached in the background with resource limits. Per-clone hooks live in `.git/hooks/` (not versioned), so re-run `graphify hook install` after a fresh clone. `graphify-out/` is gitignored: the graph is local, never committed.

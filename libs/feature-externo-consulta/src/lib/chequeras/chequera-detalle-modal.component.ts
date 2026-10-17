@@ -90,15 +90,20 @@ type Carga<T> =
                   }}
                 </p>
               }
-              <h2
-                #titulo
-                id="chequera-detalle-titulo"
-                [attr.tabindex]="inline() ? null : -1"
-                class="text-xl font-bold text-um-ink focus:outline-none"
-              >
-                {{ chequera.tipoChequera || 'Chequera'
-                }}{{ inline() ? '' : ' N° ' + chequera.chequeraSerieId }}
-              </h2>
+              <div class="flex flex-wrap items-center gap-2">
+                <h2
+                  #titulo
+                  id="chequera-detalle-titulo"
+                  [attr.tabindex]="inline() ? null : -1"
+                  class="text-xl font-bold text-um-ink focus:outline-none"
+                >
+                  {{ chequera.tipoChequera || 'Chequera'
+                  }}{{ inline() ? '' : ' N° ' + chequera.chequeraSerieId }}
+                </h2>
+                @if (chequera.hpum) {
+                  <span class="um-badge bg-um-primary text-white">HPUM</span>
+                }
+              </div>
               <p class="mt-1 text-sm text-um-muted">
                 {{ chequera.facultad }} · {{ inline() ? 'Detalle de cuotas' : chequera.titular }}
               </p>

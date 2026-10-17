@@ -28,6 +28,7 @@ const chequeras: ChequeraEstado[] = [
     geograficaId: 1,
     alternativaId: 1,
     becaPorcentaje: 0.5,
+    hpum: true,
     importeDeuda: 245300,
     cuotasDeuda: 3,
     estadoDeuda: 'CON_DEUDA_VENCIDA',
@@ -133,6 +134,21 @@ describe('ChequerasComponent', () => {
     expect(lista.querySelectorAll('button').length).toBe(1);
     expect(lista.textContent).toContain('1/2/100');
     expect(lista.textContent?.replace(/\s+/g, ' ')).toContain('Beca: 50%');
+    expect(lista.textContent).toContain('HPUM');
+  });
+
+  it('no muestra la insignia HPUM cuando la chequera no es HPUM', async () => {
+    await crear();
+    servicio['chequerasPorUsuario'].mockReturnValue(
+      of({ content: [{ ...chequeras[0], hpum: false }], totalElements: 1 }),
+    );
+    await escribirDni('30123456');
+    await buscar();
+
+    const lista = fixture.nativeElement.querySelector(
+      '[aria-label="Chequeras de la persona"]',
+    ) as HTMLElement;
+    expect(lista.textContent).not.toContain('HPUM');
   });
 
   it('muestra las cuotas en contexto al elegir la chequera', async () => {
