@@ -21,6 +21,7 @@ const chequeraA = {
   facultad: 'Ingeniería',
   titular: 'PEREZ, Juan',
   becaPorcentaje: 0.5,
+  hpum: true,
 } as ChequeraEstado;
 const chequeraB = { ...chequeraA, chequeraId: 2, chequeraSerieId: 200 } as ChequeraEstado;
 
@@ -98,6 +99,7 @@ describe('ChequeraDetalleModalComponent', () => {
     const contenido = texto(fixture);
     expect(contenido).toContain('Grado N° 100');
     expect(contenido).toContain('Beca: 50%');
+    expect(contenido).toContain('HPUM');
     expect(contenido).toContain('Sin deuda vencida');
     expect(contenido).toContain('$ 540.000,00');
     expect(contenido).toContain('1/1');
@@ -111,6 +113,17 @@ describe('ChequeraDetalleModalComponent', () => {
 
     await abrir({ ...chequeraA, becaPorcentaje: null });
     expect(texto(fixture)).toContain('Beca: -');
+  });
+
+  it('muestra la insignia HPUM sólo cuando la chequera es HPUM', async () => {
+    await abrir({ ...chequeraA, hpum: false });
+    expect(texto(fixture)).not.toContain('HPUM');
+
+    await abrir({ ...chequeraA, hpum: null });
+    expect(texto(fixture)).not.toContain('HPUM');
+
+    await abrir({ ...chequeraA, hpum: true });
+    expect(texto(fixture)).toContain('HPUM');
   });
 
   it('muestra la tarjeta de deuda vencida', async () => {
