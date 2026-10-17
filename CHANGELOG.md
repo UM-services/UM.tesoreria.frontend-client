@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.36.0] - 2026-10-17
+
+### Added
+
+- feat(externo-consulta): la pantalla de **detalle de chequera** del portal externo (`ChequeraDetalleModalComponent`) deja de calcular estados y subtotales en el cliente y consume `GET chequera/estado/{facultadId}/{tipoChequeraId}/{chequeraSerieId}/{alternativaId}` (`ChequerasService.estado`, que reemplaza a `cuotasConPagos`), la **misma fuente que el PDF «Estado de Chequera»**. Los modelos nuevos `EstadoChequera`, `ProductoEstado` y `CuotaEstado` traen los productos con su `total`, `pagado` y `deuda`, el `tituloCuota`/`totalCuotas` y, por cuota, el `estado` (`BAJA | COMPENSADA | PAGADA | A_DEFINIR | VENCIDA | PENDIENTE`), `primerVencimiento`, `importe`, `importePagado` y `referenciaPago`; la respuesta también declara los `debitos` (`DebitoEstado`), que la vista todavía no renderiza; se eliminan `agruparPorProducto`, `estadoCuota`, `ordenarCuotas` y `esVerdadero` de `chequeras.utils.ts`, la cuota etiquetada como «A definir» se resuelve por `estado === 'A_DEFINIR'` y la etiqueta legible por `etiquetaEstado`. La columna «Cuota» del listado pasa a mostrar `tituloCuota: n/totalCuotas`. Requiere que el core exponga `chequera/estado/...`. Cubierto por `chequeras.utils.spec.ts`, `chequeras.service.spec.ts`, `chequeras.component.spec.ts` y `chequera-detalle-modal.component.spec.ts`; se retiran `chequeras.utils.regression-1.spec.ts` y `chequeras.utils.regression-2.spec.ts`, ya cubiertos por el test de utilidades.
+
+### Fixed
+
+- fix(externo-consulta): en la tabla de cuotas del detalle de chequera se recalibran los anchos de columna (**Cuota** 12% → 16%, **Primer vencimiento** 17% → 15%, **Pagado** 29% → 27%) y el texto pasa a envolverse: el número/título de cuota usa `break-words` sobre una celda `min-w-0` y la etiqueta de estado con la marca «Próxima» queda en un bloque aparte, de modo que los títulos de cuota largos ya no desbordan la columna.
+
+### Changed
+
+- docs: `README.md` registra la versión actual **0.36.0** y actualiza el `curl` de prueba del portal externo a `GET chequera/estado/...`, porque el detalle de chequera ya no consulta `chequera/cuotas/pagos/...`.
+
 ## [0.35.0] - 2026-10-17
 
 ### Added

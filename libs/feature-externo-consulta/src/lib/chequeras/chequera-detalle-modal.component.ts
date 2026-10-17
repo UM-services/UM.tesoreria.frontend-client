@@ -309,7 +309,7 @@ type Carga<T> =
                             <tr>
                               <th
                                 scope="col"
-                                class="w-[12%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[16%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Cuota
                               </th>
@@ -321,7 +321,7 @@ type Carga<T> =
                               </th>
                               <th
                                 scope="col"
-                                class="w-[17%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[15%] px-2 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Primer vencimiento
                               </th>
@@ -339,7 +339,7 @@ type Carga<T> =
                               </th>
                               <th
                                 scope="col"
-                                class="w-[29%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
+                                class="w-[27%] px-2 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-um-muted"
                               >
                                 Pagado
                               </th>
@@ -348,18 +348,20 @@ type Carga<T> =
                           <tbody class="divide-y divide-[#E0E6EC]">
                             @for (fila of producto.cuotas; track fila.cuotaId) {
                               <tr [class.bg-um-selected]="fila === proxima()">
-                                <td class="whitespace-nowrap px-2 py-3 align-top text-um-ink">
-                                  <span class="block font-semibold">{{
-                                    producto.tituloCuota ? producto.tituloCuota + ': ' : ''
-                                  }}{{ fila.cuotaId }}/{{ producto.totalCuotas }}</span>
-                                  <span class="text-xs text-um-muted">{{
-                                    etiqueta(fila.estado)
-                                  }}</span>
-                                  @if (fila === proxima()) {
-                                    <span class="ml-1 text-xs font-semibold text-um-primary"
-                                      >Próxima</span
-                                    >
-                                  }
+                                <td class="min-w-0 px-2 py-3 align-top text-um-ink">
+                                  <span class="block break-words font-semibold"
+                                    >{{ producto.tituloCuota ? producto.tituloCuota + ': ' : ''
+                                    }}{{ fila.cuotaId }}/{{ producto.totalCuotas }}</span
+                                  >
+                                  <span class="block break-words text-xs text-um-muted"
+                                    >{{ etiqueta(fila.estado) }}
+                                    @if (fila === proxima()) {
+                                      <span
+                                        class="ml-1 whitespace-nowrap font-semibold text-um-primary"
+                                        >Próxima</span
+                                      >
+                                    }
+                                  </span>
                                 </td>
                                 <td
                                   class="whitespace-nowrap px-2 py-3 align-top tabular-nums text-um-text"
