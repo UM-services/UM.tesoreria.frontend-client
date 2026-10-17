@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.35.0] - 2026-10-17
+
+### Added
+
+- feat(externo-consulta): la consulta de chequeras del portal externo marca con la **insignia «HPUM»** las chequeras con la marca `hpum` (`chequera_serie.hpum` del core, resuelta a booleano) tanto en la **lista de chequeras** como en la **cabecera del detalle** (modal y detalle inline) de `libs/feature-externo-consulta/src/lib/chequeras`. `ChequeraEstado` suma el campo opcional `hpum?: boolean | null`; la insignia sólo se muestra cuando el valor es verdadero, de modo que `null` o `false` no la muestran. Sin cambios de backend ni de esquema. Cubierto por `chequeras.component.spec.ts` y `chequera-detalle-modal.component.spec.ts`.
+
+### Changed
+
+- chore(graphify): se incorpora el grafo de conocimiento local del workspace: `.gitattributes` registra el merge driver `graphify` para `graphify-out/graph.json`, `.gitignore` excluye `/graphify-out/` (artefacto local que reconstruyen los hooks de git), `.opencode/plugins/graphify.js` agrega el plugin de OpenCode que recuerda consultar el grafo antes de explorar el código, y `AGENTS.md` documenta la sección `graphify` con sus reglas de uso.
+- docs: `README.md` registra la versión actual **0.35.0**.
+
 ## [0.34.0] - 2026-10-16
 
 ### Added
