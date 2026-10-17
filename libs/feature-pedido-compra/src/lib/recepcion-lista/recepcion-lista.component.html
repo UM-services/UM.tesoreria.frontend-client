@@ -1,0 +1,216 @@
+<div class="mx-auto max-w-6xl p-4">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Compras</p>
+    <h1 class="um-page-title">Recepción y conformidad</h1>
+    <p class="um-page-desc">
+      Órdenes de Compra con saldo pendiente de recibir. Cada entrega registra el remito, las
+      cantidades recibidas y el resultado por ítem; el resultado general se deriva del peor
+      resultado informado.
+    </p>
+  </header>
+
+  <section class="um-card">
+    <h2 class="um-section">Pendientes de recepción</h2>
+    @if (isLoading()) {
+      <div class="p-6 text-sm text-um-muted">Cargando órdenes de compra...</div>
+    } @else if (errorMessage()) {
+      <div class="um-alert-error m-4">{{ errorMessage() }}</div>
+    } @else if (pendientes().length === 0) {
+      <div class="p-6 text-sm text-um-muted">No hay órdenes de compra pendientes de recepción.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Orden de compra</th>
+              <th scope="col">Proveedor</th>
+              <th scope="col" class="text-right">Monto</th>
+              <th scope="col">Fecha</th>
+              <th scope="col" class="text-right">Ítems con saldo</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pendiente of pendientes(); track pendiente.compraFormalizacionId) {
+              <tr>
+                <td class="font-semibold text-um-ink">
+                  {{ pendiente.numero || '—' }}
+                  @if (pendiente.numeroExterno) {
+                    <span class="text-um-muted"> · {{ pendiente.numeroExterno }}</span>
+                  }
+                </td>
+                <td>{{ pendiente.proveedorId ?? '—' }}</td>
+                <td class="text-right">
+                  {{ pendiente.monto !== null && pendiente.monto !== undefined ? (pendiente.monto | number: '1.2-2') : '—' }}
+                  {{ pendiente.moneda || '' }}
+                </td>
+                <td>{{ pendiente.fecha ? (pendiente.fecha | date: 'short') : '—' }}</td>
+                <td class="text-right">{{ itemsConSaldo(pendiente) }}</td>
+                <td class="text-right">
+                  <button type="button" class="um-link-btn" (click)="abrir(pendiente)">Recepcionar</button>
+                  <a [routerLink]="['/recepcion', pendiente.compraFormalizacionId]" class="um-link-btn">
+                    Ver recepciones
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (activo(); as pendiente) {
+    <section class="um-card mt-4">
+      <h2 class="um-section">
+        Registrar entrega — {{ pendiente.numero || 'Orden de Compra' }} ({{ esTotal() ? 'Total' : 'Parcial' }})
+      </h2>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div>
+          <label class="um-label">Fecha de recepción</label>
+          <input type="date" class="um-input" [(ngModel)]="fecha" />
+        </div>
+        <div>
+          <label class="um-label">Remito</label>
+          <input class="um-input" [(ngModel)]="remito" />
+        </div>
+        <div>
+          <label class="um-label">Patrimonio / Inventario</label>
+          <select class="um-input" [(ngModel)]="patrimonio">
+            @for (opcion of patrimonios; track opcion) {
+              <option [value]="opcion">{{ etiquetaPatrimonio(opcion) }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="um-label">Observación general</label>
+          <input class="um-input" [(ngModel)]="observacion" />
+        </div>
+      </div>
+
+      <div class="mt-3 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Descripción</th>
+              <th scope="col" class="text-right">Contratado</th>
+              <th scope="col" class="text-right">Saldo</th>
+              <th scope="col" class="text-right">Recibido</th>
+              <th scope="col">Resultado</th>
+              <th scope="col">Observación</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (linea of lineas(); track linea.compraFormalizacionItemId; let i = $index) {
+              <tr>
+                <td>{{ linea.orden ?? '—' }}</td>
+                <td>
+                  {{ linea.descripcion || '—' }}
+                  @if (linea.unidad) {
+                    <span class="text-um-muted"> ({{ linea.unidad }})</span>
+                  }
+                </td>
+                <td class="text-right">{{ linea.cantidadContratada | number: '1.0-2' }}</td>
+                <td class="text-right">{{ linea.saldo | number: '1.0-2' }}</td>
+                <td class="text-right">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="um-input text-right"
+                    [ngModel]="linea.cantidadRecibida"
+                    (ngModelChange)="actualizarCantidad(i, $event)"
+                  />
+                </td>
+                <td>
+                  <select
+                    class="um-input"
+                    [ngModel]="linea.resultado"
+                    (ngModelChange)="actualizarResultado(i, $event)"
+                  >
+                    @for (opcion of resultados; track opcion) {
+                      <option [value]="opcion">{{ etiquetaResultado(opcion) }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <input
+                    class="um-input"
+                    [ngModel]="linea.observacion"
+                    (ngModelChange)="actualizarObservacion(i, $event)"
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (excedeSaldo()) {
+        <div class="um-alert-warn mt-3">
+          Alguna cantidad recibida supera el saldo pendiente del ítem. Ajustá las cantidades para continuar.
+        </div>
+      }
+      @if (sinCantidades()) {
+        <div class="um-alert-warn mt-3">La entrega requiere al menos una cantidad mayor a cero.</div>
+      }
+
+      <div class="mt-3 flex justify-end gap-3">
+        <button type="button" class="um-btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button
+          type="button"
+          class="um-btn-primary"
+          [disabled]="guardando() || excedeSaldo() || sinCantidades()"
+          (click)="confirmar()"
+        >
+          Registrar recepción
+        </button>
+      </div>
+    </section>
+  }
+
+  <section class="um-card mt-4">
+    <h2 class="um-section">Recepciones registradas</h2>
+    @if (registradas().length === 0) {
+      <div class="p-6 text-sm text-um-muted">Todavía no hay recepciones registradas.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Número</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Remito</th>
+              <th scope="col">Resultado</th>
+              <th scope="col">Patrimonio</th>
+              <th scope="col" class="text-right">Ítems</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (recepcion of registradas(); track recepcion.compraRecepcionId) {
+              <tr>
+                <td class="font-semibold text-um-ink">{{ recepcion.numero || '—' }}</td>
+                <td>{{ recepcion.fecha ? (recepcion.fecha | date: 'short') : '—' }}</td>
+                <td>{{ recepcion.remito || '—' }}</td>
+                <td>
+                  <span class="um-badge" [ngClass]="badgeResultado(recepcion.resultado)">
+                    {{ etiquetaResultado(recepcion.resultado) }}
+                  </span>
+                </td>
+                <td>{{ etiquetaPatrimonio(recepcion.patrimonio) }}</td>
+                <td class="text-right">{{ recepcion.items?.length ?? 0 }}</td>
+                <td class="text-right">
+                  <a [routerLink]="['/recepcion', recepcion.compraFormalizacionId]" class="um-link-btn">
+                    Ver orden de compra
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

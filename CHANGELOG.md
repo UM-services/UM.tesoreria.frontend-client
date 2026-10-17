@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.36.0] - 2026-10-17
+
+### Added
+
+- feat(externo-consulta): la pantalla de **detalle de chequera** del portal externo (`ChequeraDetalleModalComponent`) deja de calcular estados y subtotales en el cliente y consume `GET chequera/estado/{facultadId}/{tipoChequeraId}/{chequeraSerieId}/{alternativaId}` (`ChequerasService.estado`, que reemplaza a `cuotasConPagos`), la **misma fuente que el PDF «Estado de Chequera»**. Los modelos nuevos `EstadoChequera`, `ProductoEstado` y `CuotaEstado` traen los productos con su `total`, `pagado` y `deuda`, el `tituloCuota`/`totalCuotas` y, por cuota, el `estado` (`BAJA | COMPENSADA | PAGADA | A_DEFINIR | VENCIDA | PENDIENTE`), `primerVencimiento`, `importe`, `importePagado` y `referenciaPago`; la respuesta también declara los `debitos` (`DebitoEstado`), que la vista todavía no renderiza; se eliminan `agruparPorProducto`, `estadoCuota`, `ordenarCuotas` y `esVerdadero` de `chequeras.utils.ts`, la cuota etiquetada como «A definir» se resuelve por `estado === 'A_DEFINIR'` y la etiqueta legible por `etiquetaEstado`. La columna «Cuota» del listado pasa a mostrar `tituloCuota: n/totalCuotas`. Requiere que el core exponga `chequera/estado/...`. Cubierto por `chequeras.utils.spec.ts`, `chequeras.service.spec.ts`, `chequeras.component.spec.ts` y `chequera-detalle-modal.component.spec.ts`; se retiran `chequeras.utils.regression-1.spec.ts` y `chequeras.utils.regression-2.spec.ts`, ya cubiertos por el test de utilidades.
+
+### Fixed
+
+- fix(externo-consulta): en la tabla de cuotas del detalle de chequera se recalibran los anchos de columna (**Cuota** 12% → 16%, **Primer vencimiento** 17% → 15%, **Pagado** 29% → 27%) y el texto pasa a envolverse: el número/título de cuota usa `break-words` sobre una celda `min-w-0` y la etiqueta de estado con la marca «Próxima» queda en un bloque aparte, de modo que los títulos de cuota largos ya no desbordan la columna.
+
+### Changed
+
+- docs: `README.md` registra la versión actual **0.36.0** y actualiza el `curl` de prueba del portal externo a `GET chequera/estado/...`, porque el detalle de chequera ya no consulta `chequera/cuotas/pagos/...`.
+
+## [0.35.0] - 2026-10-17
+
+### Added
+
+- feat(externo-consulta): la consulta de chequeras del portal externo marca con la **insignia «HPUM»** las chequeras con la marca `hpum` (`chequera_serie.hpum` del core, resuelta a booleano) tanto en la **lista de chequeras** como en la **cabecera del detalle** (modal y detalle inline) de `libs/feature-externo-consulta/src/lib/chequeras`. `ChequeraEstado` suma el campo opcional `hpum?: boolean | null`; la insignia sólo se muestra cuando el valor es verdadero, de modo que `null` o `false` no la muestran. Sin cambios de backend ni de esquema. Cubierto por `chequeras.component.spec.ts` y `chequera-detalle-modal.component.spec.ts`.
+
+### Changed
+
+- chore(graphify): se incorpora el grafo de conocimiento local del workspace: `.gitattributes` registra el merge driver `graphify` para `graphify-out/graph.json`, `.gitignore` excluye `/graphify-out/` (artefacto local que reconstruyen los hooks de git), `.opencode/plugins/graphify.js` agrega el plugin de OpenCode que recuerda consultar el grafo antes de explorar el código, y `AGENTS.md` documenta la sección `graphify` con sus reglas de uso.
+- docs: `README.md` registra la versión actual **0.35.0**.
+
+## [0.34.0] - 2026-10-16
+
+### Added
+
+- feat(compras): pantalla **Recepción** (`/recepcion`) en `feature-pedido-compra` (etapa 9 — `PLANIFICACION_COMPRAS.md` §18): **bandeja** de Órdenes de Compra con saldo pendiente (proveedor, monto e ítems con saldo) y **alta** de la entrega inline (fecha, remito, intervención de Patrimonio, observación general y, por ítem, cantidad recibida, resultado y observación), con el **tipo calculado** (Total cuando cubre todos los saldos) y validación de cliente (no exceder el saldo, al menos una cantidad mayor a cero); debajo, el **listado de recepciones registradas**. Nueva pantalla de **detalle** (`/recepcion/:compraFormalizacionId`) con el **saldo por ítem**, las entregas registradas y el **cierre manual con motivo** cuando el proveedor no completará el saldo. Servicio `RecepcionService` (`/api/tesoreria/compras/recepcion`); ruta y ítem de menú (`8. Recepción`) gateados con `permisoGuard`/`ShellMenuItem.permiso = 'compras.recepcionar'`.
+
 ## [0.33.0] - 2026-10-12
 
 ### Added

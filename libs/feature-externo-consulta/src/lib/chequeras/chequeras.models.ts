@@ -66,6 +66,8 @@ export interface ChequeraEstado {
   geograficaId: number | null;
   alternativaId: number;
   becaPorcentaje?: number | null;
+  /** Marca HPUM de la chequera (`chequera_serie.hpum`), ya resuelta a booleano por el core. */
+  hpum?: boolean | null;
   importeDeuda: number;
   cuotasDeuda: number;
   estadoDeuda: EstadoDeuda;
@@ -87,35 +89,62 @@ export interface Pagina<T> {
   };
 }
 
-export interface ChequeraPago {
-  chequeraPagoId: number;
-  fecha: string | null;
-  acreditacion: string | null;
-  importe: number | null;
-  archivo?: string | null;
-  tipoPagoId: number | null;
-  tipoPago?: { tipoPagoId: number | null; nombre: string } | null;
-}
+export type EstadoCuota = 'BAJA' | 'COMPENSADA' | 'PAGADA' | 'A_DEFINIR' | 'VENCIDA' | 'PENDIENTE';
 
-/** Fila de `chequera/cuotas/pagos/...`. `pagado`, `baja` y `compensada` llegan como Byte (0/1). */
-export interface CuotaConPagos {
-  chequeraCuotaId: number;
-  productoId: number;
-  alternativaId: number;
+/** Cuota de `chequera/estado/...`. Los pagos son del primer pago; `null` si está impaga. */
+export interface CuotaEstado {
   cuotaId: number;
   mes: number | null;
   anho: number | null;
-  vencimiento1: string | null;
-  importe1: number | null;
-  vencimiento2: string | null;
-  importe2: number | null;
-  vencimiento3: string | null;
-  importe3: number | null;
-  pagado: number | boolean | null;
-  baja: number | boolean | null;
-  compensada: number | boolean | null;
-  producto?: { productoId: number; nombre: string } | null;
-  chequeraPagos?: ChequeraPago[] | null;
+  primerVencimiento: string | null;
+  importe: number | null;
+  ordenPago: number | null;
+  fechaPago: string | null;
+  importePagado: number | null;
+  referenciaPago: string | null;
+  estado: EstadoCuota;
+}
+
+export interface ProductoEstado {
+  productoId: number;
+  nombre: string;
+  tituloCuota: string | null;
+  totalCuotas: number;
+  total: number;
+  pagado: number;
+  deuda: number;
+  cuotas: CuotaEstado[];
+}
+
+export interface DebitoEstado {
+  cuotaId: number;
+  importe: number | null;
+  fechaVencimiento: string | null;
+  cbu: string | null;
+  tipoDebito: string | null;
+  fechaEnvio: string | null;
+  rechazado: boolean;
+  motivoRechazo: string | null;
+}
+
+/** Respuesta de `chequera/estado/...`: la misma fuente que el PDF "Estado de Chequera". */
+export interface EstadoChequera {
+  facultadId: number;
+  facultadNombre: string | null;
+  tipoChequeraId: number;
+  tipoChequeraNombre: string | null;
+  chequeraSerieId: number;
+  personaId: number | string;
+  personaApellido: string | null;
+  personaNombre: string | null;
+  arancelTipoDescripcion: string | null;
+  lectivoNombre: string | null;
+  becaPorcentaje: number | null;
+  tipoImpresionNombre: string | null;
+  alternativaId: number;
+  hpum: boolean;
+  productos: ProductoEstado[];
+  debitos: DebitoEstado[];
 }
 
 /** Respuesta de `chequeraCuota/deuda/...`. */
@@ -126,5 +155,3 @@ export interface DeudaChequera {
   vencimiento1: string | null;
   importe1: number | null;
 }
-
-export type EstadoCuota = 'Pagada' | 'Pendiente' | 'Vencida' | 'Baja' | 'Compensada' | 'A definir';

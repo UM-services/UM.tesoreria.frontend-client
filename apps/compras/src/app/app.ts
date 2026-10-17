@@ -26,6 +26,7 @@ export class AppComponent {
     { label: 'Cotizaciones pedidas', path: '/cotizacion/pedidas', permiso: 'compras.cotizaciones.gestionar' },
     { label: '6. Adjudicación', path: '/cotizacion/adjudicacion', permiso: 'compras.adjudicacion.autorizar' },
     { label: '7. Formalización', path: '/formalizacion', permiso: 'compras.formalizar' },
+    { label: '8. Recepción', path: '/recepcion', permiso: 'compras.recepcionar' },
     { label: 'Consulta de pedidos', path: '/pedido/consulta', permiso: 'compras.consultar_pedidos' },
     { label: 'Gastos', path: '/gastos', permiso: 'compras.gastos' },
     { label: 'Proveedores', path: '/proveedores', permiso: 'compras.proveedores' },

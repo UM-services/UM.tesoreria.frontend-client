@@ -14,6 +14,12 @@ export const appRoutes: Route[] = [
     component: NoAccesoComponent,
   },
   {
+    path: 'personas',
+    loadComponent: () => import('@tesoreria/feature-personas').then(m => m.PersonasComponent),
+    canActivate: [authGuard, usuarioInternoGuard],
+    data: { eyebrow: 'Contratados / Personas' },
+  },
+  {
     path: '',
     component: BlankComponent,
     canActivate: [authGuard, usuarioInternoGuard],
