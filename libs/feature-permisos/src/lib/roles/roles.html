@@ -1,0 +1,263 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Administración / Seguridad</p>
+      <h1 class="um-page-title">Roles y matriz de permisos</h1>
+      <p class="mt-1 text-sm text-um-muted">
+        Defina los roles del sistema y qué permisos otorga cada uno. Sólo los administradores pueden
+        operar esta pantalla.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage) {
+    <div class="um-alert um-alert-error">
+      <div class="flex">
+        <div class="ml-3">
+          <p class="text-sm text-red-700">{{ errorMessage }}</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="um-alert um-alert-success">
+      <div class="flex">
+        <div class="ml-3">
+          <p class="text-sm text-green-700">{{ successMessage }}</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (cargando) {
+    <div class="bg-white border border-um-border rounded-lg shadow-sm p-12 text-center">
+      <svg
+        class="animate-spin mx-auto h-8 w-8 text-um-primary"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      <p class="mt-2 text-sm text-um-muted">Cargando roles...</p>
+    </div>
+  } @else {
+    <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">Roles</h2>
+        <button
+          type="button"
+          (click)="nuevoRol()"
+          class="um-btn-primary rounded-md px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
+        >
+          Nuevo rol
+        </button>
+      </div>
+
+      @if (mostrarForm) {
+        <div class="border-b border-um-border bg-um-surface px-6 py-5">
+          <p class="text-sm font-semibold text-um-ink">
+            {{ rolEditando ? 'Editar rol' : 'Nuevo rol' }}
+          </p>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="rol-nombre" class="block text-sm font-medium text-um-ink">Nombre</label>
+              <input
+                id="rol-nombre"
+                type="text"
+                [(ngModel)]="form.nombre"
+                placeholder="Ej.: OPERADOR_CHEQUERAS"
+                class="mt-1 block w-full rounded-md border-um-border text-sm text-um-ink shadow-sm focus:border-um-primary focus:ring-um-primary"
+              />
+            </div>
+            <div>
+              <label for="rol-estado" class="block text-sm font-medium text-um-ink">Estado</label>
+              <select
+                id="rol-estado"
+                [(ngModel)]="form.activo"
+                class="mt-1 block w-full rounded-md border-um-border text-sm text-um-ink shadow-sm focus:border-um-primary focus:ring-um-primary"
+              >
+                <option [ngValue]="1">Activo</option>
+                <option [ngValue]="0">Inactivo</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label for="rol-descripcion" class="block text-sm font-medium text-um-ink"
+                >Descripción</label
+              >
+              <input
+                id="rol-descripcion"
+                type="text"
+                [(ngModel)]="form.descripcion"
+                placeholder="Opcional"
+                class="mt-1 block w-full rounded-md border-um-border text-sm text-um-ink shadow-sm focus:border-um-primary focus:ring-um-primary"
+              />
+            </div>
+          </div>
+          <div class="mt-4 flex gap-2">
+            <button
+              type="button"
+              (click)="guardarRol()"
+              class="um-btn-primary rounded-md px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
+            >
+              Guardar
+            </button>
+            <button
+              type="button"
+              (click)="cancelarForm()"
+              class="rounded-md border border-um-border px-4 py-2 text-sm font-semibold text-um-ink hover:bg-um-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-um-border text-sm">
+          <thead class="bg-um-surface">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-um-muted">Nombre</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-um-muted">Descripción</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-um-muted">Permisos</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-um-muted">Estado</th>
+              <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-um-muted">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-um-border bg-white">
+            @for (rol of roles; track rol.rolId) {
+              <tr>
+                <td class="px-6 py-3 font-medium text-um-ink">{{ rol.nombre }}</td>
+                <td class="px-6 py-3 text-um-muted">{{ rol.descripcion || '—' }}</td>
+                <td class="px-6 py-3 text-um-muted">{{ contarAsignados(rol.rolId) }}</td>
+                <td class="px-6 py-3">
+                  @if (rol.activo === 1) {
+                    <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Activo</span>
+                  } @else {
+                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">Inactivo</span>
+                  }
+                </td>
+                <td class="px-6 py-3 text-right">
+                  @if (confirmandoEliminar === rol.rolId) {
+                    <span class="mr-2 text-xs text-um-muted">¿Eliminar?</span>
+                    <button
+                      type="button"
+                      (click)="eliminarRol(rol)"
+                      [disabled]="pendientesRol.has(rol.rolId)"
+                      class="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none"
+                    >
+                      Sí
+                    </button>
+                    <button
+                      type="button"
+                      (click)="cancelarConfirmacion()"
+                      class="ml-1 rounded-md border border-um-border px-3 py-1 text-xs font-semibold text-um-ink hover:bg-um-surface focus:outline-none"
+                    >
+                      No
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      (click)="editarRol(rol)"
+                      class="rounded-md border border-um-border px-3 py-1 text-xs font-semibold text-um-ink hover:bg-um-surface focus:outline-none"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      (click)="pedirConfirmacion(rol.rolId)"
+                      class="ml-1 rounded-md border border-um-border px-3 py-1 text-xs font-semibold text-red-700 hover:bg-um-surface focus:outline-none"
+                    >
+                      Eliminar
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="px-6 py-8 text-center text-sm text-um-muted">
+                  No hay roles definidos. Cree el primero con "Nuevo rol".
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
+          Matriz rol × permiso
+        </h2>
+        <span class="text-sm text-um-muted">Cada casilla se guarda al instante</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-um-border text-sm">
+          <thead class="bg-um-surface">
+            <tr>
+              <th
+                class="sticky left-0 z-[1] bg-um-surface px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-um-muted"
+              >
+                Permiso
+              </th>
+              @for (rol of roles; track rol.rolId) {
+                <th class="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-um-muted">
+                  {{ rol.nombre }}
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-um-border bg-white">
+            @for (grupo of grupos; track grupo.modulo) {
+              <tr class="bg-um-canvas">
+                <td
+                  [attr.colspan]="roles.length + 1"
+                  class="sticky left-0 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-um-muted"
+                >
+                  {{ grupo.modulo }}
+                </td>
+              </tr>
+              @for (permiso of grupo.permisos; track permiso.permisoId) {
+                <tr>
+                  <td class="sticky left-0 z-[1] bg-white px-6 py-3">
+                    <span class="block text-um-ink">{{ permiso.descripcion }}</span>
+                    <span class="block text-xs text-um-muted">{{ permiso.clave }}</span>
+                  </td>
+                  @for (rol of roles; track rol.rolId) {
+                    <td class="px-3 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        [checked]="tienePermiso(rol.rolId, permiso.permisoId)"
+                        [disabled]="celdaPendiente(rol.rolId, permiso.permisoId)"
+                        [attr.aria-label]="rol.nombre + ' / ' + permiso.clave"
+                        (change)="toggleCelda(rol, permiso)"
+                        class="h-4 w-4 rounded border-um-border text-um-primary focus:ring-um-primary"
+                      />
+                    </td>
+                  }
+                </tr>
+              }
+            } @empty {
+              <tr>
+                <td
+                  [attr.colspan]="roles.length + 1"
+                  class="px-6 py-8 text-center text-sm text-um-muted"
+                >
+                  No hay permisos en el catálogo. Verifique la carga inicial de la tabla
+                  <code>permiso</code>.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

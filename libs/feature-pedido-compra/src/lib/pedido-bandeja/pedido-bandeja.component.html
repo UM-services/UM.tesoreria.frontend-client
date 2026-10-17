@@ -1,0 +1,128 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Compras / Envío de pedidos</p>
+      <h1 class="um-page-title">Bandeja de envío</h1>
+      <p class="um-page-desc">Pedidos de las dependencias que tenés habilitadas.</p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  <div class="flex flex-wrap items-end gap-4">
+    <div>
+      <label class="um-label" for="estado-filtro">Estado</label>
+      <select
+        id="estado-filtro"
+        class="um-input min-w-[240px]"
+        [(ngModel)]="estadoFiltro"
+        (ngModelChange)="cargar()"
+      >
+        <option value="">Todos</option>
+        @for (estado of estados; track estado) {
+          <option [value]="estado">{{ estadoLabel(estado) }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+    @if (isLoading()) {
+      <div class="p-6 text-sm text-um-muted">Cargando…</div>
+    } @else if (pedidos().length === 0) {
+      <div class="p-6 text-sm text-um-muted">No hay pedidos para el filtro seleccionado.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Número</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Dependencia</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Necesidad</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pedido of pedidos(); track pedido.compraPedidoId) {
+              <tr>
+                <td class="font-semibold text-um-ink">{{ pedido.numero || 'Borrador' }}</td>
+                <td>
+                  <span class="um-badge" [ngClass]="estadoBadgeClass(pedido.estado)">
+                    {{ estadoLabel(pedido.estado) }}
+                  </span>
+                </td>
+                <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
+                <td>{{ pedido.fecha | date: 'short' }}</td>
+                <td>{{ pedido.necesidad }}</td>
+                <td class="text-right">
+                  <div class="flex justify-end gap-3">
+                    <a [routerLink]="['/pedido', pedido.compraPedidoId]" class="um-link-btn">Ver</a>
+                    @if (pedido.estado === 'PENDIENTE_ENVIO') {
+                      <button
+                        type="button"
+                        class="um-link-btn"
+                        [disabled]="pendientes().has(pedido.compraPedidoId!)"
+                        (click)="aprobar(pedido)"
+                      >
+                        Aprobar
+                      </button>
+                      <button
+                        type="button"
+                        class="um-link-btn text-red-600"
+                        [disabled]="pendientes().has(pedido.compraPedidoId!)"
+                        (click)="abrirRechazo(pedido)"
+                      >
+                        Rechazar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+              @if (rechazandoId() === pedido.compraPedidoId) {
+                <tr>
+                  <td colspan="6" class="bg-um-surface">
+                    <div class="space-y-2 p-2">
+                      <label class="um-label" [for]="'motivo-' + pedido.compraPedidoId"
+                        >Motivo del rechazo</label
+                      >
+                      <textarea
+                        [id]="'motivo-' + pedido.compraPedidoId"
+                        class="um-input"
+                        rows="2"
+                        [(ngModel)]="motivoRechazo"
+                        placeholder="Explique qué debe corregir el solicitante…"
+                      ></textarea>
+                      <div class="flex justify-end gap-3">
+                        <button type="button" class="um-btn-secondary" (click)="cancelarRechazo()">
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          class="um-btn-primary"
+                          (click)="confirmarRechazo(pedido)"
+                        >
+                          Confirmar rechazo
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

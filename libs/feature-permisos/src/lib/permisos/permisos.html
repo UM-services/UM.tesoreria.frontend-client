@@ -1,0 +1,288 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Administración / Seguridad</p>
+      <h1 class="um-page-title">Permisos de usuario</h1>
+      <p class="mt-1 text-sm text-um-muted">
+        Asigne roles y permisos directos a cualquier usuario. Sólo los administradores pueden operar
+        esta pantalla.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage) {
+    <div class="um-alert um-alert-error">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-red-700">{{ errorMessage }}</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="um-alert um-alert-success">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 00-1.414-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-green-700">{{ successMessage }}</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!usuarioSeleccionado) {
+    <div class="bg-white border border-um-border rounded-lg shadow-sm p-6">
+      <label for="buscar-usuario" class="block text-sm font-semibold text-um-ink"
+        >Buscar usuario</label
+      >
+      <p class="mt-1 text-sm text-um-muted">
+        Ingrese al menos 2 caracteres del login o del nombre del usuario al que quiere asignarle
+        permisos.
+      </p>
+      <input
+        id="buscar-usuario"
+        type="search"
+        [(ngModel)]="textoBusqueda"
+        (ngModelChange)="onBuscar()"
+        placeholder="Ej.: pedro, pérez, lperez..."
+        autocomplete="off"
+        class="mt-3 block w-full max-w-lg rounded-md border-um-border text-sm text-um-ink shadow-sm focus:border-um-primary focus:ring-um-primary"
+      />
+
+      @if (candidatos.length > 0) {
+        <ul
+          class="mt-4 max-w-lg divide-y divide-um-border rounded-md border border-um-border bg-white shadow-sm"
+        >
+          @for (candidato of candidatos; track candidato.userId) {
+            <li>
+              <button
+                type="button"
+                (click)="seleccionarUsuario(candidato)"
+                class="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-um-surface focus:bg-um-surface focus:outline-none"
+              >
+                <span class="text-sm font-semibold text-um-ink">{{ candidato.nombre }}</span>
+                <span class="text-sm text-um-muted">({{ candidato.login }})</span>
+                @if (candidato.administrador === 1) {
+                  <span class="ml-auto text-xs font-medium text-um-muted">Administrador</span>
+                }
+                @if (candidato.usuarioExterno === 1) {
+                  <span class="ml-auto text-xs font-medium text-um-muted">Externo</span>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      } @else if (buscando) {
+        <p class="mt-3 text-sm text-um-muted">Buscando usuarios...</p>
+      } @else if (textoBusqueda.trim().length >= 2) {
+        <p class="mt-3 text-sm text-um-muted">Sin resultados para "{{ textoBusqueda }}".</p>
+      }
+    </div>
+  } @else {
+    <div class="bg-white border border-um-border rounded-lg shadow-sm p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-um-muted">
+            Usuario seleccionado
+          </p>
+          <p class="mt-1 text-lg font-semibold text-um-ink">
+            {{ usuarioSeleccionado.nombre }}
+            <span class="text-sm font-normal text-um-muted"
+              >({{ usuarioSeleccionado.login }})</span
+            >
+            @if (usuarioSeleccionado.administrador === 1) {
+              <span class="ml-2 text-xs font-medium text-um-muted">Administrador</span>
+            }
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="limpiarSeleccion()"
+          class="rounded-md border border-um-border px-4 py-2 text-sm font-semibold text-um-ink hover:bg-um-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
+        >
+          Cambiar usuario
+        </button>
+      </div>
+    </div>
+
+    @if (cargando) {
+      <div class="bg-white border border-um-border rounded-lg shadow-sm p-12 text-center">
+        <svg
+          class="animate-spin mx-auto h-8 w-8 text-um-primary"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <p class="mt-2 text-sm text-um-muted">Cargando permisos...</p>
+      </div>
+    } @else {
+      <div class="grid gap-6 lg:grid-cols-3">
+        <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">Roles</h2>
+            <span class="text-sm text-um-muted">{{ rolesAsignados.size }} de {{ roles.length }}</span>
+          </div>
+          <ul class="max-h-[560px] divide-y divide-um-border overflow-y-auto">
+            @for (rol of roles; track rol.rolId) {
+              <li class="flex items-center gap-3 px-6 py-3">
+                <input
+                  type="checkbox"
+                  [id]="'rol-' + rol.rolId"
+                  [checked]="rolesAsignados.has(rol.rolId)"
+                  [disabled]="rolesPendientes.has(rol.rolId)"
+                  (change)="toggleRol(rol)"
+                  class="h-4 w-4 rounded border-um-border text-um-primary focus:ring-um-primary"
+                />
+                <label [for]="'rol-' + rol.rolId" class="flex-1 cursor-pointer text-sm text-um-ink">
+                  {{ rol.nombre }}
+                  @if (rol.descripcion) {
+                    <span class="block text-xs text-um-muted">{{ rol.descripcion }}</span>
+                  }
+                </label>
+                @if (rolesPendientes.has(rol.rolId)) {
+                  <svg class="animate-spin h-4 w-4 text-um-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                }
+              </li>
+            } @empty {
+              <li class="px-6 py-8 text-center text-sm text-um-muted">No hay roles definidos.</li>
+            }
+          </ul>
+        </div>
+
+        <div class="space-y-6 lg:col-span-2">
+          <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
+                Permisos efectivos
+              </h2>
+              <span class="text-sm text-um-muted">{{ permisosEfectivos.length }} habilitado(s)</span>
+            </div>
+            <div class="flex flex-wrap gap-2 px-6 py-4">
+              @for (clave of permisosEfectivos; track clave) {
+                <span
+                  class="inline-block rounded-full bg-um-selected px-3 py-1 text-xs font-medium text-um-primary"
+                  >{{ clave }}</span
+                >
+              } @empty {
+                <p class="text-sm text-um-muted">El usuario no tiene permisos habilitados.</p>
+              }
+            </div>
+          </div>
+
+          @for (grupo of grupos; track grupo.modulo) {
+            <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+              <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
+                  {{ grupo.modulo }}
+                </h2>
+                <span class="text-sm text-um-muted"
+                  >{{ grupo.asignados }} de {{ grupo.filas.length }}</span
+                >
+              </div>
+              <ul class="divide-y divide-um-border">
+                @for (fila of grupo.filas; track fila.permiso.permisoId) {
+                  <li class="flex items-center gap-3 px-6 py-3">
+                    <input
+                      type="checkbox"
+                      [id]="'permiso-' + fila.permiso.permisoId"
+                      [checked]="fila.efectivo"
+                      [disabled]="pendientesPermiso.has(fila.permiso.permisoId)"
+                      (change)="togglePermiso(fila)"
+                      class="h-4 w-4 rounded border-um-border text-um-primary focus:ring-um-primary"
+                    />
+                    <label
+                      [for]="'permiso-' + fila.permiso.permisoId"
+                      class="flex-1 cursor-pointer"
+                    >
+                      <span class="block text-sm text-um-ink">{{ fila.permiso.descripcion }}</span>
+                      <span class="block text-xs text-um-muted">{{ fila.permiso.clave }}</span>
+                    </label>
+
+                    @if (fila.override === 1) {
+                      <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Otorgado</span>
+                    }
+                    @if (fila.override === 0) {
+                      <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">Revocado</span>
+                    }
+                    @if (fila.override === null && fila.heredado) {
+                      <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">Heredado</span>
+                    }
+
+                    @if (fila.override !== null) {
+                      <button
+                        type="button"
+                        (click)="limpiarExcepcion(fila)"
+                        [disabled]="pendientesPermiso.has(fila.permiso.permisoId)"
+                        class="rounded-md border border-um-border px-3 py-1 text-xs font-semibold text-um-ink hover:bg-um-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
+                      >
+                        Quitar excepción
+                      </button>
+                    }
+
+                    @if (pendientesPermiso.has(fila.permiso.permisoId)) {
+                      <svg class="animate-spin h-4 w-4 text-um-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                      </svg>
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+          } @empty {
+            <div class="bg-white border border-um-border rounded-lg shadow-sm p-8 text-center text-sm text-um-muted">
+              No hay permisos en el catálogo. Verifique la carga inicial de la tabla <code>permiso</code>.
+            </div>
+          }
+
+          @if (otrosEfectivos.length > 0) {
+            <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
+              <div class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
+                  Otras claves efectivas
+                </h2>
+                <span class="text-sm text-um-muted">{{ otrosEfectivos.length }}</span>
+              </div>
+              <div class="flex flex-wrap gap-2 px-6 py-4">
+                @for (clave of otrosEfectivos; track clave) {
+                  <span class="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{{ clave }}</span>
+                }
+              </div>
+              <p class="px-6 pb-4 text-xs text-um-muted">
+                Claves habilitadas que no están en el catálogo de esta aplicación.
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

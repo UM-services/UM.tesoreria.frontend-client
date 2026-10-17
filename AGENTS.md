@@ -5,7 +5,7 @@
 - This is an Nx 22.7.1 monorepo using Angular 21, TypeScript 5.9, Vitest 4, and npm 11.6.2; use Node.js 20+.
 - Install from the lockfile with `npm ci`; do not use another package manager.
 - Applications live under `apps/`: `compras`, `pagos`, `chequeras`, `administrador`, `contable`, `contratados`, `guarani`, and `externo-consulta`. Apps are thin shells: root component with `<ui-shell>`, `app.config.ts`, and `app.routes.ts` only. Feature views never live inside `apps/<app>/src/app/`.
-- Shared libraries live under `libs/`: `shared-api`, `ui-auth`, `ui-layout`, `feature-proveedores`, `feature-gastos`, `feature-orden-compra`, `feature-guarani`, and `feature-externo-consulta`. Each app's views belong in its feature libraries, which export their routes (`lib.routes.ts`, e.g. `GUARANI_ROUTES`) and are mounted with `loadChildren`/`loadComponent`.
+- Shared libraries live under `libs/`: `shared-api`, `ui-auth`, `ui-layout`, `feature-proveedores`, `feature-gastos`, `feature-pedido-compra`, `feature-guarani`, and `feature-externo-consulta`. Each app's views belong in its feature libraries, which export their routes (`lib.routes.ts`, e.g. `GUARANI_ROUTES`) and are mounted with `loadChildren`/`loadComponent`.
 - Libraries must not import `apps/**/environments/*`; anything configuration-driven (API bases, debug flags) comes through injection tokens (`API_URL`, `EXTERNO_API_BASE`, `EXTERNO_ENABLE_DEBUG` in `@tesoreria/shared-api`) provided by the host app's `app.config.ts`. Because feature libs are lazy-loaded, `@nx/enforce-module-boundaries` forbids statically importing them anywhere else than route loaders.
 - Use the configured `@tesoreria/*` path aliases for shared libraries and import public symbols through each library's `src/index.ts`. Nx ESLint enforces module boundaries using project tags (`type:*` and `scope:*`) and dependency direction rules.
 - `apps/compras-e2e` and `apps/chequeras-e2e` are Playwright projects; their generated `e2e` targets start the corresponding app server.
@@ -21,6 +21,7 @@
 - Format uses Prettier with 100-column width, single quotes, and Angular parsing for HTML; repository indentation is two spaces.
 - Routes use standalone `loadComponent` lazy loading for shared login and feature components where configured; preserve this instead of reintroducing eager imports.
 - UI design follows the shared J2 theme: tokens and component utilities live in `libs/ui-layout/src/styles/tokens.css`, every app shell is `@tesoreria/ui-layout`'s `<ui-shell>`, and views use `um-*` classes (`.um-input`, `.um-btn-primary`, `.um-table`, ...) instead of ad-hoc palettes or one-off class strings.
+- **Prototypes are content references, never UI references.** HTML prototypes (e.g. `superprogramawebdecompras/`) define *what data* a screen needs, not *how it looks*. Never copy their markup, styles or layout. Build every view with the design system: `um-page-header`/`um-eyebrow`/`um-page-title`/`um-page-desc`, `um-card`, `um-section`, `um-label`/`um-input`, `um-btn-primary`/`um-btn-secondary`/`um-link-btn`, `um-alert`/`um-alert-error|warn|success`, `um-table`, `um-badge`, plus the `@tesoreria/ui-layout` widgets (search components). Use `feature-proveedores` and `feature-gastos` as structural references.
 
 ## Verification And Deployment
 
@@ -36,8 +37,41 @@
 - Every screen that looks up a person, provider, or accounting account MUST reuse the shared widgets from `@tesoreria/ui-layout`: `<ui-buscador-persona>` (with `persona-busqueda` helpers), `<ui-buscador-proveedor>`, and `<ui-buscador-cuenta-contable>`. Do not re-implement search pipelines (debounce/keyboard/dropdown wiring) inside feature libraries or apps, and do not add persona/proveedor/account search methods to feature services.
 - Exact-key lookups (legajo/DNI) belong in their own editable form fields firing on ENTER and blur, not inside the search widget. Exception: the external portal's person search (`feature-externo-consulta`) queries by assigned-faculty semantics via its own `ChequerasService`; keep that backend contract as-is and route its UI through the shared `BuscadorPersonaComponent`.
 
+## Rich Text Editors (Texto Enriquecido)
+
+- **Convention:** any view that needs **rich/long-form text** (specifications, descriptions, notes, observations, etc.) MUST use the shared WYSIWYG editor **`<ui-editor-enriquecido>`** from `@tesoreria/ui-rich-text` (Quill 2 via `ngx-quill@31`) instead of ad-hoc `<textarea>`, `contenteditable`, or a hand-rolled Markdown editor. Do not re-implement toolbars in feature libraries. This applies **everywhere it is needed across the workspace**.
+- For **read-only** rendering of stored rich text use **`<ui-texto-enriquecido>`** from `@tesoreria/ui-layout` (renders sanitized HTML, collapses long content). Do not bind stored HTML with `[innerHTML]` directly.
+- **Storage format is HTML** in the existing text column; it is sanitized with DOMPurify (the render component already does it). Legacy plain text keeps working (line breaks preserved).
+- `<ui-editor-enriquecido>` exposes `[(html)]`. It lazily loads `quill`/`ngx-quill` (~205 kB): import it **only from lazy feature libraries**, never from an eagerly-loaded app shell, so it stays out of the initial bundle. Its theme CSS (`node_modules/quill/dist/quill.snow.css`) must be added to the consuming app's global `styles`.
+- **Do not** store HTML in short, structured, or backend-constrained fields (e.g., rejection/discard reasons stored as `varchar(500)` and rendered in notifications): those stay as plain inputs.
+
 ## Nomenclature & Legacy VB6 Strict Ban (Limpieza de UI)
 
 - NEVER expose Visual Basic 6 legacy artifacts in user-facing UI: no `.frm`/`.vbp` extensions in titles, tables, or badges, and no phrases like "migración desde VB6", "formulario VB6", or legacy project names (`prjGestion.vbp`, `prjChequera.vbp`).
 - Use clean domain terminology in copy and statuses: "Módulo de Chequeras", "Pendientes Pre Guaraní", "Orden de Compra", "Módulo en Desarrollo"; status indicators read "Planificado en Desarrollo", never "Pendiente de migración".
 - Internal fields or routing names kept for backend protocol mapping are acceptable in TypeScript data structures, but they MUST NEVER be rendered into HTML templates or exposed to users.
+
+## Permissions (Feature Gating)
+
+- The backend exposes the permission catalog/assignment and the effective bundle per user (`GET /api/tesoreria/core/permisoEfectivo/usuario/{userId}`). The permission key is a contract: convention `modulo.accion` (e.g. `pagos.reembolsos`).
+- Current status: **frontend gating is implemented** — `permisoGuard(clave)` (`@tesoreria/shared-api`), `ShellMenuItem.permiso` and the `*uiPermiso` directive (`@tesoreria/ui-layout`). The effective bundle loads at login through `PermisosService` and fails closed (empty) when unavailable, so items/actions that declare a `permiso` stay hidden.
+- The management screens live in `libs/feature-permisos` (routes `/permisos`, `/roles`, `/catalogo`, `/simulador`), all behind `administradorGuard` in the `administrador` app.
+- When adding a new view or action that requires a permission:
+  1. Register the key in the catalog (administrador app → `feature-permisos` → Catálogo).
+  2. Wire it: route with `permisoGuard('<clave>')`, menu item with `permiso: '<clave>'`, button with `*uiPermiso="'<clave>'"`.
+- **Legacy rule:** never add or change gating on existing routes/screens, and never alter behavior the legacy system relies on. Gating applies to new features only; when in doubt, stop and ask.
+- Anti-pattern "phantom permission": do not register keys that no code reads; declare the key in the same change that wires the feature.
+
+## graphify
+
+This project has a knowledge graph at `graphify-out/` with god nodes, community structure, and cross-file relationships covering the Nx apps, the `libs/` feature libraries and the shared design system.
+
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- When `graphify-out/graph.json` exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than `GRAPH_REPORT.md` or raw grep output.
+- Dirty `graphify-out/` files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If `graphify-out/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
+- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- The graph rebuilds itself; do not add a file watcher. Git hooks installed with `graphify hook install` (post-commit, post-merge, post-checkout, post-rewrite) re-derive the graph **only** on commit, merge, branch switch and rebase, detached in the background with resource limits. Per-clone hooks live in `.git/hooks/` (not versioned), so re-run `graphify hook install` after a fresh clone. `graphify-out/` is gitignored: the graph is local, never committed.

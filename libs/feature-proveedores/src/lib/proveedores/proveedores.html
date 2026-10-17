@@ -9,6 +9,7 @@
     <div class="flex items-center gap-3">
       <button
         type="button"
+        *uiPermiso="'compras.proveedores.descargar'"
         (click)="descargarPlanilla()"
         [disabled]="isDownloadingSheet"
         class="um-btn-secondary inline-flex items-center"
@@ -53,7 +54,12 @@
         }
         {{ isDownloadingSheet ? 'Generando Excel...' : 'Descargar Planilla' }}
       </button>
-      <button type="button" (click)="abrirModal()" class="um-btn-primary inline-flex items-center">
+      <button
+        type="button"
+        *uiPermiso="'compras.proveedores.crear'"
+        (click)="abrirModal()"
+        class="um-btn-primary inline-flex items-center"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="mr-2 h-4 w-4"
@@ -291,12 +297,14 @@
               </td>
               <td class="text-right whitespace-nowrap">
                 <button
+                  *uiPermiso="'compras.proveedores.editar'"
                   (click)="abrirModal(p)"
                   class="rounded border border-um-btn-border bg-white px-3 py-1 text-xs font-semibold text-um-primary hover:bg-um-selected focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary mr-2"
                 >
                   Editar
                 </button>
                 <button
+                  *uiPermiso="'compras.proveedores.eliminar'"
                   (click)="eliminar(p)"
                   class="rounded border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 >

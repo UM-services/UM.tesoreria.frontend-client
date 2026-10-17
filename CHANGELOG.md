@@ -1,5 +1,132 @@
 # Changelog
 
+## [0.36.0] - 2026-10-17
+
+### Added
+
+- feat(externo-consulta): la pantalla de **detalle de chequera** del portal externo (`ChequeraDetalleModalComponent`) deja de calcular estados y subtotales en el cliente y consume `GET chequera/estado/{facultadId}/{tipoChequeraId}/{chequeraSerieId}/{alternativaId}` (`ChequerasService.estado`, que reemplaza a `cuotasConPagos`), la **misma fuente que el PDF «Estado de Chequera»**. Los modelos nuevos `EstadoChequera`, `ProductoEstado` y `CuotaEstado` traen los productos con su `total`, `pagado` y `deuda`, el `tituloCuota`/`totalCuotas` y, por cuota, el `estado` (`BAJA | COMPENSADA | PAGADA | A_DEFINIR | VENCIDA | PENDIENTE`), `primerVencimiento`, `importe`, `importePagado` y `referenciaPago`; la respuesta también declara los `debitos` (`DebitoEstado`), que la vista todavía no renderiza; se eliminan `agruparPorProducto`, `estadoCuota`, `ordenarCuotas` y `esVerdadero` de `chequeras.utils.ts`, la cuota etiquetada como «A definir» se resuelve por `estado === 'A_DEFINIR'` y la etiqueta legible por `etiquetaEstado`. La columna «Cuota» del listado pasa a mostrar `tituloCuota: n/totalCuotas`. Requiere que el core exponga `chequera/estado/...`. Cubierto por `chequeras.utils.spec.ts`, `chequeras.service.spec.ts`, `chequeras.component.spec.ts` y `chequera-detalle-modal.component.spec.ts`; se retiran `chequeras.utils.regression-1.spec.ts` y `chequeras.utils.regression-2.spec.ts`, ya cubiertos por el test de utilidades.
+
+### Fixed
+
+- fix(externo-consulta): en la tabla de cuotas del detalle de chequera se recalibran los anchos de columna (**Cuota** 12% → 16%, **Primer vencimiento** 17% → 15%, **Pagado** 29% → 27%) y el texto pasa a envolverse: el número/título de cuota usa `break-words` sobre una celda `min-w-0` y la etiqueta de estado con la marca «Próxima» queda en un bloque aparte, de modo que los títulos de cuota largos ya no desbordan la columna.
+
+### Changed
+
+- docs: `README.md` registra la versión actual **0.36.0** y actualiza el `curl` de prueba del portal externo a `GET chequera/estado/...`, porque el detalle de chequera ya no consulta `chequera/cuotas/pagos/...`.
+
+## [0.35.0] - 2026-10-17
+
+### Added
+
+- feat(externo-consulta): la consulta de chequeras del portal externo marca con la **insignia «HPUM»** las chequeras con la marca `hpum` (`chequera_serie.hpum` del core, resuelta a booleano) tanto en la **lista de chequeras** como en la **cabecera del detalle** (modal y detalle inline) de `libs/feature-externo-consulta/src/lib/chequeras`. `ChequeraEstado` suma el campo opcional `hpum?: boolean | null`; la insignia sólo se muestra cuando el valor es verdadero, de modo que `null` o `false` no la muestran. Sin cambios de backend ni de esquema. Cubierto por `chequeras.component.spec.ts` y `chequera-detalle-modal.component.spec.ts`.
+
+### Changed
+
+- chore(graphify): se incorpora el grafo de conocimiento local del workspace: `.gitattributes` registra el merge driver `graphify` para `graphify-out/graph.json`, `.gitignore` excluye `/graphify-out/` (artefacto local que reconstruyen los hooks de git), `.opencode/plugins/graphify.js` agrega el plugin de OpenCode que recuerda consultar el grafo antes de explorar el código, y `AGENTS.md` documenta la sección `graphify` con sus reglas de uso.
+- docs: `README.md` registra la versión actual **0.35.0**.
+
+## [0.34.0] - 2026-10-16
+
+### Added
+
+- feat(compras): pantalla **Recepción** (`/recepcion`) en `feature-pedido-compra` (etapa 9 — `PLANIFICACION_COMPRAS.md` §18): **bandeja** de Órdenes de Compra con saldo pendiente (proveedor, monto e ítems con saldo) y **alta** de la entrega inline (fecha, remito, intervención de Patrimonio, observación general y, por ítem, cantidad recibida, resultado y observación), con el **tipo calculado** (Total cuando cubre todos los saldos) y validación de cliente (no exceder el saldo, al menos una cantidad mayor a cero); debajo, el **listado de recepciones registradas**. Nueva pantalla de **detalle** (`/recepcion/:compraFormalizacionId`) con el **saldo por ítem**, las entregas registradas y el **cierre manual con motivo** cuando el proveedor no completará el saldo. Servicio `RecepcionService` (`/api/tesoreria/compras/recepcion`); ruta y ítem de menú (`8. Recepción`) gateados con `permisoGuard`/`ShellMenuItem.permiso = 'compras.recepcionar'`.
+
+## [0.33.0] - 2026-10-12
+
+### Added
+
+- feat(compras): pantalla **Formalización** (`/formalizacion`) en `feature-pedido-compra` (etapa 8 — `PLANIFICACION_COMPRAS.md` §17): **bandeja** de adjudicaciones pendientes de emitir la Orden de Compra (proveedor, monto, condiciones e ítems de la oferta adjudicada) y **alta** de la OC con condiciones editables, número externo opcional y objeto/alcance; debajo, el **listado de órdenes emitidas** con acceso al detalle. Nueva pantalla de **detalle de la OC** (`/formalizacion/:id`) con condiciones e ítems. Servicio `FormalizacionService` (`/api/tesoreria/compras/formalizacion`); ruta y ítem de menú (`7. Formalización`) gateados con `permisoGuard`/`ShellMenuItem.permiso = 'compras.formalizar'`.
+
+## [0.32.0] - 2026-10-11
+
+### Added
+
+- feat(administrador): pantalla **Cotizaciones mínimas por monto** (`/cotizaciones-minimas`) en `feature-administrador`. Configura los **tramos** que definen cuántas cotizaciones deben solicitarse según el monto estimado del pedido: cada tramo fija un **tope en múltiplos de la referencia del ejercicio** (sin tope = último tramo) y una **cantidad mínima**. ABM completo (alta, edición en línea, baja) con validación de cliente (cantidad 1..10, topes únicos, un solo tramo sin tope) y **vista previa** del mínimo resultante para una referencia dada. Consume la fachada gateada `compras-service` (`/api/tesoreria/compras/cotizacion/tramos`, permiso `compras.cotizaciones.configurar`); la ruta y el ítem de menú se gatean con `permisoGuard` y `ShellMenuItem.permiso` respectivamente.
+- feat(compras): el **mínimo de cotizaciones** del pedido se muestra en la **revisión de compras** (columna «Cotizaciones mín.») y en el **detalle** («Cotizaciones mínimas requeridas»), a partir del `cantidadCotizacionesMinima` que expone la fachada (snapshot al estimar, §14 fase 6A de `PLANIFICACION_COMPRAS.md`).
+- feat(compras): pantalla **Cotizaciones** (`/cotizacion`) en `feature-pedido-compra` (etapa 6, fase B): **lista** de procesos, **armado** (selección de ítems de uno o varios pedidos —por pedido completo o sueltos— y alta de proveedores con el buscador compartido `ui-buscador-proveedor`) y **detalle** (ítems, documentos por proveedor, enviar/anular). El monto estimado y el mínimo se calculan en el backend por la suma de los pedidos combinados. Ruta y ítem de menú con `permisoGuard`/`ShellMenuItem.permiso = 'compras.cotizaciones.gestionar'`.
+- feat(compras): en el detalle del proceso de cotización (etapa 6, fase C) se agrega la **carga de respuestas** por proveedor (cabecera + precio por ítem), el **No cotiza**, la **matriz de comparación** (ítems × proveedores) y la **recomendación** (proveedor + fundamento) con el cierre del proceso.
+- feat(compras): pantalla **Cotizaciones pedidas** (`/cotizacion/pedidas`) en `feature-pedido-compra` (etapa 7, pieza A — `PLANIFICACION_COMPRAS.md` §15): **bandeja transversal** de los documentos de proveedor en estado `ENVIADA` de todos los procesos, para cargar sus valores sin entrar proceso por proceso. Reutiliza el endpoint de respuestas de la etapa 6C (cabecera + precio por ítem) y el «No cotiza», y ofrece el enlace al proceso. Consume el nuevo `GET /api/tesoreria/compras/cotizacion/proveedores-pendientes`; ruta e ítem de menú con `ShellMenuItem.permiso = 'compras.cotizaciones.gestionar'`.
+- feat(compras): pantalla **Adjudicación** (`/cotizacion/adjudicacion`) en `feature-pedido-compra` (etapa 7, pieza B): bandeja de procesos `RECOMENDADA` con la cotización recomendada y su total, el **límite** visible y las acciones **Adjudicar** (elegir la oferta), **Devolver** y **No adjudicar**, con fundamento. Consume `/api/tesoreria/compras/cotizacion/adjudicacion/...`; ruta e ítem de menú (`6. Adjudicación`) con `permisoGuard`/`ShellMenuItem.permiso = 'compras.adjudicacion.autorizar'`. El `403` de límite excedido se muestra como aviso.
+
+### Changed
+
+- chore(compras): el **menú del módulo** se ordena según el **proceso temporal** del circuito y los pasos van **numerados**: `1. Pedidos`, `2. Bandeja de envío`, `3. Revisión de compras`, `4. Autorización de presupuesto`, `5. Cotizaciones`, `6. Adjudicación`. La consulta global y los maestros (`Consulta de pedidos`, `Gastos`, `Proveedores`) quedan al final, sin número. Se agrega **`Cotizaciones pedidas`** (bandeja transversal, sin número) junto a `5. Cotizaciones`.
+- docs: `README.md` registra la versión actual **0.32.0** y suma las pantallas de cotizaciones y adjudicación a `@tesoreria/feature-pedido-compra` (montada también en `/cotizacion`) y la administración de cotizaciones mínimas a `@tesoreria/feature-administrador`; `docs/architecture.md` agrega los componentes de cotizaciones a los diagramas de componentes y de los módulos Compras y Administrador.
+
+### Fixed
+
+- fix(compras): la pantalla **Autorización de presupuesto** resuelve el límite del usuario para el **ejercicio en curso** con el nuevo `GET /pedido/presupuesto/limite` de la fachada (antes lo derivaba de los pedidos pendientes y, con la bandeja vacía, ni consultaba el límite y mostraba "no tenés un perfil de autoridad"). Ahora muestra el límite real aunque no haya pendientes, y distingue "no hay pedidos pendientes" de "sin perfil".
+
+## [0.31.0] - 2026-10-10
+
+### Added
+
+- feat(compras/ui-rich-text): **Especificaciones enriquecidas de los ítems del pedido** con **editor WYSIWYG**. Nueva lib `@tesoreria/ui-rich-text` con `ui-editor-enriquecido`, un editor de texto enriquecido (Quill 2 vía `ngx-quill@31`) con barra estilo procesador de textos (títulos, negrita/itálica/subrayado, listas, indentación, alineación, cita y enlaces). `feature-pedido-compra` edita las especificaciones de cada ítem y el campo *necesidad* en un **modal** con ese editor; la celda de especificaciones del formulario es un **bloque clickeable** con vista previa (o placeholder «Agregar especificaciones…» si está vacía) y el detalle muestra el preview. El contenido se guarda como **HTML** y se renderiza con el componente **`ui-texto-enriquecido`** de `@tesoreria/ui-layout`, que **sanitiza con DOMPurify** antes de inyectarlo (y respeta el texto plano legacy convirtiendo sus saltos de línea). El editor vive en una lib propia para que `quill`/`ngx-quill` (~205 kB) y DOMPurify queden en **chunks lazy** y no en el bundle inicial. Sin cambios de esquema ni de backend. Plan: `tesoreria-compras/specs/2026-10-10-especificaciones-item-pedido/`.
+
+### Changed
+
+- chore(deps): **Actualización mayor del frontend a Angular 22.1.8 + Nx 23.3 + TypeScript 6.0** (vía `nx migrate latest`). Paquetes: `@angular/*`, `@angular/build`, `@angular-devkit/*`, `@angular/cli` 21 → 22; `nx` y `@nx/*` 22.7 → 23.3; `typescript` 5.9 → 6.0; `angular-eslint` 21 → 22.5; `@analogjs/vite-plugin-angular`/`vitest-angular` 2.1 → 2.6; `typescript-eslint` y `@typescript-eslint/utils` 8.40 → 8.71. La migración: (a) reescribió `ChangeDetectionStrategy.Default` → `ChangeDetectionStrategy.Eager` en los componentes con estrategia explícita (Angular 22 cambió el default a **OnPush**; `Eager` preserva el comportamiento previo), (b) agregó `withXhr()` a `provideHttpClient` (Angular 22), (c) reemplazó `vitest.workspace.ts` por `vitest.config.ts` (Nx 23) y (d) ajustó imports de plugins. La regla nueva `@angular-eslint/prefer-on-push-component-change-detection` se deja en **`warn`** (migrar los componentes afectados a OnPush es una tarea aparte). Verificado con `nx run-many -t lint test build` (8 apps + libs) en verde.
+- feat(compras): en el formulario de inicio de pedido, **Monto estimado** y **Fuente de estimación** sólo se muestran si está marcado «¿Conoce el monto estimado?»; al desmarcarlo se limpian y se envían como `null`.
+- docs: `README.md` registra la versión actual **0.31.0**, actualiza la tabla de tecnologías (Angular 22.1.8, Nx 23.3.0, TypeScript 6.0.3) y suma la lib `@tesoreria/ui-rich-text` y el render `ui-texto-enriquecido`; `docs/architecture.md` agrega `@tesoreria/ui-rich-text` a los diagramas de componentes y de los módulos Compras, y el pipeline de documentación (`generate-docs.yml`) cita Angular 22.
+
+## [0.30.0] - 2026-10-10
+
+### Changed
+
+- refactor(compras): las pantallas de compras dejan de usar query params y se alinean al contrato nuevo de `tesoreria-compras`: `PedidoCompraService.bandeja/consulta/revision` pasan a `POST` con el filtro en el cuerpo y `limite(ejercicioId)` a `GET /presupuesto/limite/{ejercicioId}`; `feature-gastos` y `feature-proveedores` piden su página con `POST .../page` enviando `{page,size}`. Sin cambios de UI.
+- docs: `README.md` registra la versión actual **0.30.0** y actualiza las descripciones de `@tesoreria/feature-pedido-compra` (revisión y autorización de presupuesto) y `@tesoreria/feature-administrador` (usuarios y autoridades de presupuesto); `docs/architecture.md` suma los nuevos componentes a los diagramas de componentes y de los módulos Compras y Administrador, y el flag `debeCambiarClave` a `LoginResponse`.
+
+### Added
+
+- feat(shared-api/ui-layout): **Cambio de clave forzado**. Si la sesión trae `debeCambiarClave = 1` (clave provisoria puesta por un administrador), `ui-shell` abre el modal de cambio de clave y no permite cerrarlo hasta cambiarla; al cambiar la clave, `change-password` limpia el flag y la sesión se actualiza. Aplica a todas las apps que usan el shell.
+- feat(administrador): Nueva pantalla **Usuarios** (`UsuariosComponent`, ruta `/usuarios` e ítem del menú, detrás de `[authGuard, usuarioInternoGuard, administradorGuard]`) con `UsuarioAdminService`: padrón incluyendo inactivos (`GET /usuario/searchTodos[/{texto}]`), alta (`POST /usuario/usuario`), configuración de datos y flags sin tocar la clave (`PUT .../configuracion`), habilitar/deshabilitar (`PUT .../activo/{valor}`) y reset de clave (`PUT .../password`), con enlaces a Permisos y Asignaciones. La lib `feature-administrador` suma target de test (`@nx/vitest:test`) y `usuario-admin.service.spec.ts`.
+- feat(compras): **Autorización previa por monto** en el circuito de pedidos. La lib `feature-pedido-compra` suma las pantallas **Revisión de compras** (`PedidoRevisionComponent`, ruta `/pedido/revision`, permiso `compras.estimar`; carga/confirma el valor estimado) y **Autorización de presupuesto** (`PedidoPresupuestoComponent`, ruta `/pedido/presupuesto`, permiso `compras.presupuesto.autorizar`; muestra el límite efectivo y autoriza —fail-closed por monto— o rechaza). El detalle suma las acciones de estimar y de autorizar/rechazar presupuesto, y `PedidoCompraService` los métodos `revision`, `estimar`, `presupuestoBandeja`, `limite`, `autorizarPresupuesto` y `rechazarPresupuesto`. Los estados nuevos (`EN_REVISION_COMPRAS`, `PENDIENTE_AUTORIZACION_PRESUPUESTO`, `AUTORIZADO_PRESUPUESTO`) se agregan a `ESTADOS_PEDIDO`, etiquetas y badges; el menú de la app compras suma "Revisión de compras" y "Autorización de presupuesto".
+- feat(administrador): Nueva pantalla "Autoridades de presupuesto" (`AutoridadesPresupuestoComponent`, ruta `/autoridades-presupuesto` e ítem del menú, detrás de `[authGuard, usuarioInternoGuard, administradorGuard]`) con `AutoridadPresupuestoService`: carga el valor de referencia por ejercicio (`compraReferencia`), administra los perfiles de autoridad con su múltiplo (`compraAutoridadPerfil`, CRUD) y los asigna a los usuarios (`compraAutoridadUsuario`), con vista previa del límite efectivo (`GET .../limite/{usuarioId}?ejercicioId=`).
+- feat(compras): Las opciones "Gastos" y "Proveedores" dejan de ser "siempre visibles" y pasan a estar gateadas por las claves `compras.gastos` y `compras.proveedores`: `permiso` en el `ShellMenuItem` de `apps/compras/src/app/app.ts` y `permisoGuard` en las rutas `/gastos` y `/proveedores`. Dentro de cada pantalla, `*uiPermiso` oculta las acciones por botón: Gastos → `compras.gastos.crear` (Nuevo Gasto), `.editar`, `.eliminar` y `.imputar` (Asignar imputación); Proveedores → `compras.proveedores.crear` (Nuevo Proveedor), `.editar`, `.eliminar` y `.descargar` (Descargar Planilla). Los feature libs `feature-gastos` y `feature-proveedores` importan `PermisoDirective` desde `@tesoreria/ui-layout`; `apps/compras/src/app/proveedores/proveedores.spec.ts` provee `API_URL`/`provideHttpClient`/`provideRouter` para el árbol de DI que agrega la directiva. Las claves se registran en el catálogo del core (`docs/sql/V406__compras_gastos_proveedores.sql`).
+- feat(compras): Las pantallas Gastos y Proveedores dejan de llamar a `/api/tesoreria/core/**` y consumen la **fachada gateada** de `tesoreria-compras` (`/api/tesoreria/compras/articulo|ubicacion|ubicacionArticulo|proveedor|sheet`), que exige permiso en el servidor (`403`/`401`). Así el gating no depende solo de la UI, sin tocar los endpoints del core que usa el legacy. Los buscadores compartidos (`ui-buscador-cuenta-contable`, `ui-buscador-proveedor`) siguen consultando core.
+
+## [0.29.0] - 2026-10-08
+
+### Added
+
+- feat(shared-api): Nuevo `permisoAlgunoGuard(claves)`, guard por permiso con alternativa (**OR**): autoriza si el usuario tiene **al menos una** de las claves, con la misma semántica que `permisoGuard` (espera `ensureLoaded`, sin sesión redirige a `/login?returnUrl=` y denegar redirige a `sin-acceso`). Pensado para vistas compartidas por roles distintos, como el detalle de un pedido. Se exporta desde `@tesoreria/shared-api` y se cubre con `permiso-alguno.guard.spec.ts` (permite con una clave, deniega a `sin-acceso` sin ninguna y manda a `/login` sin sesión).
+- feat(compras): El circuito de pedidos suma la **bandeja del autorizante** (`PedidoBandejaComponent`, ruta `/pedido/bandeja`, permiso `compras.enviar_pedido`) para aprobar el envío a compras o rechazarlo con motivo sobre los pedidos de las dependencias habilitadas, y la **consulta global** (`PedidoConsultaComponent`, ruta `/pedido/consulta`, permiso `compras.consultar_pedidos`) con filtros por estado, dependencia y rango de fechas.
+- feat(compras): El detalle del pedido (`PedidoDetalleComponent`) muestra acciones según el estado y los permisos del usuario —presentar para envío, editar y descartar (solicitante, `compras.iniciar_pedido`) y aprobar/rechazar (autorizante, `compras.enviar_pedido`)— y una línea de tiempo con el historial de estados (`GET /compras/pedido/{id}/historial`). El formulario pasa a soportar edición en `/pedido/:id/editar` (precarga un borrador o rechazado y lo actualiza), la lista enlaza a la edición y los estados se muestran con etiquetas y badges legibles.
+- feat(administrador): Nueva pantalla "Autorizantes de envío" (`AutorizantesEnvioComponent`, ruta `/autorizantes-envio` e ítem del menú, detrás de `[authGuard, usuarioInternoGuard, administradorGuard]`) con `AutorizanteEnvioService`: habilita por usuario las dependencias sobre las que puede aprobar o rechazar el envío de pedidos, sobre el slice `compraPedidoAutorizante` del core (`GET .../dependencias/{userId}`, `POST .../` y `DELETE .../{userId}/{dependenciaId}`), con búsqueda de usuarios (mínimo 2 caracteres, `debounce` 300 ms) y checkboxes de aplicación inmediata.
+- feat(administrador): La asignación de usuarios suma las acciones masivas "Asignar todas" / "Quitar todas" para sedes, clases de chequera y facultades, con confirmación previa y ejecución en paralelo (`forkJoin`).
+
+### Changed
+
+- feat(compras): El gating de `/pedido` baja del padre a cada ruta hija (el padre queda con `[authGuard, usuarioInternoGuard]`): `''`, `nuevo` y `:id/editar` con `permisoGuard('compras.iniciar_pedido')`, `bandeja` con `compras.enviar_pedido`, `consulta` con `compras.consultar_pedidos` y `:id` con `permisoAlgunoGuard` (visible para los tres roles). El menú de la app compras agrega "Bandeja de envío" y "Consulta de pedidos".
+- feat(compras): `PedidoCompraService` suma `bandeja`, `consulta`, `historial`, `descartar`, `aprobar`, `rechazar` y `dependencias`; los modelos incorporan `PedidoCompraHistorial`, `PedidoCompraFiltro` y `DependenciaResumen`, campos de envío/rechazo/descarte en `PedidoCompra` y los helpers `ESTADOS_PEDIDO`, `estadoLabel` y `estadoBadgeClass`.
+- docs: `README.md` registra la versión actual **0.29.0** y actualiza las descripciones de `@tesoreria/feature-pedido-compra` y `@tesoreria/feature-administrador` (bandeja, consulta, edición e historial; autorizantes de envío); `docs/architecture.md` suma `permisoAlgunoGuard` al nodo de `shared-api`, los nuevos componentes a los diagramas de componentes y de los módulos Compras y Administrador, y documenta el guard alternativo en "Gating de permisos".
+
+## [0.28.0] - 2026-10-07
+
+### Added
+
+- feat(shared-api): Gating de permisos en el frontend: `PermisosService` carga el bundle efectivo del usuario (`GET /permisoEfectivo/usuario/{userId}`) al iniciar sesión y lo limpia al cerrar; si el endpoint falla o no hay sesión el bundle queda vacío (**fail-closed**). `permisoGuard(clave)` filtra rutas por la convención `modulo.accion` y, cuando el bundle aún no se cargó, espera `ensureLoaded` antes de decidir; denegar redirige a `sin-acceso` (nunca a `/login`, para no generar bucles). El `authInterceptor` agrega el header `X-User-Id` con el `userId` de la sesión como identidad transitoria para el PEP de las fachadas hasta el JWT de M2, y `LoginResponse` suma el campo opcional `dependenciaId`.
+- feat(ui-layout): `PermisoDirective` (`*uiPermiso="'modulo.accion'"`) muestra o retira el contenido de forma reactiva según el bundle de permisos, y `ShellMenuItem.permiso` permite ocultar ítems del menú que el usuario no posee; `UiShellComponent.visibleMenuItems` filtra los ítems con `permiso` y mantiene visibles los que no lo declaran (retrocompatible con los menús existentes).
+- feat(permisos): Nueva librería `@tesoreria/feature-permisos` con las pantallas de seguridad del core: `/permisos` (asigna roles y excepciones usuario×permiso y muestra el bundle efectivo), `/roles` (ABM de roles y matriz rol × permiso con guardado inmediato por celda), `/catalogo` (ABM del catálogo de claves) y `/simulador` (lectura que explica si cada permiso efectivo proviene de un rol, de una excepción individual o del puente de flags legacy). Se montan de forma perezosa en la app administrador detrás de `[authGuard, usuarioInternoGuard, administradorGuard]`.
+- feat(administrador): Nueva librería `@tesoreria/feature-administrador` con `DependenciasComponent` y `AsignacionUsuariosComponent` (junto a `UsuarioChequeraService`), extraídos de la app administrador; sus rutas `/dependencias` y `/asignaciones` los cargan con `loadComponent` desde `@tesoreria/feature-administrador`.
+- feat(compras): Nueva librería `@tesoreria/feature-pedido-compra` (`pedidoCompraRoutes` con lista, alta y detalle) que consume la fachada `tesoreria-compras` (`/compras/pedido`) para iniciar, editar, enviar y consultar pedidos de compra; la app `compras` monta `/pedido` protegido por `permisoGuard('compras.iniciar_pedido')`.
+- test: Specs de `PermisosService` y `permisoGuard` en `shared-api` (carga del bundle al iniciar sesión, fail-closed, espera de carga y redirección) y de `PermisoDirective` en `ui-layout` (render y retiro reactivos según el permiso), más `permisos.service.spec.ts` de `feature-permisos`.
+
+### Changed
+
+- feat(compras): El circuito de compras pasa de "Compras" (`/orden-compra`, `feature-orden-compra`) a "Pedidos" (`/pedido`, `feature-pedido-compra`); el ítem del menú se llama "Pedidos" y declara `permiso: 'compras.iniciar_pedido'`.
+- refactor(administrador): Las rutas `/dependencias` y `/asignaciones` cargan los componentes desde `@tesoreria/feature-administrador` en lugar de componentes locales; se eliminan `apps/administrador/src/app/shared/buscador-cuenta/` y las vistas locales de dependencias y asignaciones.
+- chore(workspace): `tsconfig.base.json` reemplaza el alias `@tesoreria/feature-orden-compra` por `@tesoreria/feature-pedido-compra` y agrega los alias `@tesoreria/feature-administrador` y `@tesoreria/feature-permisos`.
+- docs: `AGENTS.md` documenta el gating de permisos (convención `modulo.accion`, fail-closed, pantallas de `feature-permisos` y la regla legacy de no modificar gating existente); `README.md` y `docs/architecture.md` reflejan las librerías `feature-pedido-compra`, `feature-administrador` y `feature-permisos`, el `X-User-Id` del interceptor y el nuevo esquema de guards.
+
+### Removed
+
+- `feature-orden-compra`: se elimina la librería completa (dashboard, alta multi-paso, detalle, servicio y modelos) junto con su alias `@tesoreria/feature-orden-compra`, la ruta `/orden-compra` de la app `compras` y la opción "Compras" del menú lateral. El circuito vigente de compras pasa a ser "Pedidos" (`feature-pedido-compra`, ruta `/pedido`). Se actualizan `AGENTS.md`, `README.md` y `docs/architecture.md`.
+
+### Fixed
+
+- `feature-pedido-compra`: el botón "Volver" de "Iniciar pedido de compra" no navegaba porque `PedidoFormComponent` usaba `routerLink` en su plantilla sin importar la directiva `RouterLink` (Angular lo trataba como atributo estático y el `<a>` quedaba sin navegación). Se agrega `RouterLink` a los `imports` del componente standalone.
+
 ## [0.27.1] - 2026-10-04
 
 ### Changed

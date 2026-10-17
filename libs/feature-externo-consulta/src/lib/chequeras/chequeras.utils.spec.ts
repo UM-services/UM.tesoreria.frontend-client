@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChequeraEstado, CuotaConPagos } from './chequeras.models';
+import { ChequeraEstado, CuotaEstado, ProductoEstado } from './chequeras.models';
 import {
-  agruparPorProducto,
   esDeudaCentinela,
   esPdfValido,
-  estadoCuota,
+  etiquetaEstado,
   fechaCalendario,
   formatearFecha,
   formatearInstante,
@@ -16,7 +15,7 @@ import {
   mensajeErrorPdf,
   nombreArchivoEstadoPdf,
   ordenarChequeras,
-  ordenarCuotas,
+  primeraCuotaVencida,
   proximaCuota,
   resumenDeuda,
   soloDigitos,
@@ -25,24 +24,32 @@ import {
 
 const hoy = new Date(2026, 8, 23, 15, 30);
 
-function cuota(parcial: Partial<CuotaConPagos> = {}): CuotaConPagos {
+function cuota(parcial: Partial<CuotaEstado> = {}): CuotaEstado {
   return {
-    chequeraCuotaId: 1,
-    productoId: 1,
-    alternativaId: 1,
     cuotaId: 1,
     mes: 9,
     anho: 2026,
-    vencimiento1: '2026-10-10T00:00:00Z',
-    importe1: 45000,
-    vencimiento2: null,
-    importe2: null,
-    vencimiento3: null,
-    importe3: null,
-    pagado: 0,
-    baja: 0,
-    compensada: 0,
+    primerVencimiento: '2026-10-10',
+    importe: 45000,
+    ordenPago: null,
+    fechaPago: null,
+    importePagado: null,
+    referenciaPago: null,
+    estado: 'PENDIENTE',
     ...parcial,
+  };
+}
+
+function producto(cuotas: CuotaEstado[]): ProductoEstado {
+  return {
+    productoId: 1,
+    nombre: 'Arancel',
+    tituloCuota: 'Arancel Mensual',
+    totalCuotas: cuotas.length,
+    total: 0,
+    pagado: 0,
+    deuda: 0,
+    cuotas,
   };
 }
 
@@ -90,79 +97,44 @@ describe('fechaCalendario', () => {
   });
 });
 
-describe('estadoCuota', () => {
-  it('prioriza baja sobre todo', () => {
-    expect(estadoCuota(cuota({ baja: 1, compensada: 1, pagado: 1 }), hoy)).toBe('Baja');
+describe('estado de las cuotas (viene del backend)', () => {
+  const productos = [
+    producto([
+      cuota({ cuotaId: 1, estado: 'PAGADA', primerVencimiento: '2026-07-10' }),
+      cuota({ cuotaId: 2, estado: 'VENCIDA', primerVencimiento: '2026-08-10' }),
+      cuota({ cuotaId: 3, estado: 'PENDIENTE', primerVencimiento: '2026-10-10' }),
+    ]),
+    producto([cuota({ cuotaId: 1, estado: 'VENCIDA', primerVencimiento: '2026-08-05' })]),
+  ];
+
+  it('mapea cada estado a su etiqueta', () => {
+    expect(etiquetaEstado('PAGADA')).toBe('Pagada');
+    expect(etiquetaEstado('VENCIDA')).toBe('Vencida');
+    expect(etiquetaEstado('A_DEFINIR')).toBe('A definir');
+    expect(etiquetaEstado('BAJA')).toBe('Baja');
+    expect(etiquetaEstado('COMPENSADA')).toBe('Compensada');
+    expect(etiquetaEstado('PENDIENTE')).toBe('Pendiente');
   });
 
-  it('prioriza compensada sobre pagada', () => {
-    expect(estadoCuota(cuota({ compensada: 1, pagado: 1 }), hoy)).toBe('Compensada');
+  it('la próxima cuota es la PENDIENTE o VENCIDA más temprana de todos los productos', () => {
+    expect(proximaCuota(productos)).toBe(productos[1].cuotas[0]);
   });
 
-  it('marca pagada aunque esté vencida', () => {
-    expect(estadoCuota(cuota({ pagado: 1, vencimiento1: '2026-01-10' }), hoy)).toBe('Pagada');
+  it('la primera vencida ignora las pendientes', () => {
+    expect(primeraCuotaVencida(productos)).toBe(productos[1].cuotas[0]);
   });
 
-  it('acepta flags booleanos', () => {
-    expect(estadoCuota(cuota({ pagado: true }), hoy)).toBe('Pagada');
-  });
-
-  it('vencida desde el día siguiente al primer vencimiento', () => {
-    expect(estadoCuota(cuota({ vencimiento1: '2026-09-22T00:00:00Z' }), hoy)).toBe('Vencida');
-  });
-
-  it('pendiente el mismo día del primer vencimiento, aunque venga en UTC', () => {
-    expect(estadoCuota(cuota({ vencimiento1: '2026-09-23T00:00:00Z' }), hoy)).toBe('Pendiente');
-  });
-
-  it('"A definir" si está impaga con importe 0 (aunque el vencimiento haya pasado)', () => {
-    expect(estadoCuota(cuota({ importe1: 0 }), hoy)).toBe('A definir');
-    expect(estadoCuota(cuota({ importe1: 0, vencimiento1: '2026-01-10' }), hoy)).toBe('A definir');
-    expect(estadoCuota(cuota({ importe1: 0, pagado: 1 }), hoy)).toBe('Pagada');
-    expect(estadoCuota(cuota({ importe1: 0, baja: 1 }), hoy)).toBe('Baja');
-  });
-
-  it('la próxima cuota ignora las que están "A definir"', () => {
-    const conImporte = cuota({ chequeraCuotaId: 2, vencimiento1: '2026-11-10' });
-    expect(
-      proximaCuota(
-        [cuota({ chequeraCuotaId: 1, vencimiento1: '2026-10-10', importe1: 0 }), conImporte],
-        hoy,
-      ),
-    ).toBe(conImporte);
-  });
-
-  it('pendiente si no tiene vencimiento', () => {
-    expect(estadoCuota(cuota({ vencimiento1: null }), hoy)).toBe('Pendiente');
-  });
-});
-
-describe('cuotas', () => {
-  it('ordena por primer vencimiento, producto y cuota', () => {
-    const ordenadas = ordenarCuotas([
-      cuota({ chequeraCuotaId: 3, vencimiento1: '2026-11-10' }),
-      cuota({ chequeraCuotaId: 2, vencimiento1: '2026-10-10', productoId: 2 }),
-      cuota({ chequeraCuotaId: 1, vencimiento1: '2026-10-10', productoId: 1 }),
-      cuota({ chequeraCuotaId: 4, vencimiento1: null }),
-    ]);
-    expect(ordenadas.map((c) => c.chequeraCuotaId)).toEqual([1, 2, 3, 4]);
-  });
-
-  it('la próxima cuota es la pendiente o vencida más temprana', () => {
-    const vencida = cuota({ chequeraCuotaId: 2, vencimiento1: '2026-08-10' });
-    const proxima = proximaCuota(
-      [
-        cuota({ chequeraCuotaId: 1, vencimiento1: '2026-07-10', pagado: 1 }),
-        vencida,
-        cuota({ chequeraCuotaId: 3, vencimiento1: '2026-10-10' }),
-      ],
-      hoy,
-    );
-    expect(proxima).toBe(vencida);
-  });
-
-  it('no hay próxima cuota si todas están pagadas', () => {
-    expect(proximaCuota([cuota({ pagado: 1 })], hoy)).toBeNull();
+  it('ignora las cuotas A_DEFINIR, pagadas, compensadas y de baja', () => {
+    const sinDeuda = [
+      producto([
+        cuota({ estado: 'A_DEFINIR' }),
+        cuota({ estado: 'PAGADA' }),
+        cuota({ estado: 'COMPENSADA' }),
+        cuota({ estado: 'BAJA' }),
+      ]),
+    ];
+    expect(proximaCuota(sinDeuda)).toBeNull();
+    expect(primeraCuotaVencida(sinDeuda)).toBeNull();
   });
 });
 
@@ -331,53 +303,5 @@ describe('número de chequera', () => {
 
   it('formatea el número de una chequera', () => {
     expect(numeroChequera(chequera())).toBe('1/2/100');
-  });
-});
-
-describe('agruparPorProducto', () => {
-  it('ordena productos por id y suma subtotales como el PDF de estado', () => {
-    const productos = agruparPorProducto([
-      cuota({
-        chequeraCuotaId: 3,
-        productoId: 3,
-        cuotaId: 2,
-        importe1: 386000,
-        producto: { productoId: 3, nombre: 'Arancel' },
-      }),
-      cuota({
-        chequeraCuotaId: 2,
-        productoId: 3,
-        cuotaId: 1,
-        importe1: 331000,
-        pagado: 1,
-        chequeraPagos: [
-          {
-            chequeraPagoId: 1,
-            fecha: '2026-03-19T00:00:00Z',
-            acreditacion: null,
-            importe: 331000,
-            tipoPagoId: 18,
-            tipoPago: { tipoPagoId: 18, nombre: 'MercadoPago' },
-          },
-        ],
-      }),
-      cuota({ chequeraCuotaId: 4, productoId: 3, cuotaId: 3, importe1: 99, baja: 1 }),
-      cuota({
-        chequeraCuotaId: 1,
-        productoId: 2,
-        cuotaId: 1,
-        importe1: 182000,
-        producto: { productoId: 2, nombre: 'Matrícula' },
-      }),
-    ]);
-    expect(productos.map((p) => p.nombre)).toEqual(['Matrícula', 'Arancel']);
-    const arancel = productos[1];
-    expect(arancel.cuotas.map((c) => c.numero)).toEqual(['1/3', '2/3', '3/3']);
-    expect(arancel.cuotas[0]).toMatchObject({ pagado: 331000, referencia: 'MercadoPago' });
-    expect(arancel).toMatchObject({
-      subtotalProducto: 717000,
-      subtotalPagado: 331000,
-      subtotalDeuda: 386000,
-    });
   });
 });

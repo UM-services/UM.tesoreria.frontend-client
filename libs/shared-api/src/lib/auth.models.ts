@@ -15,12 +15,16 @@ export interface LoginResponse {
   nombre: string;
   sede: string;
   geograficaId?: number;
+  /** Dependencia a la que pertenece el usuario (agregada al backend el 2026-10-07). */
+  dependenciaId?: number;
   /** 1 = usuario con permisos en el módulo administrador. */
   administrador?: number;
   /** 1 = usuario externo: sólo puede usar el módulo externo-consulta. */
   usuarioExterno?: number;
   /** 1 = usuario activo dado de alta. */
   activo?: number;
+  /** 1 = debe cambiar la clave antes de operar (clave provisoria puesta por un administrador). */
+  debeCambiarClave?: number;
   /** Flag binario del backend (1/0): impresión de chequera. */
   imprimeChequera?: number;
   /** Flag binario del backend (1/0): numeración de operaciones manual. */

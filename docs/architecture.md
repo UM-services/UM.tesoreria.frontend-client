@@ -17,12 +17,15 @@
         end
 
         subgraph "Libraries"
-            SharedAPI["@tesoreria/shared-api<br/>AuthService, AuthGuard<br/>Auth y error interceptors<br/>Models, tokens API_URL y EXTERNO_*"]
+            SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>BuscadorCuentaContableComponent<br/>BuscadorProveedorComponent<br/>BuscadorPersonaComponent"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>TextoEnriquecidoComponent<br/>PermisoDirective (*uiPermiso)"]
+            UIRichText["@tesoreria/ui-rich-text<br/>EditorEnriquecidoComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
-            FeatureOrdenCompra["@tesoreria/feature-orden-compra<br/>OcDashboardComponent<br/>OcCreateComponent<br/>OcDetailComponent"]
+            FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoRevisionComponent<br/>PedidoPresupuestoComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent<br/>CotizacionProcesoListaComponent<br/>CotizacionProcesoFormComponent<br/>CotizacionProcesoDetalleComponent<br/>CotizacionProcesoPedidasComponent<br/>CotizacionAdjudicacionComponent<br/>FormalizacionListaComponent<br/>FormalizacionDetalleComponent<br/>RecepcionListaComponent<br/>RecepcionDetalleComponent"]
+            FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>UsuariosComponent<br/>AsignacionUsuariosComponent<br/>AutorizantesEnvioComponent<br/>AutoridadesPresupuestoComponent<br/>CotizacionesMinimasComponent"]
+            FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent, SimuladorComponent"]
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
         end
@@ -33,7 +36,7 @@
     Compras --> UILayout
     Compras --> FeatureProveedores
     Compras --> FeatureGastos
-    Compras --> FeatureOrdenCompra
+    Compras --> FeaturePedidoCompra
 
     Pagos --> SharedAPI
     Pagos --> UIAuth
@@ -50,6 +53,8 @@
     Admin --> UILayout
     Admin --> FeatureProveedores
     Admin --> FeatureGastos
+    Admin --> FeatureAdministrador
+    Admin --> FeaturePermisos
 
     Contable --> SharedAPI
     Contable --> UIAuth
@@ -72,6 +77,8 @@
     ExternoConsulta -->|"loadComponent"| FeatureExterno
     FeatureExterno --> SharedAPI
     FeatureExterno --> UILayout
+
+    FeaturePedidoCompra --> UIRichText
 
     UILayout -->|"modal cambio de clave"| UIAuth
 
@@ -99,11 +106,12 @@ sequenceDiagram
     API-->>AuthService: LoginResponse {token, userId, login, nombre, sede, administrador, usuarioExterno, ...}
     AuthService->>API: GET /auth/me/{userId} (revalidar flags de acceso)
     AuthService-->>Login: Sesión almacenada con flags del backend
+    Note over Login,Cambio: Si debeCambiarClave = 1, ui-shell abre el modal forzado y no permite cerrarlo hasta cambiar la clave
     Login->>AuthGuard: Navegar a ruta protegida
     AuthGuard->>AuthGuard: Verificar token
     AuthGuard-->>User: Acceso permitido
     User->>AuthInterceptor: Solicitud protegida
-    AuthInterceptor->>API: Authorization: Bearer token
+    AuthInterceptor->>API: Authorization: Bearer + X-User-Id
     API-->>ErrorInterceptor: 401 o 403
     ErrorInterceptor->>AuthService: logout()
     ErrorInterceptor-->>User: Navegar a /login
@@ -120,6 +128,11 @@ sequenceDiagram
     Cambio-->>User: Mensaje de éxito y cierre automático
 ```
 
+`LoginResponse` incluye `debeCambiarClave` (1 = clave provisoria puesta por un administrador). Cuando la
+sesión lo trae en 1, `ui-shell` (`@tesoreria/ui-layout`) abre el modal de cambio de clave y bloquea su
+cierre hasta que el usuario la cambie; `POST /change-password` actualiza la sesión y limpia el flag, con
+lo que el modal deja de reabrirse.
+
 ### Guards de acceso por módulo
 
 `@tesoreria/shared-api` exporta, además de `authGuard` (sólo sesión), guards que leen
@@ -135,6 +148,26 @@ es editable por el usuario, la sesión se revalida contra `GET /auth/me/{userId}
 app y tras el login: el backend es la fuente de verdad y debe denegar 401/403 en las APIs que
 correspondan (`errorInterceptor` expulsa la sesión en ese caso).
 
+### Gating de permisos
+
+`@tesoreria/shared-api` exporta `PermisosService` y `permisoGuard(clave)`. El servicio carga el bundle
+efectivo del usuario (`GET /permisoEfectivo/usuario/{userId}`) al iniciar sesión y lo limpia al
+cerrar; si la llamada falla el bundle queda vacío (**fail-closed**). La clave sigue la convención
+`modulo.accion` (p. ej. `compras.iniciar_pedido`). `permisoGuard` espera `ensureLoaded` antes de
+decidir y, al denegar, redirige a `sin-acceso` (nunca a `/login`, para no generar bucles).
+`permisoAlgunoGuard(claves)` aplica la misma semántica con alternativa (**OR**): autoriza si el
+usuario tiene al menos una de las claves, para vistas compartidas por roles distintos (p. ej. el
+detalle de un pedido, que ven solicitante y autorizante). Cada app declara sus rutas gated junto a
+los guards de acceso: `[authGuard, usuarioInternoGuard, administradorGuard, permisoGuard('<clave>')]`
+o `permisoAlgunoGuard(['<clave>', ...])`.
+
+En la UI, `@tesoreria/ui-layout` aporta `PermisoDirective` (`*uiPermiso="'modulo.accion'"`) y el
+campo `ShellMenuItem.permiso`; `UiShellComponent.visibleMenuItems` oculta los ítems sin permiso y
+mantiene visibles los que no declaran `permiso`. El header `X-User-Id` que agrega `authInterceptor`
+es identidad transitoria para el PEP de las fachadas, hasta que el gateway valide el JWT. Las
+pantallas de administración del catálogo, roles, asignaciones y simulador viven en
+`@tesoreria/feature-permisos` (app administrador, detrás de `administradorGuard`).
+
 ## Estructura de Módulos - Compras
 
 ```mermaid
@@ -144,16 +177,46 @@ correspondan (`errorInterceptor` expulsa la sesión en ese caso).
     AppRoutes --> Blank["Blank Component<br/>Contenedor protegido"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
-    AppRoutes --> OrdenCompra["OrdenCompra Module<br/>@tesoreria/feature-orden-compra"]
-
-    OrdenCompra --> OCDashboard["OcDashboardComponent<br/>Listado y simulación de roles"]
-    OrdenCompra --> OCCreate["OcCreateComponent<br/>Formulario multi-paso"]
-    OrdenCompra --> OCDetail["OcDetailComponent<br/>Detalle y aprobación"]
+    AppRoutes --> Pedidos["PedidoCompra Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>iniciar, enviar, revisar,<br/>autorizar presupuesto y consultar"]
+    AppRoutes --> Cotizaciones["Cotizacion Routes<br/>@tesoreria/feature-pedido-compra<br/>guards por ruta:<br/>gestionar cotizaciones<br/>y autorizar adjudicación"]
+    AppRoutes --> Formalizacion["Formalizacion Routes<br/>@tesoreria/feature-pedido-compra<br/>guard por ruta: formalizar<br/>(emitir Orden de Compra)"]
+    AppRoutes --> Recepcion["Recepcion Routes<br/>@tesoreria/feature-pedido-compra<br/>guard por ruta: recepcionar<br/>(entrega total o parcial y cierre manual)"]
 
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
-    OCCreate --> BuscadorProveedor
-    OCCreate --> BuscadorCuentaContable
+    Pedidos --> Bandeja["PedidoBandeja Component<br/>compras.enviar_pedido"]
+    Pedidos --> Revision["PedidoRevision Component<br/>compras.estimar"]
+    Pedidos --> Presupuesto["PedidoPresupuesto Component<br/>compras.presupuesto.autorizar"]
+    Pedidos --> Consulta["PedidoConsulta Component<br/>compras.consultar_pedidos"]
+    Pedidos --> Detalle["PedidoDetalle Component<br/>permisoAlgunoGuard"]
+    Pedidos --> Editor["EditorEnriquecido Component<br/>@tesoreria/ui-rich-text"]
+    Pedidos --> Texto["TextoEnriquecido Component<br/>@tesoreria/ui-layout"]
+    Pedidos --> PedidoAPI["Fachada tesoreria-compras<br/>/compras/pedido"]
+    Bandeja --> PedidoAPI
+    Revision --> PedidoAPI
+    Presupuesto --> PedidoAPI
+    Consulta --> PedidoAPI
+    Detalle --> PedidoAPI
+
+    Cotizaciones --> CotizacionLista["CotizacionProcesoLista Component<br/>compras.cotizaciones.gestionar"]
+    Cotizaciones --> CotizacionForm["CotizacionProcesoForm Component<br/>compras.cotizaciones.gestionar"]
+    Cotizaciones --> CotizacionDetalle["CotizacionProcesoDetalle Component<br/>compras.cotizaciones.gestionar"]
+    Cotizaciones --> CotizacionPedidas["CotizacionProcesoPedidas Component<br/>compras.cotizaciones.gestionar"]
+    Cotizaciones --> CotizacionAdjudicacion["CotizacionAdjudicacion Component<br/>compras.adjudicacion.autorizar"]
+    Cotizaciones --> BuscadorProveedor
+    CotizacionLista --> CotizacionAPI["Fachada tesoreria-compras<br/>/compras/cotizacion"]
+    CotizacionForm --> CotizacionAPI
+    CotizacionDetalle --> CotizacionAPI
+    CotizacionPedidas --> CotizacionAPI
+    CotizacionAdjudicacion --> CotizacionAPI
+    Formalizacion --> FormalizacionLista["FormalizacionLista Component<br/>compras.formalizar"]
+    Formalizacion --> FormalizacionDetalle["FormalizacionDetalle Component<br/>compras.formalizar"]
+    FormalizacionLista --> FormalizacionAPI["Fachada tesoreria-compras<br/>/compras/formalizacion"]
+    FormalizacionDetalle --> FormalizacionAPI
+    Recepcion --> RecepcionLista["RecepcionLista Component<br/>compras.recepcionar"]
+    Recepcion --> RecepcionDetalle["RecepcionDetalle Component<br/>compras.recepcionar"]
+    RecepcionLista --> RecepcionAPI["Fachada tesoreria-compras<br/>/compras/recepcion"]
+    RecepcionDetalle --> RecepcionAPI
 ```
 
 ## Estructura de Módulos - Administrador
@@ -162,12 +225,30 @@ correspondan (`errorInterceptor` expulsa la sesión en ese caso).
     flowchart TD
     AdminApp["Administrador App"] --> AppRoutes["Rutas de la App"]
     AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
-    AppRoutes --> Dependencias["Dependencias Component"]
+    AppRoutes --> Dependencias["Dependencias Component<br/>@tesoreria/feature-administrador"]
+    AppRoutes --> Asignaciones["AsignacionUsuarios Component<br/>@tesoreria/feature-administrador"]
+    AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compraPedidoAutorizante del core"]
+    AppRoutes --> Usuarios["Usuarios Component<br/>@tesoreria/feature-administrador<br/>alta, configuración y reset de clave"]
+    AppRoutes --> Autoridades["AutoridadesPresupuesto Component<br/>@tesoreria/feature-administrador<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario del core"]
+    AppRoutes --> CotizacionesMinimas["CotizacionesMinimas Component<br/>@tesoreria/feature-administrador<br/>compras.cotizaciones.configurar"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
+    AppRoutes --> Permisos["Permisos Component<br/>@tesoreria/feature-permisos"]
+    AppRoutes --> Roles["Roles Component<br/>@tesoreria/feature-permisos"]
+    AppRoutes --> Catalogo["Catalogo Component<br/>@tesoreria/feature-permisos"]
+    AppRoutes --> Simulador["Simulador Component<br/>@tesoreria/feature-permisos"]
     AppRoutes --> Redirect["Redirección a /dependencias"]
 
     Dependencias --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
+    Asignaciones --> PermisosAPI["API de seguridad del core<br/>usuario, rol, permiso y overrides"]
+    Autorizantes --> AutorizantesAPI["Slice compraPedidoAutorizante del core<br/>dependencias habilitadas por usuario"]
+    Usuarios --> UsuariosAPI["Slice usuario del core<br/>searchTodos, alta, configuración,<br/>activo y password"]
+    Autoridades --> AutoridadesAPI["Slices de presupuesto del core<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario"]
+    CotizacionesMinimas --> TramosAPI["Fachada tesoreria-compras<br/>/compras/cotizacion/tramos"]
+    Permisos --> PermisosAPI
+    Roles --> PermisosAPI
+    Catalogo --> PermisosAPI
+    Simulador --> PermisosAPI
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable
 ```
@@ -186,39 +267,6 @@ correspondan (`errorInterceptor` expulsa la sesión en ese caso).
     Facturas --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable
-```
-
-## Estructura de Módulos - Órdenes de Compra
-
-```mermaid
-    flowchart TD
-    OCMOD["feature-orden-compra"] --> Routes["Rutas"]
-    Routes --> Dashboard["OcDashboardComponent<br/>/orden-compra"]
-    Routes --> Create["OcCreateComponent<br/>/orden-compra/nueva"]
-    Routes --> Detail["OcDetailComponent<br/>/orden-compra/oc/:id"]
-
-    Dashboard --> Service["OrdenCompraService"]
-    Create --> Service
-    Detail --> Service
-
-    Service --> Models["Modelos: OrdenCompra<br/>ArticuloOC, Comentario<br/>RolSimulado, OrdenCompraEstado"]
-
-    subgraph "Flujo de Estados"
-        PEND[PENDIENTE_APROBACION] --> APRO[APROBADA]
-        APRO --> ENV[ENVIADA]
-        ENV --> CUM[CUMPLIDA]
-        PEND --> ANU1[ANULADA]
-        APRO --> ANU2[ANULADA]
-        ENV --> CPP[CUMPLIDA_PARCIAL]
-    end
-
-    subgraph "Simulación de Roles"
-        DIRC["Director de Compras<br/>Crear OC"]
-        DIRA["Director de Administración<br/>Aprobar ≤ $50k"]
-        SEC["Secretario Administrativo<br/>Aprobar $50k-$200k"]
-        DIRG["Director de Gestión<br/>Aprobar $50k-$200k"]
-        REC["Rector<br/>Aprobar > $200k"]
-    end
 ```
 
 ## Estructura de Módulos - Guaraní
@@ -260,9 +308,11 @@ classDiagram
         +string nombre
         +string sede
         +number geograficaId
+        +number dependenciaId
         +number administrador
         +number usuarioExterno
         +number activo
+        +number debeCambiarClave
         +number imprimeChequera
         +number numeroOpManual
         +number habilitaOpEliminacion

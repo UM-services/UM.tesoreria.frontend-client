@@ -48,5 +48,12 @@ Thumbs.db
 .nx/cache
 .nx/workspace-data
 .angular
+.vscode
 
 vitest.config.*.timestamp*
+
+.nx/migrate-runs
+.vitest
+
+# graphify knowledge graph (local, rebuilt by git hooks)
+/graphify-out/

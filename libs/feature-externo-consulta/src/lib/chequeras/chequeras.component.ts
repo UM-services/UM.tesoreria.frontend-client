@@ -1,5 +1,5 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { BuscadorPersonaComponent } from '@tesoreria/ui-layout';
 import { ChequeraDetalleModalComponent } from './chequera-detalle-modal.component';
 import { ChequerasBusquedaStore } from './chequeras-busqueda.store';
@@ -11,6 +11,7 @@ import { numeroChequera, tieneDeuda } from './chequeras.utils';
   standalone: true,
   imports: [CurrencyPipe, DecimalPipe, ChequeraDetalleModalComponent, BuscadorPersonaComponent],
   providers: [ChequerasBusquedaStore],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './chequeras.component.html',
 })
 export class ChequerasComponent implements OnInit {

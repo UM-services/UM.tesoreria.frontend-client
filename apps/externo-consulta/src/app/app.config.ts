@@ -2,7 +2,7 @@ import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { appRoutes } from './app.routes';
 import {
   API_URL,
@@ -20,7 +20,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(appRoutes),
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor, errorInterceptor])),
     { provide: API_URL, useValue: environment.apiUrl },
     { provide: EXTERNO_API_BASE, useValue: environment.apiBase },
     { provide: EXTERNO_ENABLE_DEBUG, useValue: environment.enableDebug },

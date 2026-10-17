@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ShellMenuItem, UiShellComponent } from '@tesoreria/ui-layout';
 
 @Component({
   standalone: true,
   imports: [UiShellComponent],
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `<ui-shell moduleName="Chequeras" [menuItems]="menuItems" />`,
 })
 export class AppComponent {
@@ -15,5 +16,6 @@ export class AppComponent {
     { label: 'Emisión', path: '/emision' },
     { label: 'Cobranzas', path: '/cobranzas' },
     { label: 'Consultas', path: '/consultas' },
+    { label: 'Personas', path: '/personas' },
   ];
 }

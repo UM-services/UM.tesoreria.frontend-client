@@ -1,5 +1,10 @@
 import { Route } from '@angular/router';
-import { authGuard, SIN_ACCESO_RUTA, usuarioInternoGuard } from '@tesoreria/shared-api';
+import {
+  authGuard,
+  permisoGuard,
+  SIN_ACCESO_RUTA,
+  usuarioInternoGuard,
+} from '@tesoreria/shared-api';
 import { NoAccesoComponent } from '@tesoreria/ui-layout';
 import { BlankComponent } from './blank.component';
 
@@ -19,19 +24,34 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
-    path: 'orden-compra',
-    loadChildren: () => import('@tesoreria/feature-orden-compra').then(m => m.ordenCompraRoutes),
+    path: 'pedido',
+    loadChildren: () => import('@tesoreria/feature-pedido-compra').then(m => m.pedidoCompraRoutes),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
+    path: 'cotizacion',
+    loadChildren: () => import('@tesoreria/feature-pedido-compra').then(m => m.cotizacionRoutes),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
+    path: 'formalizacion',
+    loadChildren: () => import('@tesoreria/feature-pedido-compra').then(m => m.formalizacionRoutes),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
+    path: 'recepcion',
+    loadChildren: () => import('@tesoreria/feature-pedido-compra').then(m => m.recepcionRoutes),
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
     path: 'gastos',
     loadComponent: () => import('@tesoreria/feature-gastos').then(m => m.GastosComponent),
-    canActivate: [authGuard, usuarioInternoGuard],
+    canActivate: [authGuard, usuarioInternoGuard, permisoGuard('compras.gastos')],
   },
   {
     path: 'proveedores',
     loadComponent: () => import('@tesoreria/feature-proveedores').then(m => m.ProveedoresComponent),
-    canActivate: [authGuard, usuarioInternoGuard],
+    canActivate: [authGuard, usuarioInternoGuard, permisoGuard('compras.proveedores')],
   },
   {
     path: '**',

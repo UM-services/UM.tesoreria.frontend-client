@@ -1,0 +1,137 @@
+<div class="mx-auto max-w-6xl p-4">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Compras</p>
+    <h1 class="um-page-title">Cotizaciones pedidas</h1>
+    <p class="um-page-desc">
+      Pedidos de cotización enviados a proveedores, pendientes de cargar su respuesta. Reunidos de
+      todos los procesos para cargar los valores sin entrar proceso por proceso.
+    </p>
+  </header>
+
+  <section class="um-card">
+    @if (isLoading()) {
+      <div class="p-6 text-sm text-um-muted">Cargando cotizaciones pedidas...</div>
+    } @else if (errorMessage()) {
+      <div class="um-alert-error m-4">{{ errorMessage() }}</div>
+    } @else if (pendientes().length === 0) {
+      <div class="p-6 text-sm text-um-muted">No hay cotizaciones pedidas pendientes de respuesta.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Proceso</th>
+              <th scope="col">Proveedor</th>
+              <th scope="col">Email</th>
+              <th scope="col">Enviado</th>
+              <th scope="col" class="text-right">Ítems</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pendiente of pendientes(); track pendiente.proveedor.compraCotizacionProveedorId) {
+              <tr>
+                <td class="font-semibold text-um-ink">{{ pendiente.numero || '—' }}</td>
+                <td>{{ pendiente.proveedor.proveedorId }}</td>
+                <td>{{ pendiente.proveedor.email || '—' }}</td>
+                <td>{{ pendiente.proveedor.fechaEnvio ? (pendiente.proveedor.fechaEnvio | date: 'short') : '—' }}</td>
+                <td class="text-right">{{ pendiente.items?.length ?? 0 }}</td>
+                <td class="text-right">
+                  <button type="button" class="um-link-btn" (click)="abrirRespuesta(pendiente)">
+                    Cargar valores
+                  </button>
+                  <button type="button" class="um-link-btn" (click)="marcarNoCotiza(pendiente)">No cotiza</button>
+                  <a [routerLink]="['/cotizacion', pendiente.compraCotizacionId]" class="um-link-btn">Ver proceso</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (respondiendo(); as pendiente) {
+    <section class="um-card mt-4">
+      <h2 class="um-section">
+        Respuesta del proveedor {{ pendiente.proveedor.proveedorId }} — proceso
+        {{ pendiente.numero || '—' }}
+      </h2>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div>
+          <label class="um-label">Moneda</label>
+          <input class="um-input" [(ngModel)]="moneda" />
+        </div>
+        <div>
+          <label class="um-label">Total ofertado</label>
+          <input type="number" class="um-input" [(ngModel)]="total" />
+        </div>
+        <div>
+          <label class="um-label">Plazo de entrega</label>
+          <input class="um-input" [(ngModel)]="plazoEntrega" />
+        </div>
+        <div>
+          <label class="um-label">Condición de pago</label>
+          <input class="um-input" [(ngModel)]="condicionPago" />
+        </div>
+        <div>
+          <label class="um-label">Garantía</label>
+          <input class="um-input" [(ngModel)]="garantia" />
+        </div>
+        <div>
+          <label class="um-label">Validez de la oferta</label>
+          <input class="um-input" [(ngModel)]="validezOferta" />
+        </div>
+      </div>
+
+      <div class="mt-3 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Ítem</th>
+              <th scope="col">Cotiza</th>
+              <th scope="col" class="text-right">Precio unitario</th>
+              <th scope="col">Marca</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of itemsRespuesta(); track item.compraCotizacionItemId; let i = $index) {
+              <tr>
+                <td>#{{ item.compraCotizacionItemId }}</td>
+                <td>
+                  <input
+                    type="checkbox"
+                    [checked]="item.cotiza"
+                    (change)="actualizarItem(i, 'cotiza', $any($event.target).checked)"
+                  />
+                </td>
+                <td class="text-right">
+                  <input
+                    type="number"
+                    class="um-input"
+                    [ngModel]="item.precioUnitario"
+                    (ngModelChange)="actualizarItem(i, 'precioUnitario', $event)"
+                  />
+                </td>
+                <td>
+                  <input
+                    class="um-input"
+                    [ngModel]="item.marca"
+                    (ngModelChange)="actualizarItem(i, 'marca', $event)"
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-3 flex justify-end gap-3">
+        <button type="button" class="um-btn-secondary" (click)="cancelarRespuesta()">Cancelar</button>
+        <button type="button" class="um-btn-primary" [disabled]="guardando()" (click)="guardarRespuesta()">
+          Guardar respuesta
+        </button>
+      </div>
+    </section>
+  }
+</div>

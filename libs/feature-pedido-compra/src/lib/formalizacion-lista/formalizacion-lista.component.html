@@ -1,0 +1,177 @@
+<div class="mx-auto max-w-6xl p-4">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Compras</p>
+    <h1 class="um-page-title">Formalización de la Orden de Compra</h1>
+    <p class="um-page-desc">
+      Adjudicaciones pendientes de emitir su Orden de Compra. El proveedor, el monto y las condiciones
+      se toman de la oferta adjudicada y pueden ajustarse antes de formalizar.
+    </p>
+  </header>
+
+  <section class="um-card">
+    <h2 class="um-section">Pendientes de formalizar</h2>
+    @if (isLoading()) {
+      <div class="p-6 text-sm text-um-muted">Cargando adjudicaciones...</div>
+    } @else if (errorMessage()) {
+      <div class="um-alert-error m-4">{{ errorMessage() }}</div>
+    } @else if (pendientes().length === 0) {
+      <div class="p-6 text-sm text-um-muted">No hay adjudicaciones pendientes de formalizar.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Proceso</th>
+              <th scope="col">Proveedor</th>
+              <th scope="col" class="text-right">Monto</th>
+              <th scope="col">Pago</th>
+              <th scope="col">Entrega</th>
+              <th scope="col">Garantía</th>
+              <th scope="col" class="text-right">Ítems</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pendiente of pendientes(); track pendiente.compraCotizacionId) {
+              <tr>
+                <td class="font-semibold text-um-ink">{{ pendiente.numero || '—' }}</td>
+                <td>{{ pendiente.proveedorId ?? '—' }}</td>
+                <td class="text-right">
+                  {{ pendiente.monto !== null ? (pendiente.monto | number: '1.2-2') : '—' }}
+                  {{ pendiente.moneda || '' }}
+                </td>
+                <td>{{ pendiente.condicionPago || '—' }}</td>
+                <td>{{ pendiente.plazoEntrega || '—' }}</td>
+                <td>{{ pendiente.garantia || '—' }}</td>
+                <td class="text-right">{{ pendiente.items?.length ?? 0 }}</td>
+                <td class="text-right">
+                  <button type="button" class="um-link-btn" (click)="abrir(pendiente)">Formalizar</button>
+                  <a [routerLink]="['/cotizacion', pendiente.compraCotizacionId]" class="um-link-btn">Ver proceso</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (activo(); as pendiente) {
+    <section class="um-card mt-4">
+      <h2 class="um-section">Emitir Orden de Compra — proceso {{ pendiente.numero || '—' }}</h2>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div>
+          <label class="um-label">Número externo (opcional)</label>
+          <input class="um-input" [(ngModel)]="numeroExterno" />
+        </div>
+        <div>
+          <label class="um-label">Moneda</label>
+          <input class="um-input" [(ngModel)]="moneda" />
+        </div>
+        <div>
+          <label class="um-label">Monto</label>
+          <input type="number" class="um-input" [(ngModel)]="monto" />
+        </div>
+        <div>
+          <label class="um-label">Condición de pago</label>
+          <input class="um-input" [(ngModel)]="condicionPago" />
+        </div>
+        <div>
+          <label class="um-label">Plazo de entrega</label>
+          <input class="um-input" [(ngModel)]="plazoEntrega" />
+        </div>
+        <div>
+          <label class="um-label">Garantía</label>
+          <input class="um-input" [(ngModel)]="garantia" />
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label class="um-label">Objeto / alcance</label>
+        <textarea class="um-input" rows="3" [(ngModel)]="objeto"></textarea>
+      </div>
+      <div class="mt-3">
+        <label class="um-label">Observación</label>
+        <input class="um-input" [(ngModel)]="observacion" />
+      </div>
+
+      <div class="mt-3 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Descripción</th>
+              <th scope="col" class="text-right">Cantidad</th>
+              <th scope="col">Unidad</th>
+              <th scope="col" class="text-right">Precio unitario</th>
+              <th scope="col" class="text-right">Subtotal</th>
+              <th scope="col">Marca</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of pendiente.items ?? []; track item.compraCotizacionItemId ?? $index) {
+              <tr>
+                <td>{{ item.orden ?? '—' }}</td>
+                <td>{{ item.descripcion || '—' }}</td>
+                <td class="text-right">{{ item.cantidad ?? '—' }}</td>
+                <td>{{ item.unidad || '—' }}</td>
+                <td class="text-right">
+                  {{ item.precioUnitario !== null ? (item.precioUnitario | number: '1.2-2') : '—' }}
+                </td>
+                <td class="text-right">
+                  {{ item.subtotal !== null ? (item.subtotal | number: '1.2-2') : '—' }}
+                </td>
+                <td>{{ item.marca || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-3 flex justify-end gap-3">
+        <button type="button" class="um-btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button type="button" class="um-btn-primary" [disabled]="guardando()" (click)="confirmar()">
+          Emitir Orden de Compra
+        </button>
+      </div>
+    </section>
+  }
+
+  <section class="um-card mt-4">
+    <h2 class="um-section">Órdenes de Compra emitidas</h2>
+    @if (emitidas().length === 0) {
+      <div class="p-6 text-sm text-um-muted">Todavía no hay órdenes de compra emitidas.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Número</th>
+              <th scope="col">Externo</th>
+              <th scope="col">Proveedor</th>
+              <th scope="col" class="text-right">Monto</th>
+              <th scope="col">Fecha</th>
+              <th scope="col" class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (oc of emitidas(); track oc.compraFormalizacionId) {
+              <tr>
+                <td class="font-semibold text-um-ink">{{ oc.numero || '—' }}</td>
+                <td>{{ oc.numeroExterno || '—' }}</td>
+                <td>{{ oc.proveedorId ?? '—' }}</td>
+                <td class="text-right">
+                  {{ oc.monto !== null ? (oc.monto | number: '1.2-2') : '—' }} {{ oc.moneda || '' }}
+                </td>
+                <td>{{ oc.fecha ? (oc.fecha | date: 'short') : '—' }}</td>
+                <td class="text-right">
+                  <a [routerLink]="['/formalizacion', oc.compraFormalizacionId]" class="um-link-btn">Ver OC</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

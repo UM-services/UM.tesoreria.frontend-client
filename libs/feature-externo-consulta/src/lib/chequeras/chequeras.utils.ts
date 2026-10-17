@@ -1,11 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChequeraEstado,
-  CuotaConPagos,
+  CuotaEstado,
   DeudaChequera,
   EstadoCuota,
   Lectivo,
   Pagina,
+  ProductoEstado,
 } from './chequeras.models';
 
 export const MENSAJE_SOPORTE = 'Si persiste, contacte a Tesorería.';
@@ -21,11 +22,6 @@ export function normalizarLista<T>(data: unknown): T[] {
 
 export function soloDigitos(valor: string): string {
   return valor.replace(/\D/g, '');
-}
-
-/** El backend manda los flags como Byte (0/1); se toleran booleanos. */
-export function esVerdadero(valor: unknown): boolean {
-  return valor === true || Number(valor) === 1;
 }
 
 /**
@@ -88,53 +84,42 @@ function inicioDelDia(fecha: Date): number {
   return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()).getTime();
 }
 
-// Precedencia: baja > compensada > pagada > a definir > vencida > pendiente.
-// Vencida desde el primer vencimiento, igual que el cálculo de deuda del core.
-// "A definir": cuota impaga con importe 0. En develop son las cuotas de arancel de diciembre a
-// febrero, generadas antes de que se fije su importe; no suman deuda ni tienen PDF.
-export function estadoCuota(cuota: CuotaConPagos, hoy: Date): EstadoCuota {
-  if (esVerdadero(cuota.baja)) {
-    return 'Baja';
-  }
-  if (esVerdadero(cuota.compensada)) {
-    return 'Compensada';
-  }
-  if (esVerdadero(cuota.pagado)) {
-    return 'Pagada';
-  }
-  if (!cuota.importe1) {
-    return 'A definir';
-  }
-  const vencimiento = fechaCalendario(cuota.vencimiento1);
-  if (vencimiento && vencimiento.getTime() < inicioDelDia(hoy)) {
-    return 'Vencida';
-  }
-  return 'Pendiente';
-}
-
-export function ordenarCuotas(cuotas: CuotaConPagos[]): CuotaConPagos[] {
-  const tiempo = (cuota: CuotaConPagos) =>
-    fechaCalendario(cuota.vencimiento1)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-  return [...cuotas].sort(
-    (a, b) => tiempo(a) - tiempo(b) || a.productoId - b.productoId || a.cuotaId - b.cuotaId,
-  );
-}
-
-/** La cuota Pendiente o Vencida con el primer vencimiento más temprano. */
-export function proximaCuota(cuotas: CuotaConPagos[], hoy: Date): CuotaConPagos | null {
-  const candidatas = cuotas.filter((cuota) => {
-    const estado = estadoCuota(cuota, hoy);
-    return estado === 'Pendiente' || estado === 'Vencida';
-  });
-  return ordenarCuotas(candidatas)[0] ?? null;
+/** La cuota PENDIENTE o VENCIDA (según `estado` del backend) con el primer vencimiento más temprano. */
+export function proximaCuota(productos: ProductoEstado[]): CuotaEstado | null {
+  return primeraConEstado(productos, ['PENDIENTE', 'VENCIDA']);
 }
 
 /**
- * La cuota Vencida con el primer vencimiento más temprano. `vencimiento1`/`importe1` de
+ * La cuota VENCIDA con el primer vencimiento más temprano. `vencimiento1`/`importe1` de
  * `chequeraCuota/deuda` son de la primera cuota de la chequera, aunque esté pagada.
  */
-export function primeraCuotaVencida(cuotas: CuotaConPagos[], hoy: Date): CuotaConPagos | null {
-  return ordenarCuotas(cuotas.filter((cuota) => estadoCuota(cuota, hoy) === 'Vencida'))[0] ?? null;
+export function primeraCuotaVencida(productos: ProductoEstado[]): CuotaEstado | null {
+  return primeraConEstado(productos, ['VENCIDA']);
+}
+
+function primeraConEstado(productos: ProductoEstado[], estados: EstadoCuota[]): CuotaEstado | null {
+  const tiempo = (cuota: CuotaEstado) =>
+    fechaCalendario(cuota.primerVencimiento)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+  const candidatas = productos
+    .flatMap((producto) => producto.cuotas)
+    .filter((cuota) => estados.includes(cuota.estado));
+  return candidatas.reduce<CuotaEstado | null>(
+    (mejor, cuota) => (mejor === null || tiempo(cuota) < tiempo(mejor) ? cuota : mejor),
+    null,
+  );
+}
+
+const ETIQUETAS_ESTADO: Record<EstadoCuota, string> = {
+  BAJA: 'Baja',
+  COMPENSADA: 'Compensada',
+  PAGADA: 'Pagada',
+  A_DEFINIR: 'A definir',
+  VENCIDA: 'Vencida',
+  PENDIENTE: 'Pendiente',
+};
+
+export function etiquetaEstado(estado: EstadoCuota): string {
+  return ETIQUETAS_ESTADO[estado] ?? estado;
 }
 
 export function tieneDeuda(chequera: ChequeraEstado): boolean {
@@ -251,71 +236,4 @@ export function numeroChequera(chequera: {
   chequeraSerieId: number;
 }): string {
   return `${chequera.facultadId}/${chequera.tipoChequeraId}/${chequera.chequeraSerieId}`;
-}
-
-export interface CuotaDelEstado {
-  cuota: CuotaConPagos;
-  /** "n/total" dentro del producto, como en el PDF "Estado de Chequera". */
-  numero: string;
-  aPagar: number;
-  pagado: number;
-  fechaPago: string | null;
-  /** Archivo del banco o medio de pago (ej. "MercadoPago"). */
-  referencia: string;
-}
-
-export interface ProductoDelEstado {
-  productoId: number;
-  nombre: string;
-  cuotas: CuotaDelEstado[];
-  subtotalProducto: number;
-  subtotalPagado: number;
-  subtotalDeuda: number;
-}
-
-/**
- * Agrupa las cuotas por producto como el PDF "Estado de Chequera": productos por id ascendente
- * (Matrícula antes que Arancel), cuotas por número, y subtotales producto / pagado / deuda.
- * Las cuotas dadas de baja no suman al producto. La deuda es lo que falta pagar de cada cuota
- * impaga (no pagada, compensada ni de baja): un recargo pagado en una cuota no descuenta deuda
- * de otras.
- */
-export function agruparPorProducto(cuotas: CuotaConPagos[]): ProductoDelEstado[] {
-  const grupos = new Map<number, CuotaConPagos[]>();
-  for (const cuota of cuotas) {
-    grupos.set(cuota.productoId, [...(grupos.get(cuota.productoId) ?? []), cuota]);
-  }
-  return [...grupos.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([productoId, lista]) => {
-      const ordenadas = [...lista].sort((a, b) => a.cuotaId - b.cuotaId);
-      const filas = ordenadas.map((cuota): CuotaDelEstado => {
-        const pagos = cuota.chequeraPagos ?? [];
-        const primero = pagos[0];
-        return {
-          cuota,
-          numero: `${cuota.cuotaId}/${ordenadas.length}`,
-          aPagar: cuota.importe1 ?? 0,
-          pagado: pagos.reduce((total, pago) => total + (pago.importe ?? 0), 0),
-          fechaPago: primero?.fecha ?? null,
-          referencia: primero ? primero.archivo || primero.tipoPago?.nombre || '' : '',
-        };
-      });
-      const vigentes = filas.filter((fila) => !esVerdadero(fila.cuota.baja));
-      const subtotalProducto = vigentes.reduce((total, fila) => total + fila.aPagar, 0);
-      const subtotalPagado = filas.reduce((total, fila) => total + fila.pagado, 0);
-      const subtotalDeuda = vigentes
-        .filter((fila) => !esVerdadero(fila.cuota.pagado) && !esVerdadero(fila.cuota.compensada))
-        .reduce((total, fila) => total + Math.max(fila.aPagar - fila.pagado, 0), 0);
-      return {
-        productoId,
-        nombre:
-          ordenadas.find((cuota) => cuota.producto?.nombre)?.producto?.nombre ??
-          `Producto ${productoId}`,
-        cuotas: filas,
-        subtotalProducto,
-        subtotalPagado,
-        subtotalDeuda,
-      };
-    });
 }

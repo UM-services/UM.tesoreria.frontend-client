@@ -2,11 +2,11 @@ import { Route } from '@angular/router';
 import {
   administradorGuard,
   authGuard,
+  permisoGuard,
   SIN_ACCESO_RUTA,
   usuarioInternoGuard,
 } from '@tesoreria/shared-api';
 import { NoAccesoComponent } from '@tesoreria/ui-layout';
-import { DependenciasComponent } from './dependencias/dependencias';
 
 export const appRoutes: Route[] = [
   {
@@ -19,14 +19,76 @@ export const appRoutes: Route[] = [
     component: NoAccesoComponent,
   },
   {
+    path: 'personas',
+      loadComponent: () => import('@tesoreria/feature-personas').then((m) => m.PersonasComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
     path: 'dependencias',
-    component: DependenciasComponent,
+    loadComponent: () =>
+      import('@tesoreria/feature-administrador').then(m => m.DependenciasComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Sólo administradores: alta, configuración y habilitar/deshabilitar usuarios.
+    path: 'usuarios',
+    loadComponent: () => import('@tesoreria/feature-administrador').then(m => m.UsuariosComponent),
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
     path: 'asignaciones',
     loadComponent: () =>
-      import('./asignacion-usuarios/asignacion-usuarios').then(m => m.AsignacionUsuariosComponent),
+      import('@tesoreria/feature-administrador').then(m => m.AsignacionUsuariosComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Dependencias sobre las que cada usuario puede aprobar/rechazar el envío de pedidos.
+    path: 'autorizantes-envio',
+    loadComponent: () =>
+      import('@tesoreria/feature-administrador').then(m => m.AutorizantesEnvioComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Referencia por ejercicio, perfiles de autoridad por monto y su asignación a usuarios.
+    path: 'autoridades-presupuesto',
+    loadComponent: () =>
+      import('@tesoreria/feature-administrador').then(m => m.AutoridadesPresupuestoComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Tramos de cotizaciones mínimas por monto (configuración del proceso de compras).
+    path: 'cotizaciones-minimas',
+    loadComponent: () =>
+      import('@tesoreria/feature-administrador').then(m => m.CotizacionesMinimasComponent),
+    canActivate: [
+      authGuard,
+      usuarioInternoGuard,
+      administradorGuard,
+      permisoGuard('compras.cotizaciones.configurar'),
+    ],
+  },
+  {
+    // Sólo administradores: asignación de roles y permisos a cualquier usuario.
+    path: 'permisos',
+    loadComponent: () => import('@tesoreria/feature-permisos').then(m => m.PermisosComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Sólo administradores: ABM de roles y matriz rol × permiso.
+    path: 'roles',
+    loadComponent: () => import('@tesoreria/feature-permisos').then(m => m.RolesComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Sólo administradores: ABM del catálogo de permisos.
+    path: 'catalogo',
+    loadComponent: () => import('@tesoreria/feature-permisos').then(m => m.CatalogoComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Sólo administradores: simulador (lectura) del permiso efectivo de un usuario.
+    path: 'simulador',
+    loadComponent: () => import('@tesoreria/feature-permisos').then(m => m.SimuladorComponent),
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
