@@ -28,11 +28,11 @@ on:
         type: boolean
         required: false
         default: false
-      deployRunner:
-        description: Self-hosted runner label for the target environment (e.g. develop, staging)
+      deployRunners:
+        description: JSON list of self-hosted runner labels (one deploy leg per label; the leg's environment name is the label)
         type: string
         required: false
-        default: ''
+        default: '[]'
       deployScript:
         description: Deployment script executed on the self-hosted runner
         type: string
@@ -135,12 +135,16 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.app }},mode=max
 
   deploy:
-    name: Deploy ${{ inputs.environment }} services
+    name: Deploy ${{ inputs.environment }} services (${{ matrix.runner }})
     needs: publish-docker
     if: github.event_name == 'push' && inputs.deploy
-    runs-on: [self-hosted, linux, "${{ inputs.deployRunner }}"]
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(inputs.deployRunners) }}
+    runs-on: [self-hosted, linux, "${{ matrix.runner }}"]
     environment:
-      name: ${{ inputs.environment }}
+      name: ${{ matrix.runner }}
     permissions:
       contents: read
 
