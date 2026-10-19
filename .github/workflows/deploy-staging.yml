@@ -20,7 +20,7 @@ jobs:
       environment: staging
       apps: '["administrador", "chequeras", "compras", "contable", "contratados", "guarani", "externo-consulta", "pagos"]'
       deploy: true
-      deployRunner: staging
+      deployRunners: '["staging", "staging-new"]'
       deployScript: /data/docker/env-staging/deploy-tesoreria-frontend-staging.sh
     permissions:
       contents: read

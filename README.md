@@ -263,7 +263,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.36.0**
+Versión actual: **0.37.0**
 
 ## Licencia
 

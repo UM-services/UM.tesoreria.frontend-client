@@ -20,7 +20,7 @@ jobs:
       environment: develop
       apps: '["administrador", "chequeras", "compras", "contable", "contratados", "guarani", "externo-consulta", "pagos"]'
       deploy: true
-      deployRunner: develop
+      deployRunners: '["develop"]'
       deployScript: /kibaig0ahNgashee/infraestructura/um/env-develop/deploy-tesoreria-frontend-develop.sh
     permissions:
       contents: read
