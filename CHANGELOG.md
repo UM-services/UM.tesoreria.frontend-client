@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.37.0] - 2026-10-19
+
+### Added
+
+- feat(ci): el workflow reutilizable `deploy-pipeline.yml` admite **varios runners de despliegue**. El nuevo input `deployRunners` (lista JSON, por defecto `[]`) alimenta una matriz en el job `deploy` (`fail-fast: false`) con una pata por label: cada pata corre en `runs-on: [self-hosted, linux, <runner>]`, usa `environment.name` igual al label y el nombre del job indica el runner (`Deploy <environment> services (<runner>)`). Así un mismo push puede desplegarse en más de un host del mismo ambiente.
+
+### Changed
+
+- refactor(ci): `deployRunner` (string) se reemplaza por `deployRunners` (lista JSON) en el contrato de `deploy-pipeline.yml`. `deploy-develop.yml` pasa `'["develop"]'` y `deploy-staging.yml` pasa `'["staging", "staging-new"]'`, por lo que staging despliega el mismo commit tanto en `staging` como en `staging-new`; `docker-publish.yml` no lo envía (usa `deploy: false`). Los llamadores que sigan enviando `deployRunner` deben migrar al input nuevo, porque GitHub rechaza inputs no declarados en un `workflow_call`.
+- docs: `README.md` registra la versión actual **0.37.0** y `AGENTS.md` describe el pipeline con `deployRunners` en lugar de `deployRunner`.
+
 ## [0.36.0] - 2026-10-17
 
 ### Added
