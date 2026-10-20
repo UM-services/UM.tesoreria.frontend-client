@@ -71,7 +71,11 @@
                 <td>{{ pedido.fecha | date: 'short' }}</td>
                 <td>{{ pedido.montoEstimado !== null ? (pedido.montoEstimado | number: '1.2-2') : '—' }}</td>
                 <td class="text-right">{{ pedido.cantidadCotizacionesMinima ?? '—' }}</td>
-                <td>{{ pedido.necesidad }}</td>
+                <td class="align-top">
+                  <div class="max-w-md">
+                    <ui-texto-enriquecido [texto]="pedido.necesidad" />
+                  </div>
+                </td>
                 <td class="text-right">
                   <div class="flex justify-end gap-3">
                     <a [routerLink]="['/pedido', pedido.compraPedidoId]" class="um-link-btn">Ver</a>
