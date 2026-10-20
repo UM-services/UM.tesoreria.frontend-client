@@ -6,7 +6,7 @@ export interface PedidoCompraItem {
   unidad: string;
   descripcion: string;
   especificaciones: string;
-  referenciaWeb: string;
+  referenciaWeb?: string | null;
 }
 
 export interface PedidoCompra {

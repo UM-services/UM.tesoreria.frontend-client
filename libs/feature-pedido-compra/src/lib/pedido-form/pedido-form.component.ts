@@ -19,6 +19,9 @@ import {
   PedidoCompraRequest,
 } from '../models/pedido-compra.models';
 
+/** Largo máximo razonable de una URL de referencia (la columna del backend es TEXT). */
+const MAX_REFERENCIA_WEB = 4096;
+
 /**
  * Formulario de pedido. En modo alta (`/pedido/nuevo`) muestra el contexto del
  * solicitante y crea el pedido; en modo edición (`/pedido/:id/editar`) precarga un
@@ -187,6 +190,15 @@ export class PedidoFormComponent implements OnInit {
       this.errorMessage.set('Ingrese el fundamento o necesidad.');
       return;
     }
+    const referenciaLarga = this.items.some(
+      (item) => (item.referenciaWeb ?? '').trim().length > MAX_REFERENCIA_WEB,
+    );
+    if (referenciaLarga) {
+      this.errorMessage.set(
+        `La referencia web no puede superar los ${MAX_REFERENCIA_WEB} caracteres.`,
+      );
+      return;
+    }
     this.isLoading.set(true);
     const request: PedidoCompraRequest = {
       necesidad: this.necesidad,
@@ -196,7 +208,11 @@ export class PedidoFormComponent implements OnInit {
       montoConocido: this.montoConocido,
       montoEstimado: this.montoConocido ? this.montoEstimado : null,
       fuenteEstimacion: this.montoConocido ? this.fuenteEstimacion || null : null,
-      items: this.items.map((item, index) => ({ ...item, orden: index + 1 })),
+      items: this.items.map((item, index) => ({
+        ...item,
+        orden: index + 1,
+        referenciaWeb: (item.referenciaWeb ?? '').trim(),
+      })),
       enviar,
     };
 
@@ -211,9 +227,10 @@ export class PedidoFormComponent implements OnInit {
         this.isLoading.set(false);
         this.router.navigate(['/pedido', pedido.compraPedidoId]);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.isLoading.set(false);
-        this.errorMessage.set('No se pudo guardar el pedido de compra.');
+        const detail = (err as { error?: { detail?: string } } | null)?.error?.detail;
+        this.errorMessage.set(detail ?? 'No se pudo guardar el pedido de compra.');
       },
     });
   }
