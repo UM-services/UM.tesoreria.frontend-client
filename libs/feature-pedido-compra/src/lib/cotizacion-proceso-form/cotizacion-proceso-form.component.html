@@ -48,7 +48,7 @@
                   <td>{{ item.descripcion }}</td>
                   <td>{{ item.cantidad }}</td>
                   <td>{{ item.unidad }}</td>
-                  <td class="text-sm text-um-muted">{{ item.especificaciones || '—' }}</td>
+                  <td class="align-top"><ui-texto-enriquecido [texto]="item.especificaciones" /></td>
                 </tr>
               }
             </tbody>

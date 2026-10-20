@@ -2,7 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { BuscadorProveedorComponent, ProveedorSearchResponse } from '@tesoreria/ui-layout';
+import {
+  BuscadorProveedorComponent,
+  ProveedorSearchResponse,
+  TextoEnriquecidoComponent,
+} from '@tesoreria/ui-layout';
 import { CotizacionProcesoService } from '../data-access/cotizacion-proceso.service';
 import { CotizacionPendiente, CotizacionProcesoRequest } from '../models/cotizacion-proceso.models';
 
@@ -21,7 +25,7 @@ interface ProveedorElegido {
 @Component({
   selector: 'app-cotizacion-proceso-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, BuscadorProveedorComponent],
+  imports: [CommonModule, FormsModule, BuscadorProveedorComponent, TextoEnriquecidoComponent],
   templateUrl: './cotizacion-proceso-form.component.html',
 })
 export class CotizacionProcesoFormComponent implements OnInit {
