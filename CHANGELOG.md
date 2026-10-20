@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.37.1] - 2026-10-20
+
+### Fixed
+
+- fix(ui-auth): el pie del login compartido (`libs/ui-auth/src/lib/login.html`) decía «Universidad de **Montevideo** · Tesorería» y pasa a «Universidad de **Mendoza** · Tesorería». Como ese pie es el único de `ui-auth`, el nombre equivocado se mostraba en las ocho apps (compras, pagos, chequeras, administrador, contable, contratados, guarani, externo-consulta); sólo cambia el texto, sin tocar estilos ni layout. Los bundles viejos que todavía lo muestran están en `dist/` y `.nx/cache/` y desaparecen al reconstruir.
+
+### Changed
+
+- docs: `AGENTS.md` incorpora la regla de branding (el sistema pertenece a la Universidad de Mendoza, `libs/ui-auth/src/lib/login.html` define el pie de las ocho apps) para que el nombre no se vuelva a inventar; `README.md` registra la versión actual **0.37.1**.
+
 ## [0.37.0] - 2026-10-19
 
 ### Added
