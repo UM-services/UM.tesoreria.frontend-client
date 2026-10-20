@@ -27,6 +27,7 @@ export class PedidoBandejaComponent implements OnInit {
 
   readonly pedidos = signal<PedidoCompra[]>([]);
   readonly isLoading = signal(false);
+  readonly sinDependencias = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly pendientes = signal<Set<number>>(new Set());
@@ -47,8 +48,9 @@ export class PedidoBandejaComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.pedidoCompraService.bandeja(this.estadoFiltro || null).subscribe({
-      next: pedidos => {
-        this.pedidos.set(pedidos ?? []);
+      next: bandeja => {
+        this.pedidos.set(bandeja?.pedidos ?? []);
+        this.sinDependencias.set(bandeja?.sinDependencias ?? false);
         this.isLoading.set(false);
       },
       error: () => {

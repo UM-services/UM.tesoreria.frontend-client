@@ -38,6 +38,18 @@
   <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
     @if (isLoading()) {
       <div class="p-6 text-sm text-um-muted">Cargando…</div>
+    } @else if (sinDependencias()) {
+      <div class="p-4">
+        <div class="um-alert um-alert-warn">
+          <p class="font-semibold">Tu usuario no tiene dependencias habilitadas.</p>
+          <p class="mt-1">
+            La bandeja sólo muestra pedidos de las dependencias asignadas como autorizante de
+            envío, así que por ahora va a quedar vacía aunque existan solicitudes pendientes.
+            Pedí que te asignen una en
+            <strong>Administrador → Autorizantes de envío</strong>.
+          </p>
+        </div>
+      </div>
     } @else if (pedidos().length === 0) {
       <div class="p-6 text-sm text-um-muted">No hay pedidos para el filtro seleccionado.</div>
     } @else {
