@@ -132,12 +132,26 @@
       <h2 class="text-base font-semibold text-um-ink">Nuevo usuario</h2>
       <div class="mt-4 grid gap-5 md:grid-cols-2">
         <div>
-          <label class="um-label" for="alta-login">Usuario (login)</label>
-          <input id="alta-login" class="um-input mt-2 w-full" [(ngModel)]="altaForm.login" autocomplete="off" />
+          <label class="um-label" for="alta-nombre">Nombre</label>
+          <input id="alta-nombre" class="um-input mt-2 w-full" [ngModel]="altaForm.nombre" (ngModelChange)="onNombreChange($event)" autocomplete="off" />
+          <p class="mt-1 text-xs text-um-muted">Sólo nombres, sin títulos (Dr., Lic., etc.).</p>
         </div>
         <div>
-          <label class="um-label" for="alta-nombre">Nombre</label>
-          <input id="alta-nombre" class="um-input mt-2 w-full" [(ngModel)]="altaForm.nombre" autocomplete="off" />
+          <label class="um-label" for="alta-apellido">Apellido</label>
+          <input id="alta-apellido" class="um-input mt-2 w-full" [ngModel]="altaForm.apellido" (ngModelChange)="onApellidoChange($event)" autocomplete="off" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="um-label" for="alta-login">Usuario (se genera automáticamente)</label>
+          <input id="alta-login" class="um-input mt-2 w-full" [value]="loginSugerido()" disabled placeholder="Completá nombre y apellido" />
+          <p class="mt-1 text-xs text-um-muted">
+            @if (sugiriendoLogin()) {
+              Generando login…
+            } @else if (loginSugerido()) {
+              Se usará este login. Si ya existe, se agregarán letras del nombre; no se podrá editar después.
+            } @else {
+              Se calcula con la primera letra del nombre y el apellido, sin tildes ni caracteres especiales.
+            }
+          </p>
         </div>
         <div>
           <label class="um-label" for="alta-clave">Clave</label>

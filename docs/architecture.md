@@ -228,7 +228,7 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Dependencias["Dependencias Component<br/>@tesoreria/feature-administrador"]
     AppRoutes --> Asignaciones["AsignacionUsuarios Component<br/>@tesoreria/feature-administrador"]
     AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compraPedidoAutorizante del core"]
-    AppRoutes --> Usuarios["Usuarios Component<br/>@tesoreria/feature-administrador<br/>alta, configuración y reset de clave"]
+    AppRoutes --> Usuarios["Usuarios Component<br/>@tesoreria/feature-administrador<br/>alta con login sugerido, configuración y reset de clave"]
     AppRoutes --> Autoridades["AutoridadesPresupuesto Component<br/>@tesoreria/feature-administrador<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario del core"]
     AppRoutes --> CotizacionesMinimas["CotizacionesMinimas Component<br/>@tesoreria/feature-administrador<br/>compras.cotizaciones.configurar"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
@@ -242,7 +242,7 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     Dependencias --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     Asignaciones --> PermisosAPI["API de seguridad del core<br/>usuario, rol, permiso y overrides"]
     Autorizantes --> AutorizantesAPI["Slice compraPedidoAutorizante del core<br/>dependencias habilitadas por usuario"]
-    Usuarios --> UsuariosAPI["Slice usuario del core<br/>searchTodos, alta, configuración,<br/>activo y password"]
+    Usuarios --> UsuariosAPI["Slice usuario del core<br/>searchTodos, alta con login generado,<br/>login-sugerido, configuración, activo y password"]
     Autoridades --> AutoridadesAPI["Slices de presupuesto del core<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario"]
     CotizacionesMinimas --> TramosAPI["Fachada tesoreria-compras<br/>/compras/cotizacion/tramos"]
     Permisos --> PermisosAPI
