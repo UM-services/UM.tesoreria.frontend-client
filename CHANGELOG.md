@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.38.0] - 2026-10-22
+
+### Added
+
+- feat(compras): la **bandeja de envío** (`PedidoBandejaComponent`, `/pedido/bandeja`) suma la columna **Motivo/Urgencia**: cuando el pedido trae `urgente` muestra la insignia «Urgente» y, si existe, el `urgenciaMotivo` debajo; en caso contrario muestra un guion. La fila inline de rechazo pasa a `colspan="7"` para cubrir la columna nueva. Sin cambios de backend (los campos `urgente` y `urgenciaMotivo` ya formaban parte de `PedidoCompra`).
+- feat(compras): la **bandeja del autorizante** explica una bandeja vacía por falta de asignación. `PedidoCompraService.bandeja` pasa a consumir `POST /pedido/bandeja` como `BandejaPedido` (`pedidos`, `dependenciaIds`, `sinDependencias`) en lugar de un arreglo de pedidos, y la vista muestra un `um-alert-warn` («Tu usuario no tiene dependencias habilitadas») con el camino **Administrador → Autorizantes de envío** cuando `sinDependencias` es verdadero. Requiere que la fachada `compras` devuelva el objeto nuevo.
+
+### Changed
+
+- feat(compras): las bandejas, listados y consultas de pedidos renderizan la **necesidad** y las **especificaciones** con `ui-texto-enriquecido` (`@tesoreria/ui-layout`) en lugar de texto plano, para respetar el HTML que se guarda desde `ui-editor-enriquecido` (disponible desde 0.31.0). Aplica a `PedidoBandejaComponent`, `PedidoConsultaComponent`, `PedidoListaComponent`, `PedidoPresupuestoComponent`, `PedidoRevisionComponent` y a la tabla de ítems de `CotizacionProcesoFormComponent`, que declaran `TextoEnriquecidoComponent` en sus `imports`. Sin cambios de contrato.
+- docs: `CHANGELOG.md` documenta la release **0.38.0** y `README.md` registra la versión actual **0.38.0**.
+
+### Fixed
+
+- fix(compras): la **referencia web** del ítem del pedido pasa a ser opcional (`referenciaWeb?: string | null`). El detalle la muestra como enlace «Abrir referencia» con `target="_blank"` y `rel="noopener noreferrer"`: `PedidoDetalleComponent.enlaceReferencia` acepta sólo `http(s)`, antepone `https://` cuando falta el esquema y descarta esquemas peligrosos. El formulario agrega el placeholder `https://…` y la ayuda «Enlace del producto (opcional).», recorta el valor antes de enviarlo, rechaza las referencias de más de 4096 caracteres y muestra el `detail` del backend cuando falla el guardado en lugar del mensaje genérico.
+
 ## [0.37.1] - 2026-10-20
 
 ### Fixed

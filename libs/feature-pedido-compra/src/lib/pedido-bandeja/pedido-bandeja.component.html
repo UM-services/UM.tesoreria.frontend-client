@@ -61,6 +61,7 @@
               <th scope="col">Estado</th>
               <th scope="col">Dependencia</th>
               <th scope="col">Fecha</th>
+              <th scope="col">Motivo/Urgencia</th>
               <th scope="col">Necesidad</th>
               <th scope="col" class="text-right">Acciones</th>
             </tr>
@@ -76,6 +77,18 @@
                 </td>
                 <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
                 <td>{{ pedido.fecha | date: 'short' }}</td>
+                <td class="align-top">
+                  @if (pedido.urgente) {
+                    <span class="um-badge bg-red-100 text-red-800">Urgente</span>
+                    @if (pedido.urgenciaMotivo) {
+                      <p class="mt-1 max-w-[16rem] text-sm text-um-text">
+                        {{ pedido.urgenciaMotivo }}
+                      </p>
+                    }
+                  } @else {
+                    <span class="text-sm text-um-muted">—</span>
+                  }
+                </td>
                 <td class="align-top">
                   <div class="max-w-md">
                     <ui-texto-enriquecido [texto]="pedido.necesidad" />
@@ -107,7 +120,7 @@
               </tr>
               @if (rechazandoId() === pedido.compraPedidoId) {
                 <tr>
-                  <td colspan="6" class="bg-um-surface">
+                  <td colspan="7" class="bg-um-surface">
                     <div class="space-y-2 p-2">
                       <label class="um-label" [for]="'motivo-' + pedido.compraPedidoId"
                         >Motivo del rechazo</label
