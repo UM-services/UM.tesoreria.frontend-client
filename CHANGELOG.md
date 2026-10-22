@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.39.0] - 2026-10-22
+
+### Added
+
+- feat(administrador): el **alta de usuarios** (`/usuarios` del app `administrador`) ya no pide un login escrito a mano: se completa **Nombre** y **Apellido** y el login lo genera el core. `UsuarioAdminService.sugerirLogin(nombre, apellido)` consume `GET /usuario/login-sugerido/{nombre}/{apellido}` (ambos valores URL-encoded) y devuelve `LoginSugerido { login }`; la vista lo muestra en un `um-input` deshabilitado («Usuario (se genera automáticamente)») con el estado «Generando login…» mientras consulta y la ayuda «Si ya existe, se agregarán letras del nombre; no se podrá editar después». La sugerencia se pide con `debounceTime(300)` + `switchMap` (descarta respuestas viejas) y sólo cuando nombre y apellido tienen contenido; si el core falla, `catchError` deja la sugerencia vacía y el alta sigue disponible.
+
+### Changed
+
+- feat(administrador): el contrato de alta `UsuarioAltaRequest` (`usuario-admin.service.ts`) pasa a `apellido` obligatorio y `login` opcional; `guardarAlta` valida el apellido (mensaje «El apellido es requerido.»), ya no exige login y envía el request sin `login`. `FormUsuario` reemplaza el campo `login` por `apellido`; el nombre conserva la aclaración «Sólo nombres, sin títulos (Dr., Lic., etc.)». La configuración (`PUT /usuario/usuario/{id}/configuracion`) no cambia: sigue sin tocar login ni clave y deja `apellido` vacío en el formulario. Requiere un core cuyo `POST /usuario/usuario` acepte `apellido` sin `login` y que exponga `GET /usuario/login-sugerido/{nombre}/{apellido}`.
+- test(administrador): nuevo `libs/feature-administrador/src/lib/usuarios/usuarios.spec.ts` con cuatro casos (sugerencia con debounce y render del login en el input, sin sugerencia si falta nombre o apellido, alta sin `login` y con `apellido`, y apellido obligatorio); `usuario-admin.service.spec.ts` suma la verificación del path URL-encoded de `login-sugerido` con tildes y espacios.
+- docs: `CHANGELOG.md` documenta la release **0.39.0**, `README.md` registra la versión actual **0.39.0** y `docs/architecture.md` anota el login sugerido en el diagrama del módulo Administrador.
+
 ## [0.38.0] - 2026-10-22
 
 ### Added
