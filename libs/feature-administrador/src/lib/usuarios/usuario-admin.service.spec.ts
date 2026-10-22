@@ -51,9 +51,9 @@ describe('UsuarioAdminService', () => {
 
   it('crea contra POST /usuario/usuario con el body enviado', () => {
     const body = {
-      login: 'ana',
       password: 'clave',
       nombre: 'Ana',
+      apellido: 'Pérez',
       dependenciaId: null,
       geograficaId: 1,
       imprimeChequera: 0,
@@ -72,7 +72,21 @@ describe('UsuarioAdminService', () => {
     const req = httpTestingController.expectOne(`${coreBase}/usuario/usuario`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(body);
-    req.flush({ userId: 9, ...body });
+    req.flush({ userId: 9, login: 'aperez', nombre: 'Ana Pérez' });
+  });
+
+  it('sugiere el login con nombre y apellido en el path (URL-encoded)', () => {
+    let resultado: unknown = null;
+
+    service.sugerirLogin('María Paz', 'Martínez').subscribe(value => (resultado = value));
+
+    const req = httpTestingController.expectOne(
+      `${coreBase}/usuario/login-sugerido/Mar%C3%ADa%20Paz/Mart%C3%ADnez`,
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({ login: 'mpmartinez' });
+
+    expect(resultado).toEqual({ login: 'mpmartinez' });
   });
 
   it('actualiza la configuración contra PUT /usuario/usuario/{id}/configuracion', () => {
