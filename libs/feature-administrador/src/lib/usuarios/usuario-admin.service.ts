@@ -33,11 +33,12 @@ export interface Dependencia {
   nombre: string;
 }
 
-/** Alta de usuario (`POST /usuario/usuario`). */
+/** Alta de usuario (`POST /usuario/usuario`). El login se genera si no se envía. */
 export interface UsuarioAltaRequest {
-  login: string;
+  login?: string;
   password: string;
   nombre: string;
+  apellido: string;
   dependenciaId: number | null;
   geograficaId: number;
   imprimeChequera: number;
@@ -49,6 +50,11 @@ export interface UsuarioAltaRequest {
   activo: number;
   administrador: number;
   usuarioExterno: number;
+}
+
+/** Respuesta de `GET /usuario/login-sugerido`. */
+export interface LoginSugerido {
+  login: string;
 }
 
 /** Configuración (`PUT /usuario/usuario/{id}/configuracion`): no toca login ni clave. */
@@ -89,6 +95,13 @@ export class UsuarioAdminService {
 
   crear(request: UsuarioAltaRequest): Observable<UsuarioAdmin> {
     return this.http.post<UsuarioAdmin>(`${this.coreUrl}/usuario/usuario`, request);
+  }
+
+  /** Login que el core generaría para el nombre y apellido indicados (no crea nada). */
+  sugerirLogin(nombre: string, apellido: string): Observable<LoginSugerido> {
+    return this.http.get<LoginSugerido>(
+      `${this.coreUrl}/usuario/login-sugerido/${encodeURIComponent(nombre)}/${encodeURIComponent(apellido)}`,
+    );
   }
 
   actualizarConfiguracion(
