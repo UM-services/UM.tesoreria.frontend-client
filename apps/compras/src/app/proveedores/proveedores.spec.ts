@@ -3,7 +3,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { API_URL } from '@tesoreria/shared-api';
-import { cuitValido, mensajeDeError } from '@tesoreria/feature-proveedores';
 
 type Comp = import('@tesoreria/feature-proveedores').ProveedoresComponent;
 
@@ -107,6 +106,12 @@ describe('ProveedoresComponent', () => {
 });
 
 describe('cuitValido', () => {
+  let cuitValido: typeof import('@tesoreria/feature-proveedores').cuitValido;
+
+  beforeAll(async () => {
+    ({ cuitValido } = await import('@tesoreria/feature-proveedores'));
+  });
+
   it('acepta CUIT con dígito verificador correcto', () => {
     expect(cuitValido('30-99999903-0')).toBe(true);
     expect(cuitValido('30-99999903-3')).toBe(false);
@@ -125,6 +130,12 @@ describe('cuitValido', () => {
 });
 
 describe('mensajeDeError', () => {
+  let mensajeDeError: typeof import('@tesoreria/feature-proveedores').mensajeDeError;
+
+  beforeAll(async () => {
+    ({ mensajeDeError } = await import('@tesoreria/feature-proveedores'));
+  });
+
   it('devuelve message del body o el genérico', () => {
     expect(mensajeDeError({ error: { message: 'boom' } }, 'g')).toBe('boom');
     expect(mensajeDeError({ error: null }, 'g')).toBe('g');
