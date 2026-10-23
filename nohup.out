@@ -1,0 +1,22 @@
+2026-10-09 10:05:42,430 [   1774]   WARN - #c.i.m.l.t.AIAssistantTelemetryExporterKt - No Langfuse auth string found.
+2026-10-09 10:05:42,639 [   1983]   WARN - c.i.o.u.r.overrides - Conflicting registry key definition for key completion.cloud.enableCompletionInCommitMessage: it was defined by plugin org.jetbrains.completion.full.line but redefined by plugin org.jetbrains.completion.full.line. Consider adding overrides="true" for one of the plugins, see the documentation for com.intellij.openapi.util.registry.RegistryKeyBean.overrides for more details.
+2026-10-09 10:05:43,343 [   2687]   WARN - #c.i.s.c.i.StationSocketConnectionLoop - Discovery connection failed with NoSuchFileException (/run/user/1000/jb.station.sock)
+2026-10-09 10:05:44,114 [   3458]   WARN - #c.i.o.e.c.i.EditorColorsManagerImpl - resource not found: colorSchemes/SqlDefault.xml
+2026-10-09 10:05:44,118 [   3462]   WARN - #c.i.o.e.c.i.EditorColorsManagerImpl - resource not found: colorSchemes/sassDefault.xml
+2026-10-09 10:05:44,148 [   3492]   WARN - #c.i.o.e.c.i.EditorColorsManagerImpl - resource not found: colorSchemes/SqlDarcula.xml
+2026-10-09 10:05:50,598 [   9942]   WARN - #com.github.weisj.jsvg.parser.NodeMap - unsupported foreignObject
+2026-10-09 10:05:50,601 [   9945]   WARN - #com.github.weisj.jsvg.parser.NodeMap - unsupported foreignObject
+2026-10-09 10:05:50,601 [   9945]   WARN - #com.github.weisj.jsvg.parser.NodeMap - unsupported foreignObject
+2026-10-09 10:05:50,601 [   9945]   WARN - #com.github.weisj.jsvg.parser.NodeMap - unsupported foreignObject
+2026-10-09 10:05:50,601 [   9945]   WARN - #com.github.weisj.jsvg.parser.NodeMap - unsupported foreignObject
+2026-10-09 10:05:50,603 [   9947]   WARN - #com.github.weisj.jsvg.parser.NodeMap - unsupported foreignObject
+2026-10-09 10:05:50,603 [   9947]   WARN - #com.github.weisj.jsvg.parser.NodeMap - unsupported foreignObject
+2026-10-09 10:05:50,729 [  10073]   WARN - #c.i.s.c.i.StationSocketConnectionLoop - /mcp-servers connection failed with NoSuchFileException (/run/user/1000/jb.station.sock)
+2026-10-09 10:05:50,773 [  10117]   WARN - #c.i.s.c.i.StationSocketConnectionLoop - RecentProjects connection failed with NoSuchFileException (/run/user/1000/jb.station.sock)
+2026-10-09 10:05:51,174 [  10518]   WARN - #c.i.m.l.c.q.QuotaManager2Impl - Quota refill state was updated by another thread, wanted to update to Error(exception=com.intellij.ml.llm.core.quota.ResultDoesNotMatchConditionException: Returned result does not match the condition, previous=null)
+2026-10-09 10:05:58,154 [  17498]   WARN - #c.i.s.SpellCheckerManager - Couldn't load dictionary vue.dic with loader 'class org.jetbrains.vuejs.spellchecker.VueSpellcheckingDictionaryProvider'
+2026-10-09 10:15:44,212 [ 603556]   WARN - #c.i.o.a.ExperimentalFeatureImpl - Feature 'ml.llm.ask.ai' is disabled in Release. Set 'percentOfUsers' to 100% to enable in Release.
+2026-10-09 10:15:44,242 [ 603586]   WARN - #c.i.m.l.c.c.u.AIAssistantUIUtil - quota and refill values are returned as null by platform, refill: null, quota: null
+2026-10-09 10:15:44,242 [ 603586]   WARN - #c.i.m.l.c.c.u.AIAssistantUIUtil - getQuotaUiLabelData returning unknown
+2026-10-09 10:19:29,846 [ 829190]   WARN - org.apache.velocity.deprecation - configuration key 'resource.loader' has been deprecated in favor of 'resource.loaders'
+2026-10-09 10:19:29,847 [ 829191]   WARN - org.apache.velocity.deprecation - configuration key 'includes.resource.loader.instance' has been deprecated in favor of 'resource.loader.includes.instance'
