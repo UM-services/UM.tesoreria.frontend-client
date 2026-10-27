@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.40.0] - 2026-10-23
+
+### Added
+
+- feat(proveedores): la **cuenta contable pasa a ser opcional** en el alta y la edición de proveedores (`ProveedoresComponent`). `numeroCuenta` deja de tener `Validators.required`, el modelo lo declara `numeroCuenta?: number | null` y `guardar()` normaliza el valor vacío a `null` (nunca `0`, que el core rechaza por la FK a `plancta`) antes de enviar el `POST`/`PUT`. La etiqueta del formulario deja de mostrar el asterisco de obligatorio.
+- feat(proveedores): la **validación de CUIT pasa a ser informativa**. El nuevo `cuitValido()` de `libs/feature-proveedores/src/lib/proveedores/cuit.util.ts` (exportado desde `@tesoreria/feature-proveedores`) reimplementa `modCUIT.validaCUIT` de VB6: exige 11 dígitos, acepta el CUIT «sin dato» `00-00000000-0` y verifica el dígito verificador con los pesos `5,4,3,2,7,6,5,4,3,2`. Si el CUIT cargado no valida, el formulario muestra el aviso ámbar «CUIT no validado (formato o dígito verificador incorrecto). Se puede guardar igual.» y el guardado sigue disponible; sólo se bloquea el CUIT vacío («Ingrese el CUIT.»). El `formatCuit()` de blur sigue normalizando a `XX-XXXXXXXX-X`.
+
+### Changed
+
+- feat(proveedores): el guardado deja de hacer el pre-chequeo `GET /proveedor/cuit/{cuit}` y lo resuelve el core: se envía el `POST` (alta) o el `PUT /proveedor/{proveedorId}` (edición) directamente y, si el CUIT está repetido, el `409` se muestra con el `message` que devuelve el core. El nuevo `mensajeDeError(err, generico)` (mismo `cuit.util.ts`) extrae `error.message` y cae al texto genérico («Error al guardar proveedor.» / «Error al eliminar proveedor.») cuando no hay body útil. La baja también muestra el motivo del `409` (por ejemplo, proveedor con movimientos asociados) en lugar del error genérico y ya no informa una eliminación exitosa. Requiere un core que valide el CUIT repetido con `409` y devuelva `{ status, error, message }`.
+- test(compras): `apps/compras/src/app/proveedores/proveedores.spec.ts` usa `provideHttpClientTesting()` + `HttpTestingController` para fijar el contrato: guardar sin cuenta contable envía `numeroCuenta: null`, un CUIT mal formado sólo avisa (`cuitNoValidado`) y no dispara `GET /cuit/...`, la edición usa `PUT`, el `409` del core se muestra en `errorMessage` y la baja con `409` no se marca como exitosa. La librería lazy se resuelve con `import()` dinámico para respetar `@nx/enforce-module-boundaries`; nuevos bloques cubren `cuitValido` y `mensajeDeError`.
+- docs: `CHANGELOG.md` documenta la release **0.40.0** y `README.md` registra la versión actual **0.40.0**. Los diagramas de `docs/architecture.md` no cambian: la estructura de módulos, rutas y dependencias se mantiene y el cambio queda dentro de `ProveedoresComponent` y su utilidad.
+
 ## [0.39.0] - 2026-10-22
 
 ### Added

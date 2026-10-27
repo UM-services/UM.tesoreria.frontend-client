@@ -3,9 +3,18 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { API_URL } from '@tesoreria/shared-api';
-import { cuitValido, mensajeDeError } from '@tesoreria/feature-proveedores';
 
+type FeatureSdk = typeof import('@tesoreria/feature-proveedores');
 type Comp = import('@tesoreria/feature-proveedores').ProveedoresComponent;
+
+// feature-proveedores es una librería lazy-loaded: se resuelve con import()
+// dinámico para no romper la regla @nx/enforce-module-boundaries.
+let cuitValido: FeatureSdk['cuitValido'];
+let mensajeDeError: FeatureSdk['mensajeDeError'];
+
+beforeAll(async () => {
+  ({ cuitValido, mensajeDeError } = await import('@tesoreria/feature-proveedores'));
+});
 
 describe('ProveedoresComponent', () => {
   let component: Comp;
