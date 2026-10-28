@@ -52,6 +52,7 @@ Thumbs.db
 .nx/workspace-data
 .angular
 .vscode
+nohup.out
 
 vitest.config.*.timestamp*
 
