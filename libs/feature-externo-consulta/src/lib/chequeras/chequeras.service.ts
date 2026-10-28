@@ -16,6 +16,7 @@ import {
   EstadoChequera,
   FacultadAsignada,
   Lectivo,
+  MateriasEstado,
   Pagina,
   SedeAsignada,
 } from './chequeras.models';
@@ -105,6 +106,19 @@ export class ChequerasService {
     return this.http.get<EstadoChequera>(
       `${this.coreBaseUrl}/chequera/estado/${facultadId}/${tipoChequeraId}/${chequeraSerieId}/${alternativaId}`,
     );
+  }
+
+  /**
+   * Materias de grado del alumno en el lectivo de la chequera, un elemento por fuente (SIUM, Guaraní).
+   * Endpoint aparte del estado: si la fuente tarda, el detalle de cuotas no espera.
+   */
+  materiasInscriptas(chequera: ChequeraEstado): Observable<MateriasEstado[]> {
+    const { facultadId, tipoChequeraId, chequeraSerieId } = chequera;
+    return this.http
+      .get<
+        MateriasEstado[]
+      >(`${this.coreBaseUrl}/materiasInscriptas/${facultadId}/${tipoChequeraId}/${chequeraSerieId}`)
+      .pipe(map((data) => normalizarLista<MateriasEstado>(data)));
   }
 
   deuda(chequera: ChequeraEstado): Observable<DeudaChequera> {
