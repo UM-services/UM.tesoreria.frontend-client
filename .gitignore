@@ -29,6 +29,9 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
+# Logs de procesos en segundo plano (nohup)
+nohup.out
+
 # Miscellaneous
 /.angular/cache
 .sass-cache/
@@ -49,6 +52,7 @@ Thumbs.db
 .nx/workspace-data
 .angular
 .vscode
+nohup.out
 
 vitest.config.*.timestamp*
 

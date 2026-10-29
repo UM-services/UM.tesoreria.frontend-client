@@ -4,10 +4,16 @@ import { ChequeraEstado, CuotaEstado, ProductoEstado } from './chequeras.models'
 import {
   esDeudaCentinela,
   esPdfValido,
+  estadoMaterias,
+  etiquetaCurso,
+  etiquetaCursoInscripcion,
   etiquetaEstado,
+  etiquetaFuente,
+  etiquetaPeriodo,
   fechaCalendario,
   formatearFecha,
   formatearInstante,
+  leyendaMaterias,
   numeroChequera,
   parsearNumeroChequera,
   lectivoVigente,
@@ -303,5 +309,58 @@ describe('número de chequera', () => {
 
   it('formatea el número de una chequera', () => {
     expect(numeroChequera(chequera())).toBe('1/2/100');
+  });
+});
+
+describe('etiquetas de materias', () => {
+  it('etiquetaFuente: SIUM, Guaraní y el valor crudo si es desconocida', () => {
+    // protects=el nombre visible de cada fuente académica; fails_when=una fuente nueva se oculta o se renombra;
+    // no_claim=no prueba qué fuentes existen en el core.
+    expect(etiquetaFuente('SIUM')).toBe('SIUM');
+    expect(etiquetaFuente('GUARANI')).toBe('Guaraní');
+    expect(etiquetaFuente('OTRA')).toBe('OTRA');
+  });
+
+  it('etiquetaPeriodo: anual, semestres y "Sin período" para SIN_PERIODO o desconocidos', () => {
+    // protects=las etiquetas del contrato; fails_when=un período desconocido, nulo o SIN_PERIODO no cae en "Sin período";
+    // no_claim=no prueba el orden de los períodos (lo decide el core).
+    expect(etiquetaPeriodo('ANUAL')).toBe('Anual');
+    expect(etiquetaPeriodo('PRIMER_SEMESTRE')).toBe('1er Semestre');
+    expect(etiquetaPeriodo('SEGUNDO_SEMESTRE')).toBe('2do Semestre');
+    expect(etiquetaPeriodo('SIN_PERIODO')).toBe('Sin período');
+    expect(etiquetaPeriodo('TRIMESTRE')).toBe('Sin período');
+    expect(etiquetaPeriodo(null)).toBe('Sin período');
+  });
+
+  it('etiquetaCurso y etiquetaCursoInscripcion distinguen null, 0 y un curso real', () => {
+    // protects=el curso 0 de la inscripción es "Sin cursar" y un curso nulo "Sin curso asignado";
+    // fails_when=el 0 se muestra como número o el null como "Curso null";
+    // no_claim=no prueba de dónde sale el curso.
+    expect(etiquetaCurso(3)).toBe('Curso 3');
+    expect(etiquetaCurso(null)).toBe('Sin curso asignado');
+    expect(etiquetaCursoInscripcion(5)).toBe('5');
+    expect(etiquetaCursoInscripcion(0)).toBe('Sin cursar');
+    expect(etiquetaCursoInscripcion(null)).toBe('—');
+  });
+
+  it('estadoMaterias y leyendaMaterias: OK sin leyenda y estados desconocidos como NO_DISPONIBLE', () => {
+    // protects=un estado nuevo del core no rompe ni se muestra crudo; fails_when=un estado desconocido da "OK";
+    // no_claim=no prueba el texto del aviso en pantalla (lo cubre el spec del modal).
+    expect(estadoMaterias({ estado: 'OK' })).toBe('OK');
+    expect(estadoMaterias({ estado: 'SIN_INSCRIPCION' })).toBe('SIN_INSCRIPCION');
+    expect(estadoMaterias({ estado: 'NUEVO' })).toBe('NO_DISPONIBLE');
+    expect(leyendaMaterias({ fuente: 'SIUM', estado: 'OK' })).toBeNull();
+    expect(leyendaMaterias({ fuente: 'SIUM', estado: 'NO_DISPONIBLE' })).toBe(
+      'No se pudieron consultar las materias en la facultad.',
+    );
+    expect(leyendaMaterias({ fuente: 'GUARANI', estado: 'NO_DISPONIBLE' })).toBe(
+      'No se pudieron consultar las materias en Guaraní.',
+    );
+    expect(leyendaMaterias({ fuente: 'OTRA', estado: 'NUEVO' })).toBe(
+      'No se pudieron consultar las materias en OTRA.',
+    );
+    expect(leyendaMaterias({ fuente: 'SIUM', estado: 'SIN_INSCRIPCION' })).toBe(
+      'Sin inscripción a materias en el lectivo.',
+    );
   });
 });

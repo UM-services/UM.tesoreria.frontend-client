@@ -386,13 +386,17 @@
                   }"
                 />
                 @if (proveedorForm.get('cuit')?.invalid && proveedorForm.get('cuit')?.touched) {
-                  <p class="mt-1 text-xs text-red-500">Formato inválido.</p>
+                  <p class="mt-1 text-xs text-red-500">Ingrese el CUIT.</p>
+                } @else if (cuitNoValidado) {
+                  <p class="mt-1 text-xs text-amber-600">
+                    CUIT no validado (formato o dígito verificador incorrecto). Se puede guardar igual.
+                  </p>
                 }
               </div>
 
               <!-- Cuenta Contable -->
               <div class="md:col-span-8">
-                <label class="um-label">Cuenta Contable <span class="text-red-500">*</span></label>
+                <label class="um-label">Cuenta Contable</label>
                 <div class="flex gap-2">
                   <div class="relative flex items-center w-2/5">
                     <input

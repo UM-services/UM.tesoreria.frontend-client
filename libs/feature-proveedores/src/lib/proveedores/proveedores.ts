@@ -10,11 +10,12 @@ import {
 } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { cuitValido, mensajeDeError } from './cuit.util';
 
 export interface Proveedor {
   proveedorId?: number;
   cuit: string;
-  numeroCuenta: number;
+  numeroCuenta?: number | null;
   razonSocial: string;
   nombreFantasia: string;
   ordenCheque: string;
@@ -71,8 +72,8 @@ export class ProveedoresComponent implements OnInit {
 
   public proveedorForm = this.fb.group({
     proveedorId: [{ value: null as number | null, disabled: true }],
-    cuit: ['', [Validators.required, Validators.pattern('^[0-9]{2}-[0-9]{8}-[0-9]$')]],
-    numeroCuenta: [null as number | null, Validators.required],
+    cuit: ['', [Validators.required]],
+    numeroCuenta: [null as number | null],
     nombreCuenta: [{ value: '', disabled: true }],
     razonSocial: ['', Validators.required],
     nombreFantasia: [''],
@@ -237,37 +238,33 @@ export class ProveedoresComponent implements OnInit {
       this.showError('Por favor, complete los campos obligatorios correctamente.');
       return;
     }
-    const formValue = this.proveedorForm.getRawValue() as Proveedor;
+    const raw = this.proveedorForm.getRawValue();
+    // Cuenta contable opcional: sin cuenta se manda null (nunca 0, el core lo rechaza por FK a plancta).
+    const formValue = { ...raw, numeroCuenta: raw.numeroCuenta ? raw.numeroCuenta : null } as Proveedor;
     this.isLoading = true;
     this.cdr.detectChanges();
-    this.http
-      .get<Proveedor>(`${this.baseUrl}/cuit/${formValue.cuit}`)
-      .pipe(catchError(() => of(null)))
-      .subscribe((existingProv) => {
-        if (existingProv && existingProv.proveedorId) {
-          if (
-            !formValue.proveedorId ||
-            (formValue.proveedorId && formValue.proveedorId !== existingProv.proveedorId)
-          ) {
-            this.showError(`ERROR: CUIT Repetido -> ${existingProv.razonSocial}`);
-            return;
-          }
-        }
+    // El core decide si el CUIT está repetido (409) y devuelve el motivo en `message`.
+    const req$ = formValue.proveedorId
+      ? this.http.put<Proveedor>(`${this.baseUrl}/${formValue.proveedorId}`, formValue)
+      : this.http.post<Proveedor>(`${this.baseUrl}/`, formValue);
+    req$.subscribe({
+      next: () => {
         this.zone.run(() => {
-          const req$ = formValue.proveedorId
-            ? this.http.put<Proveedor>(`${this.baseUrl}/${formValue.proveedorId}`, formValue)
-            : this.http.post<Proveedor>(`${this.baseUrl}/`, formValue);
-          req$.subscribe({
-            next: () => {
-              this.cerrarModal();
-              this.showSuccess('Proveedor guardado correctamente.');
-              if (this.isSearching) this.buscarProveedores(this.searchQuery.value || '');
-              else this.loadProveedores(this.currentPage);
-            },
-            error: () => this.showError('Error al guardar proveedor.'),
-          });
+          this.cerrarModal();
+          this.showSuccess('Proveedor guardado correctamente.');
+          if (this.isSearching) this.buscarProveedores(this.searchQuery.value || '');
+          else this.loadProveedores(this.currentPage);
         });
-      });
+      },
+      error: (err) =>
+        this.zone.run(() => this.showError(mensajeDeError(err, 'Error al guardar proveedor.'))),
+    });
+  }
+
+  /** CUIT cargado pero con formato o dígito verificador incorrecto (aviso, no bloquea). */
+  get cuitNoValidado(): boolean {
+    const valor = this.proveedorForm.get('cuit')?.value;
+    return !!valor && !cuitValido(valor);
   }
 
   eliminar(prov: Proveedor) {
@@ -281,7 +278,9 @@ export class ProveedoresComponent implements OnInit {
           if (this.isSearching) this.buscarProveedores(this.searchQuery.value || '');
           else this.loadProveedores(this.currentPage);
         },
-        error: () => this.showError('Error al eliminar proveedor.'),
+        // 409: el proveedor tiene movimientos/valores/etc. asociados; no se borró nada.
+        error: (err) =>
+          this.zone.run(() => this.showError(mensajeDeError(err, 'Error al eliminar proveedor.'))),
       });
     }
   }
