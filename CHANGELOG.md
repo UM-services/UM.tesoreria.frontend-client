@@ -1,5 +1,78 @@
 # Changelog
 
+## [0.41.0] - 2026-10-28
+ 
+### Added
+ 
+- feat(externo-consulta): el detalle de chequera del portal externo (`ChequeraDetalleModalComponent`) muestra la sección **«Materias inscriptas»**, debajo de la lista de productos. `ChequerasService.materiasInscriptas(chequera)` consume `GET /api/tesoreria/core/materiasInscriptas/{facultadId}/{tipoChequeraId}/{chequeraSerieId}`, un endpoint **aparte del estado de chequera** (así una fuente académica lenta no demora las cuotas): devuelve un elemento por fuente (`SIUM`, `GUARANI`) y `[]` si la chequera no es de grado. El modal lo pide en paralelo a las cuotas y la deuda (`cargarMaterias()`), y no espera su respuesta para mostrar el resto.
+- feat(externo-consulta): cada fuente es un bloque con su etiqueta, la carrera (`plan / carrera`), el curso de la inscripción («Sin cursar» si es `0`, «—» si falta), las observaciones cuando existen y las materias agrupadas por curso y período (Anual, 1er Semestre, 2do Semestre, Sin período), en el orden que manda el core: el front no reordena. Una materia sin nombre se muestra como `materiaId - —`.
+- feat(externo-consulta): `NO_DISPONIBLE` muestra «No se pudieron consultar las materias en {la facultad | Guaraní | <fuente>}.» y `SIN_INSCRIPCION` «Sin inscripción a materias en el lectivo.», sin botón de reintento propio. Una `fuente` o un `estado` desconocidos no rompen la pantalla: la fuente se muestra con su valor crudo y el estado se trata como `NO_DISPONIBLE`. Con la lista vacía, o un `404`, la sección no se renderiza; mientras carga tampoco; si la llamada falla (`5xx`, red) se muestra un aviso «Error N al cargar las materias inscriptas.» y las cuotas siguen visibles.
+- feat(externo-consulta): modelos `MateriasEstado`, `CursoMaterias`, `PeriodoMaterias` y `MateriaInscripta` (`fuente`, `estado` y `periodo` como `string` para tolerar valores nuevos) y las utilidades `etiquetaFuente`, `etiquetaPeriodo`, `etiquetaCurso`, `etiquetaCursoInscripcion`, `estadoMaterias` y `leyendaMaterias`.
+- test(externo-consulta): `chequeras/testing/materias-estado.fixture.ts` con el JSON de ejemplo del contrato de #481 (13 materias, datos ficticios); nuevos casos en `chequera-detalle-modal.component.spec.ts` (fixture completa en orden, datos nulos, sin nombre y sin curso, lista vacía, leyendas, valores desconocidos, dos fuentes, carga, fuente lenta que no demora las cuotas, error y 404 de materias, cambio de chequera y una llamada a cada endpoint), en `chequeras.service.spec.ts` (ruta del endpoint y respuesta nula) y en `chequeras.utils.spec.ts` (etiquetas). Cada test declara su ficha `protects / fails_when / no_claim`.
+> Requiere un core con `GET /materiasInscriptas/...` (#481: #482 y #485 ya están; #487 lo conecta a SIUM). Hasta entonces el endpoint devuelve `[]` y la sección no aparece. Si el gateway no enruta `/api/tesoreria/core/materiasInscriptas/**`, la llamada falla y se ve el aviso de error. Cambio **aditivo** ⇒ incremento **minor** (`0.40.0` → `0.41.0`); la versión se vuelve a numerar al abrir el PR si `develop` avanzó. `docs/architecture.md` no cambia: no se agregan módulos, rutas ni dependencias.
+
+## [0.40.0] - 2026-10-23
+
+### Added
+
+- feat(proveedores): la **cuenta contable pasa a ser opcional** en el alta y la edición de proveedores (`ProveedoresComponent`). `numeroCuenta` deja de tener `Validators.required`, el modelo lo declara `numeroCuenta?: number | null` y `guardar()` normaliza el valor vacío a `null` (nunca `0`, que el core rechaza por la FK a `plancta`) antes de enviar el `POST`/`PUT`. La etiqueta del formulario deja de mostrar el asterisco de obligatorio.
+- feat(proveedores): la **validación de CUIT pasa a ser informativa**. El nuevo `cuitValido()` de `libs/feature-proveedores/src/lib/proveedores/cuit.util.ts` (exportado desde `@tesoreria/feature-proveedores`) reimplementa `modCUIT.validaCUIT` de VB6: exige 11 dígitos, acepta el CUIT «sin dato» `00-00000000-0` y verifica el dígito verificador con los pesos `5,4,3,2,7,6,5,4,3,2`. Si el CUIT cargado no valida, el formulario muestra el aviso ámbar «CUIT no validado (formato o dígito verificador incorrecto). Se puede guardar igual.» y el guardado sigue disponible; sólo se bloquea el CUIT vacío («Ingrese el CUIT.»). El `formatCuit()` de blur sigue normalizando a `XX-XXXXXXXX-X`.
+
+### Changed
+
+- feat(proveedores): el guardado deja de hacer el pre-chequeo `GET /proveedor/cuit/{cuit}` y lo resuelve el core: se envía el `POST` (alta) o el `PUT /proveedor/{proveedorId}` (edición) directamente y, si el CUIT está repetido, el `409` se muestra con el `message` que devuelve el core. El nuevo `mensajeDeError(err, generico)` (mismo `cuit.util.ts`) extrae `error.message` y cae al texto genérico («Error al guardar proveedor.» / «Error al eliminar proveedor.») cuando no hay body útil. La baja también muestra el motivo del `409` (por ejemplo, proveedor con movimientos asociados) en lugar del error genérico y ya no informa una eliminación exitosa. Requiere un core que valide el CUIT repetido con `409` y devuelva `{ status, error, message }`.
+- test(compras): `apps/compras/src/app/proveedores/proveedores.spec.ts` usa `provideHttpClientTesting()` + `HttpTestingController` para fijar el contrato: guardar sin cuenta contable envía `numeroCuenta: null`, un CUIT mal formado sólo avisa (`cuitNoValidado`) y no dispara `GET /cuit/...`, la edición usa `PUT`, el `409` del core se muestra en `errorMessage` y la baja con `409` no se marca como exitosa. La librería lazy se resuelve con `import()` dinámico para respetar `@nx/enforce-module-boundaries`; nuevos bloques cubren `cuitValido` y `mensajeDeError`.
+- docs: `CHANGELOG.md` documenta la release **0.40.0** y `README.md` registra la versión actual **0.40.0**. Los diagramas de `docs/architecture.md` no cambian: la estructura de módulos, rutas y dependencias se mantiene y el cambio queda dentro de `ProveedoresComponent` y su utilidad.
+
+## [0.39.0] - 2026-10-22
+
+### Added
+
+- feat(administrador): el **alta de usuarios** (`/usuarios` del app `administrador`) ya no pide un login escrito a mano: se completa **Nombre** y **Apellido** y el login lo genera el core. `UsuarioAdminService.sugerirLogin(nombre, apellido)` consume `GET /usuario/login-sugerido/{nombre}/{apellido}` (ambos valores URL-encoded) y devuelve `LoginSugerido { login }`; la vista lo muestra en un `um-input` deshabilitado («Usuario (se genera automáticamente)») con el estado «Generando login…» mientras consulta y la ayuda «Si ya existe, se agregarán letras del nombre; no se podrá editar después». La sugerencia se pide con `debounceTime(300)` + `switchMap` (descarta respuestas viejas) y sólo cuando nombre y apellido tienen contenido; si el core falla, `catchError` deja la sugerencia vacía y el alta sigue disponible.
+
+### Changed
+
+- feat(administrador): el contrato de alta `UsuarioAltaRequest` (`usuario-admin.service.ts`) pasa a `apellido` obligatorio y `login` opcional; `guardarAlta` valida el apellido (mensaje «El apellido es requerido.»), ya no exige login y envía el request sin `login`. `FormUsuario` reemplaza el campo `login` por `apellido`; el nombre conserva la aclaración «Sólo nombres, sin títulos (Dr., Lic., etc.)». La configuración (`PUT /usuario/usuario/{id}/configuracion`) no cambia: sigue sin tocar login ni clave y deja `apellido` vacío en el formulario. Requiere un core cuyo `POST /usuario/usuario` acepte `apellido` sin `login` y que exponga `GET /usuario/login-sugerido/{nombre}/{apellido}`.
+- test(administrador): nuevo `libs/feature-administrador/src/lib/usuarios/usuarios.spec.ts` con cuatro casos (sugerencia con debounce y render del login en el input, sin sugerencia si falta nombre o apellido, alta sin `login` y con `apellido`, y apellido obligatorio); `usuario-admin.service.spec.ts` suma la verificación del path URL-encoded de `login-sugerido` con tildes y espacios.
+- docs: `CHANGELOG.md` documenta la release **0.39.0**, `README.md` registra la versión actual **0.39.0** y `docs/architecture.md` anota el login sugerido en el diagrama del módulo Administrador.
+
+## [0.38.0] - 2026-10-22
+
+### Added
+
+- feat(compras): la **bandeja de envío** (`PedidoBandejaComponent`, `/pedido/bandeja`) suma la columna **Motivo/Urgencia**: cuando el pedido trae `urgente` muestra la insignia «Urgente» y, si existe, el `urgenciaMotivo` debajo; en caso contrario muestra un guion. La fila inline de rechazo pasa a `colspan="7"` para cubrir la columna nueva. Sin cambios de backend (los campos `urgente` y `urgenciaMotivo` ya formaban parte de `PedidoCompra`).
+- feat(compras): la **bandeja del autorizante** explica una bandeja vacía por falta de asignación. `PedidoCompraService.bandeja` pasa a consumir `POST /pedido/bandeja` como `BandejaPedido` (`pedidos`, `dependenciaIds`, `sinDependencias`) en lugar de un arreglo de pedidos, y la vista muestra un `um-alert-warn` («Tu usuario no tiene dependencias habilitadas») con el camino **Administrador → Autorizantes de envío** cuando `sinDependencias` es verdadero. Requiere que la fachada `compras` devuelva el objeto nuevo.
+
+### Changed
+
+- feat(compras): las bandejas, listados y consultas de pedidos renderizan la **necesidad** y las **especificaciones** con `ui-texto-enriquecido` (`@tesoreria/ui-layout`) en lugar de texto plano, para respetar el HTML que se guarda desde `ui-editor-enriquecido` (disponible desde 0.31.0). Aplica a `PedidoBandejaComponent`, `PedidoConsultaComponent`, `PedidoListaComponent`, `PedidoPresupuestoComponent`, `PedidoRevisionComponent` y a la tabla de ítems de `CotizacionProcesoFormComponent`, que declaran `TextoEnriquecidoComponent` en sus `imports`. Sin cambios de contrato.
+- docs: `CHANGELOG.md` documenta la release **0.38.0** y `README.md` registra la versión actual **0.38.0**.
+
+### Fixed
+
+- fix(compras): la **referencia web** del ítem del pedido pasa a ser opcional (`referenciaWeb?: string | null`). El detalle la muestra como enlace «Abrir referencia» con `target="_blank"` y `rel="noopener noreferrer"`: `PedidoDetalleComponent.enlaceReferencia` acepta sólo `http(s)`, antepone `https://` cuando falta el esquema y descarta esquemas peligrosos. El formulario agrega el placeholder `https://…` y la ayuda «Enlace del producto (opcional).», recorta el valor antes de enviarlo, rechaza las referencias de más de 4096 caracteres y muestra el `detail` del backend cuando falla el guardado en lugar del mensaje genérico.
+
+## [0.37.1] - 2026-10-20
+
+### Fixed
+
+- fix(ui-auth): el pie del login compartido (`libs/ui-auth/src/lib/login.html`) decía «Universidad de **Montevideo** · Tesorería» y pasa a «Universidad de **Mendoza** · Tesorería». Como ese pie es el único de `ui-auth`, el nombre equivocado se mostraba en las ocho apps (compras, pagos, chequeras, administrador, contable, contratados, guarani, externo-consulta); sólo cambia el texto, sin tocar estilos ni layout. Los bundles viejos que todavía lo muestran están en `dist/` y `.nx/cache/` y desaparecen al reconstruir.
+
+### Changed
+
+- docs: `AGENTS.md` incorpora la regla de branding (el sistema pertenece a la Universidad de Mendoza, `libs/ui-auth/src/lib/login.html` define el pie de las ocho apps) para que el nombre no se vuelva a inventar; `README.md` registra la versión actual **0.37.1**.
+
+## [0.37.0] - 2026-10-19
+
+### Added
+
+- feat(ci): el workflow reutilizable `deploy-pipeline.yml` admite **varios runners de despliegue**. El nuevo input `deployRunners` (lista JSON, por defecto `[]`) alimenta una matriz en el job `deploy` (`fail-fast: false`) con una pata por label: cada pata corre en `runs-on: [self-hosted, linux, <runner>]`, usa `environment.name` igual al label y el nombre del job indica el runner (`Deploy <environment> services (<runner>)`). Así un mismo push puede desplegarse en más de un host del mismo ambiente.
+
+### Changed
+
+- refactor(ci): `deployRunner` (string) se reemplaza por `deployRunners` (lista JSON) en el contrato de `deploy-pipeline.yml`. `deploy-develop.yml` pasa `'["develop"]'` y `deploy-staging.yml` pasa `'["staging", "staging-new"]'`, por lo que staging despliega el mismo commit tanto en `staging` como en `staging-new`; `docker-publish.yml` no lo envía (usa `deploy: false`). Los llamadores que sigan enviando `deployRunner` deben migrar al input nuevo, porque GitHub rechaza inputs no declarados en un `workflow_call`.
+- docs: `README.md` registra la versión actual **0.37.0** y `AGENTS.md` describe el pipeline con `deployRunners` en lugar de `deployRunner`.
+
 ## [0.36.0] - 2026-10-17
 
 ### Added

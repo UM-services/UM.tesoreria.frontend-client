@@ -73,6 +73,7 @@ describe('ChequerasComponent', () => {
       chequerasPorSerie: vi.fn(),
       estado: vi.fn().mockReturnValue(NEVER),
       deuda: vi.fn().mockReturnValue(NEVER),
+      materiasInscriptas: vi.fn().mockReturnValue(NEVER),
     };
     TestBed.configureTestingModule({
       imports: [ChequerasComponent],

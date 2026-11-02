@@ -178,6 +178,18 @@ export class PedidoDetalleComponent implements OnInit {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(valor);
   }
 
+  /**
+   * Enlace seguro para una referencia web: sólo se aceptan http(s) y, si el usuario guardó
+   * el dominio sin esquema, se asume `https://`. Evita `javascript:` y esquemas peligrosos.
+   */
+  enlaceReferencia(valor: string | null | undefined): string {
+    const url = (valor ?? '').trim();
+    if (!url) {
+      return '';
+    }
+    return /^https?:\/\//i.test(url) ? url : `https://${url.replace(/^\/+/, '')}`;
+  }
+
   presentar(): void {
     this.accion(() => this.pedidoCompraService.enviar(this.compraPedidoId), 'Pedido presentado.');
   }

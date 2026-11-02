@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
   ESTADOS_PEDIDO,
@@ -17,7 +18,7 @@ import {
 @Component({
   selector: 'app-pedido-bandeja',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-bandeja.component.html',
 })
@@ -26,6 +27,7 @@ export class PedidoBandejaComponent implements OnInit {
 
   readonly pedidos = signal<PedidoCompra[]>([]);
   readonly isLoading = signal(false);
+  readonly sinDependencias = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly pendientes = signal<Set<number>>(new Set());
@@ -46,8 +48,9 @@ export class PedidoBandejaComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.pedidoCompraService.bandeja(this.estadoFiltro || null).subscribe({
-      next: pedidos => {
-        this.pedidos.set(pedidos ?? []);
+      next: bandeja => {
+        this.pedidos.set(bandeja?.pedidos ?? []);
+        this.sinDependencias.set(bandeja?.sinDependencias ?? false);
         this.isLoading.set(false);
       },
       error: () => {

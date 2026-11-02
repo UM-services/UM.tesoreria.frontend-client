@@ -116,7 +116,17 @@
                   }
                 </div>
               </td>
-              <td><input class="um-input" [(ngModel)]="item.referenciaWeb" /></td>
+              <td>
+                <input
+                  class="um-input min-w-[14rem]"
+                  type="text"
+                  inputmode="url"
+                  autocomplete="url"
+                  placeholder="https://…"
+                  [(ngModel)]="item.referenciaWeb"
+                />
+                <span class="mt-1 block text-xs text-um-muted">Enlace del producto (opcional).</span>
+              </td>
               <td class="text-right">
                 <button type="button" class="um-link-btn" (click)="quitarItem(i)">Quitar</button>
               </td>

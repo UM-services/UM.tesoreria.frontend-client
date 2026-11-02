@@ -127,6 +127,43 @@ export interface DebitoEstado {
   motivoRechazo: string | null;
 }
 
+export interface MateriaInscripta {
+  materiaId: string;
+  /** `null` si la facultad no pudo resolver el nombre (materia de otro plan). */
+  nombre: string | null;
+}
+
+export interface PeriodoMaterias {
+  /** `ANUAL`, `PRIMER_SEMESTRE`, `SEGUNDO_SEMESTRE` o `SIN_PERIODO`; otro valor se muestra como "Sin período". */
+  periodo: string;
+  materias: MateriaInscripta[];
+}
+
+export interface CursoMaterias {
+  /** `null`: materias sin curso asignado. */
+  curso: number | null;
+  periodos: PeriodoMaterias[];
+}
+
+/**
+ * Materias de grado de una fuente académica (SIUM hoy; Guaraní después), ya ordenadas por el core.
+ * `GET materiasInscriptas/...` devuelve una lista con un elemento por fuente consultada (vacía si la
+ * chequera no es de grado); es un endpoint aparte del estado para que una fuente lenta no lo demore:
+ * curso, período y materia. `fuente` y `estado` son texto abierto: el core puede sumar valores sin
+ * coordinar despliegues. Con `estado` distinto de `OK`, `cursos` es `[]` y el resto de los datos es `null`.
+ */
+export interface MateriasEstado {
+  fuente: string;
+  /** `OK`, `SIN_INSCRIPCION` o `NO_DISPONIBLE`; un valor desconocido se trata como `NO_DISPONIBLE`. */
+  estado: string;
+  /** Curso de la inscripción tal cual; `0` es "Sin cursar". */
+  cursoInscripcion: number | null;
+  plan: string | null;
+  carrera: string | null;
+  observaciones: string | null;
+  cursos: CursoMaterias[];
+}
+
 /** Respuesta de `chequera/estado/...`: la misma fuente que el PDF "Estado de Chequera". */
 export interface EstadoChequera {
   facultadId: number;

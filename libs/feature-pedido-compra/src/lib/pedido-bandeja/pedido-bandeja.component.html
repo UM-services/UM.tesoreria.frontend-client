@@ -38,6 +38,18 @@
   <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
     @if (isLoading()) {
       <div class="p-6 text-sm text-um-muted">Cargando…</div>
+    } @else if (sinDependencias()) {
+      <div class="p-4">
+        <div class="um-alert um-alert-warn">
+          <p class="font-semibold">Tu usuario no tiene dependencias habilitadas.</p>
+          <p class="mt-1">
+            La bandeja sólo muestra pedidos de las dependencias asignadas como autorizante de
+            envío, así que por ahora va a quedar vacía aunque existan solicitudes pendientes.
+            Pedí que te asignen una en
+            <strong>Administrador → Autorizantes de envío</strong>.
+          </p>
+        </div>
+      </div>
     } @else if (pedidos().length === 0) {
       <div class="p-6 text-sm text-um-muted">No hay pedidos para el filtro seleccionado.</div>
     } @else {
@@ -49,6 +61,7 @@
               <th scope="col">Estado</th>
               <th scope="col">Dependencia</th>
               <th scope="col">Fecha</th>
+              <th scope="col">Motivo/Urgencia</th>
               <th scope="col">Necesidad</th>
               <th scope="col" class="text-right">Acciones</th>
             </tr>
@@ -64,7 +77,23 @@
                 </td>
                 <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
                 <td>{{ pedido.fecha | date: 'short' }}</td>
-                <td>{{ pedido.necesidad }}</td>
+                <td class="align-top">
+                  @if (pedido.urgente) {
+                    <span class="um-badge bg-red-100 text-red-800">Urgente</span>
+                    @if (pedido.urgenciaMotivo) {
+                      <p class="mt-1 max-w-[16rem] text-sm text-um-text">
+                        {{ pedido.urgenciaMotivo }}
+                      </p>
+                    }
+                  } @else {
+                    <span class="text-sm text-um-muted">—</span>
+                  }
+                </td>
+                <td class="align-top">
+                  <div class="max-w-md">
+                    <ui-texto-enriquecido [texto]="pedido.necesidad" />
+                  </div>
+                </td>
                 <td class="text-right">
                   <div class="flex justify-end gap-3">
                     <a [routerLink]="['/pedido', pedido.compraPedidoId]" class="um-link-btn">Ver</a>
@@ -91,7 +120,7 @@
               </tr>
               @if (rechazandoId() === pedido.compraPedidoId) {
                 <tr>
-                  <td colspan="6" class="bg-um-surface">
+                  <td colspan="7" class="bg-um-surface">
                     <div class="space-y-2 p-2">
                       <label class="um-label" [for]="'motivo-' + pedido.compraPedidoId"
                         >Motivo del rechazo</label

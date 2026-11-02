@@ -92,6 +92,29 @@ describe('ChequerasService', () => {
     http.expectOne((r) => r.url.endsWith('/core/chequeraSerie/bynumber/1/14160')).flush([]);
   });
 
+  it('pide las materias inscriptas al core, sin el número de alternativa', () => {
+    // protects=la ruta exacta del endpoint aparte de materias (facultad/tipo/serie) sobre el core;
+    // fails_when=se agrega la alternativa, se usa otra base o se vuelve a pedir dentro del estado;
+    // no_claim=no prueba la respuesta real del core ni que la ruta exista en el gateway.
+    let resultado: unknown;
+    service.materiasInscriptas(chequera).subscribe((valor) => (resultado = valor));
+
+    const req = http.expectOne((r) => r.url.endsWith('/core/materiasInscriptas/1/2/300'));
+    expect(req.request.method).toBe('GET');
+    req.flush([{ fuente: 'SIUM', estado: 'OK', cursos: [] }]);
+
+    expect(resultado).toEqual([{ fuente: 'SIUM', estado: 'OK', cursos: [] }]);
+  });
+
+  it('materiasInscriptas devuelve una lista vacía si el core responde sin cuerpo', () => {
+    // protects=una respuesta nula no rompe el modal; fails_when=devuelve null o lanza;
+    // no_claim=no prueba qué manda el core para una chequera que no es de grado.
+    let resultado: unknown;
+    service.materiasInscriptas(chequera).subscribe((valor) => (resultado = valor));
+    http.expectOne((r) => r.url.endsWith('/core/materiasInscriptas/1/2/300')).flush(null);
+    expect(resultado).toEqual([]);
+  });
+
   it('pide el PDF de estado al servicio report sin filtrar por tipo de débito', () => {
     service.descargarPdfEstado(chequera).subscribe();
     const req = http.expectOne((r) =>

@@ -6,7 +6,7 @@ export interface PedidoCompraItem {
   unidad: string;
   descripcion: string;
   especificaciones: string;
-  referenciaWeb: string;
+  referenciaWeb?: string | null;
 }
 
 export interface PedidoCompra {
@@ -34,6 +34,17 @@ export interface PedidoCompra {
   dependenciaNombre?: string | null;
   solicitanteNombre?: string | null;
   items?: PedidoCompraItem[];
+}
+
+/**
+ * Respuesta de la bandeja del autorizante: pedidos de las dependencias habilitadas más el
+ * detalle de esas dependencias. `sinDependencias` indica que el usuario no tiene ninguna
+ * asignada, por lo que la bandeja siempre va a estar vacía.
+ */
+export interface BandejaPedido {
+  pedidos: PedidoCompra[];
+  dependenciaIds: number[];
+  sinDependencias: boolean;
 }
 
 export interface PedidoCompraRequest {

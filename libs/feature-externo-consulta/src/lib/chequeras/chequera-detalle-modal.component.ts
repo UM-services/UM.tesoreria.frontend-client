@@ -29,6 +29,7 @@ import {
   CuotaEstado,
   DeudaChequera,
   EstadoCuota,
+  MateriasEstado,
   ProductoEstado,
 } from './chequeras.models';
 import { ChequerasService } from './chequeras.service';
@@ -36,8 +37,14 @@ import {
   descargarBlob,
   esDeudaCentinela,
   esPdfValido,
+  estadoMaterias,
+  etiquetaCurso,
+  etiquetaCursoInscripcion,
   etiquetaEstado,
+  etiquetaFuente,
+  etiquetaPeriodo,
   formatearFecha,
+  leyendaMaterias,
   mensajeError,
   mensajeErrorPdf,
   nombreArchivoEstadoPdf,
@@ -432,6 +439,104 @@ type Carga<T> =
                 </div>
               }
             }
+
+            <!-- Materias inscriptas -->
+            @if (materias().length || mensajeMaterias()) {
+              <section class="space-y-4" aria-labelledby="materias-titulo">
+                <h3
+                  id="materias-titulo"
+                  class="text-xs font-bold uppercase tracking-[0.1em] text-um-muted"
+                >
+                  Materias inscriptas
+                </h3>
+                @if (mensajeMaterias(); as aviso) {
+                  <p class="um-alert um-alert-warn" role="status">{{ aviso }}</p>
+                }
+                @for (bloque of materias(); track $index) {
+                  <div
+                    [class]="
+                      inline() ? 'min-w-0' : 'overflow-hidden rounded-lg border border-um-border'
+                    "
+                    [attr.aria-label]="'Materias de ' + fuente(bloque)"
+                  >
+                    <div
+                      [class]="
+                        inline()
+                          ? 'flex flex-wrap items-center gap-x-6 gap-y-1 pb-3'
+                          : 'flex flex-wrap items-center gap-x-6 gap-y-1 bg-um-surface px-4 py-3'
+                      "
+                    >
+                      <span class="um-badge bg-um-primary text-white">{{ fuente(bloque) }}</span>
+                      @if (leyenda(bloque) === null) {
+                        <p class="text-sm text-um-muted">
+                          Carrera:
+                          <span class="font-semibold text-um-ink"
+                            >{{ bloque.plan ?? '—' }} / {{ bloque.carrera ?? '—' }}</span
+                          >
+                        </p>
+                        <p class="text-sm text-um-muted">
+                          Curso:
+                          <span class="font-semibold text-um-ink">{{
+                            cursoInscripcion(bloque.cursoInscripcion)
+                          }}</span>
+                        </p>
+                      }
+                    </div>
+                    @if (leyenda(bloque); as texto) {
+                      <p
+                        [class]="
+                          estadoDe(bloque) === 'NO_DISPONIBLE'
+                            ? 'um-alert um-alert-warn'
+                            : 'um-alert'
+                        "
+                        role="status"
+                      >
+                        {{ texto }}
+                      </p>
+                    } @else {
+                      @if (bloque.observaciones) {
+                        <p [class]="'text-sm text-um-muted' + (inline() ? ' pb-3' : ' px-4 pt-3')">
+                          Observaciones:
+                          <span class="text-um-text">{{ bloque.observaciones }}</span>
+                        </p>
+                      }
+                      <div [class]="inline() ? 'space-y-4' : 'space-y-4 p-4'">
+                        @for (grupo of bloque.cursos; track $index) {
+                          <div
+                            class="space-y-3 border-t border-um-border pt-4 first:border-t-0 first:pt-0"
+                          >
+                            <h4 class="text-sm font-bold text-um-ink">
+                              {{ nombreCurso(grupo.curso) }}
+                            </h4>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                              @for (periodo of grupo.periodos; track $index) {
+                                <div class="min-w-0 rounded-lg bg-um-surface px-3 py-2.5">
+                                  <p
+                                    class="mb-1.5 text-xs font-bold uppercase tracking-wider text-um-muted"
+                                  >
+                                    {{ nombrePeriodo(periodo.periodo) }}
+                                  </p>
+                                  <ul class="space-y-1 text-sm text-um-text">
+                                    @for (materia of periodo.materias; track $index) {
+                                      <li class="break-words">
+                                        <span class="font-semibold tabular-nums text-um-ink">{{
+                                          materia.materiaId
+                                        }}</span>
+                                        - {{ materia.nombre ?? '—' }}
+                                      </li>
+                                    }
+                                  </ul>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </section>
+            }
           </div>
         </div>
       </div>
@@ -453,6 +558,7 @@ export class ChequeraDetalleModalComponent {
 
   readonly cuotas = signal<Carga<ProductoEstado[]>>({ tipo: 'cargando' });
   readonly deuda = signal<Carga<DeudaChequera>>({ tipo: 'cargando' });
+  readonly cargaMaterias = signal<Carga<MateriasEstado[]>>({ tipo: 'cargando' });
   readonly pdfPendiente = signal<ReadonlySet<string>>(new Set());
   readonly pdfErrores = signal<Record<string, string>>({});
 
@@ -470,6 +576,14 @@ export class ChequeraDetalleModalComponent {
     const carga = this.deuda();
     return carga.tipo === 'error' ? carga.mensaje : '';
   });
+  readonly materias = computed(() => {
+    const carga = this.cargaMaterias();
+    return carga.tipo === 'listo' ? carga.datos : [];
+  });
+  readonly mensajeMaterias = computed(() => {
+    const carga = this.cargaMaterias();
+    return carga.tipo === 'error' ? carga.mensaje : '';
+  });
   readonly mensajeCuotas = computed(() => {
     const carga = this.cuotas();
     return carga.tipo === 'error' ? carga.mensaje : '';
@@ -482,7 +596,11 @@ export class ChequeraDetalleModalComponent {
       .pipe(
         switchMap(([chequera]) =>
           chequera
-            ? combineLatest([this.cargarCuotas(chequera), this.cargarDeuda(chequera)])
+            ? combineLatest([
+                this.cargarCuotas(chequera),
+                this.cargarDeuda(chequera),
+                this.cargarMaterias(chequera),
+              ])
             : of(null),
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -491,6 +609,7 @@ export class ChequeraDetalleModalComponent {
         if (cargas) {
           this.cuotas.set(cargas[0]);
           this.deuda.set(cargas[1]);
+          this.cargaMaterias.set(cargas[2]);
         }
       });
 
@@ -540,6 +659,30 @@ export class ChequeraDetalleModalComponent {
 
   fecha(valor: string | null | undefined): string {
     return formatearFecha(valor);
+  }
+
+  fuente(bloque: MateriasEstado): string {
+    return etiquetaFuente(bloque.fuente);
+  }
+
+  estadoDe(bloque: MateriasEstado): string {
+    return estadoMaterias(bloque);
+  }
+
+  leyenda(bloque: MateriasEstado): string | null {
+    return leyendaMaterias(bloque);
+  }
+
+  cursoInscripcion(curso: number | null): string {
+    return etiquetaCursoInscripcion(curso);
+  }
+
+  nombreCurso(curso: number | null): string {
+    return etiquetaCurso(curso);
+  }
+
+  nombrePeriodo(periodo: string): string {
+    return etiquetaPeriodo(periodo);
   }
 
   periodo(cuota: CuotaEstado): string {
@@ -607,6 +750,27 @@ export class ChequeraDetalleModalComponent {
         ),
       ),
       startWith<Carga<ProductoEstado[]>>({ tipo: 'cargando' }),
+    );
+  }
+
+  /**
+   * Las materias vienen de un endpoint aparte del estado: una fuente académica lenta no demora las
+   * cuotas ni la deuda. Mientras carga no se muestra nada; si falla, un aviso sin afectar al resto.
+   */
+  private cargarMaterias(chequera: ChequeraEstado): Observable<Carga<MateriasEstado[]>> {
+    return this.service.materiasInscriptas(chequera).pipe(
+      map(
+        (datos): Carga<MateriasEstado[]> =>
+          datos.length ? { tipo: 'listo', datos } : { tipo: 'vacio' },
+      ),
+      catchError((error: unknown) =>
+        of<Carga<MateriasEstado[]>>(
+          esNoEncontrado(error)
+            ? { tipo: 'vacio' }
+            : { tipo: 'error', mensaje: mensajeError(error, 'cargar las materias inscriptas') },
+        ),
+      ),
+      startWith<Carga<MateriasEstado[]>>({ tipo: 'cargando' }),
     );
   }
 

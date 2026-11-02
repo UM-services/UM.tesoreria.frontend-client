@@ -5,6 +5,7 @@ import {
   DeudaChequera,
   EstadoCuota,
   Lectivo,
+  MateriasEstado,
   Pagina,
   ProductoEstado,
 } from './chequeras.models';
@@ -120,6 +121,62 @@ const ETIQUETAS_ESTADO: Record<EstadoCuota, string> = {
 
 export function etiquetaEstado(estado: EstadoCuota): string {
   return ETIQUETAS_ESTADO[estado] ?? estado;
+}
+
+const ETIQUETAS_FUENTE: Record<string, string> = {
+  SIUM: 'SIUM',
+  GUARANI: 'Guaraní',
+};
+
+const ETIQUETAS_PERIODO: Record<string, string> = {
+  ANUAL: 'Anual',
+  PRIMER_SEMESTRE: '1er Semestre',
+  SEGUNDO_SEMESTRE: '2do Semestre',
+};
+
+/** Nombre de la fuente académica; una fuente desconocida se muestra con su valor crudo. */
+export function etiquetaFuente(fuente: string): string {
+  return ETIQUETAS_FUENTE[fuente] ?? fuente;
+}
+
+/** Período de cursada; `SIN_PERIODO` y cualquier valor desconocido se muestran como "Sin período". */
+export function etiquetaPeriodo(periodo: string | null | undefined): string {
+  return ETIQUETAS_PERIODO[periodo ?? ''] ?? 'Sin período';
+}
+
+export function etiquetaCurso(curso: number | null | undefined): string {
+  return curso === null || curso === undefined ? 'Sin curso asignado' : `Curso ${curso}`;
+}
+
+/** Curso de la inscripción: `0` es "Sin cursar" (como el VB6) y `null`, dato ausente. */
+export function etiquetaCursoInscripcion(curso: number | null | undefined): string {
+  if (curso === null || curso === undefined) {
+    return '—';
+  }
+  return curso === 0 ? 'Sin cursar' : String(curso);
+}
+
+/** Estado de una fuente de materias; uno desconocido se trata como `NO_DISPONIBLE`. */
+export function estadoMaterias(materias: Pick<MateriasEstado, 'estado'>): string {
+  return materias.estado === 'OK' || materias.estado === 'SIN_INSCRIPCION'
+    ? materias.estado
+    : 'NO_DISPONIBLE';
+}
+
+/** Leyenda de una fuente sin materias que mostrar; `null` cuando el estado es `OK`. */
+export function leyendaMaterias(
+  materias: Pick<MateriasEstado, 'fuente' | 'estado'>,
+): string | null {
+  switch (estadoMaterias(materias)) {
+    case 'OK':
+      return null;
+    case 'SIN_INSCRIPCION':
+      return 'Sin inscripción a materias en el lectivo.';
+    default: {
+      const donde = materias.fuente === 'SIUM' ? 'la facultad' : etiquetaFuente(materias.fuente);
+      return `No se pudieron consultar las materias en ${donde}.`;
+    }
+  }
 }
 
 export function tieneDeuda(chequera: ChequeraEstado): boolean {

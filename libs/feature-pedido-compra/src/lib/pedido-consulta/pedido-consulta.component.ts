@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
   DependenciaResumen,
@@ -18,7 +19,7 @@ import {
 @Component({
   selector: 'app-pedido-consulta',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-consulta.component.html',
 })

@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit, inject, signal, ChangeDetectionStrategy }
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
-import { catchError, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
+import { catchError, debounceTime, map, switchMap, takeUntil } from 'rxjs/operators';
 import {
   Dependencia,
   Geografica,
@@ -16,10 +16,10 @@ import {
 type Modo = 'lista' | 'alta' | 'config';
 
 interface FormUsuario {
-  login: string;
   password: string;
   reClave: string;
   nombre: string;
+  apellido: string;
   dependenciaId: number | null;
   geograficaId: number | null;
   googleMail: string;
@@ -60,6 +60,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   readonly usuarioSeleccionado = signal<UsuarioAdmin | null>(null);
   readonly estadoPendiente = signal<UsuarioAdmin | null>(null);
   readonly guardando = signal(false);
+  readonly loginSugerido = signal('');
+  readonly sugiriendoLogin = signal(false);
 
   textoBusqueda = '';
   incluirInactivos = true;
@@ -70,6 +72,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   resetReClave = '';
 
   private readonly busqueda$ = new Subject<string>();
+  private readonly sugerencia$ = new Subject<{ nombre: string; apellido: string }>();
   private readonly destroy$ = new Subject<void>();
 
   get filtrados(): UsuarioAdmin[] {
@@ -100,6 +103,28 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       )
       .subscribe(lista => this.usuarios.set(lista));
+
+    this.sugerencia$
+      .pipe(
+        debounceTime(300),
+        switchMap(({ nombre, apellido }) => {
+          const n = nombre.trim();
+          const a = apellido.trim();
+          if (!n || !a) {
+            return of('');
+          }
+          this.sugiriendoLogin.set(true);
+          return this.service.sugerirLogin(n, a).pipe(
+            map(respuesta => respuesta?.login ?? ''),
+            catchError(() => of('')),
+          );
+        }),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(login => {
+        this.loginSugerido.set(login ?? '');
+        this.sugiriendoLogin.set(false);
+      });
   }
 
   ngOnDestroy(): void {
@@ -130,6 +155,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   nuevoUsuario(): void {
     this.altaForm = this.formVacio();
     this.usuarioSeleccionado.set(null);
+    this.loginSugerido.set('');
+    this.sugiriendoLogin.set(false);
     this.modo.set('alta');
   }
 
@@ -137,18 +164,40 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.modo.set('lista');
     this.usuarioSeleccionado.set(null);
     this.estadoPendiente.set(null);
+    this.loginSugerido.set('');
+    this.sugiriendoLogin.set(false);
     this.resetPassword = '';
     this.resetReClave = '';
   }
 
+  /** El login se genera en el core a partir de estos dos campos. */
+  onNombreChange(nombre: string): void {
+    this.altaForm.nombre = nombre;
+    this.loginSugerido.set('');
+    this.solicitarSugerencia();
+  }
+
+  onApellidoChange(apellido: string): void {
+    this.altaForm.apellido = apellido;
+    this.loginSugerido.set('');
+    this.solicitarSugerencia();
+  }
+
+  private solicitarSugerencia(): void {
+    this.sugerencia$.next({
+      nombre: this.altaForm.nombre,
+      apellido: this.altaForm.apellido,
+    });
+  }
+
   guardarAlta(): void {
     const f = this.altaForm;
-    if (!f.login.trim()) {
-      this.showError('El usuario (login) es requerido.');
-      return;
-    }
     if (!f.nombre.trim()) {
       this.showError('El nombre es requerido.');
+      return;
+    }
+    if (!f.apellido.trim()) {
+      this.showError('El apellido es requerido.');
       return;
     }
     if (!f.password.trim()) {
@@ -165,9 +214,9 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     }
 
     const request: UsuarioAltaRequest = {
-      login: f.login.trim(),
       password: f.password.trim(),
       nombre: f.nombre.trim(),
+      apellido: f.apellido.trim(),
       dependenciaId: f.dependenciaId,
       geograficaId: f.geograficaId,
       imprimeChequera: this.bit(f.imprimeChequera),
@@ -186,6 +235,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       next: creado => {
         this.guardando.set(false);
         this.modo.set('lista');
+        this.loginSugerido.set('');
         this.usuarios.set([...this.usuarios(), creado]);
         this.showSuccess(`Usuario "${creado.login}" creado.`);
       },
@@ -324,10 +374,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   private aForm(u: UsuarioAdmin): FormUsuario {
     return {
-      login: u.login,
       password: '',
       reClave: '',
       nombre: u.nombre,
+      apellido: '',
       dependenciaId: u.dependenciaId,
       geograficaId: u.geograficaId,
       googleMail: u.googleMail ?? '',
@@ -344,10 +394,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   private formVacio(): FormUsuario {
     return {
-      login: '',
       password: '',
       reClave: '',
       nombre: '',
+      apellido: '',
       dependenciaId: null,
       geograficaId: null,
       googleMail: '',

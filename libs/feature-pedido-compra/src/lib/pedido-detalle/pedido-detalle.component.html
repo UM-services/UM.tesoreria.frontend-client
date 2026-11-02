@@ -316,7 +316,21 @@
                 <td>{{ item.unidad }}</td>
                 <td>{{ item.descripcion }}</td>
                 <td class="align-top"><ui-texto-enriquecido [texto]="item.especificaciones" /></td>
-                <td>{{ item.referenciaWeb }}</td>
+                <td class="align-top">
+                  @if (item.referenciaWeb) {
+                    <a
+                      class="um-link-btn"
+                      [href]="enlaceReferencia(item.referenciaWeb)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      [title]="item.referenciaWeb"
+                    >
+                      Abrir referencia
+                    </a>
+                  } @else {
+                    <span class="text-sm text-um-muted">—</span>
+                  }
+                </td>
               </tr>
             }
           </tbody>

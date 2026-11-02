@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { API_URL } from '@tesoreria/shared-api';
 import { Observable } from 'rxjs';
 import {
+  BandejaPedido,
   ContextoInicioPedido,
   DependenciaResumen,
   LimiteAutorizacion,
@@ -32,9 +33,13 @@ export class PedidoCompraService {
     return this.http.get<PedidoCompra[]>(this.baseUrl);
   }
 
-  /** Pedidos de las dependencias habilitadas del autorizante, con filtro de estado opcional. */
-  bandeja(estado?: string | null): Observable<PedidoCompra[]> {
-    return this.http.post<PedidoCompra[]>(`${this.baseUrl}/bandeja`, { estado: estado ?? null });
+  /**
+   * Pedidos de las dependencias habilitadas del autorizante, con filtro de estado opcional.
+   * La respuesta incluye `sinDependencias` para explicar una bandeja vacía por falta de
+   * asignación.
+   */
+  bandeja(estado?: string | null): Observable<BandejaPedido> {
+    return this.http.post<BandejaPedido>(`${this.baseUrl}/bandeja`, { estado: estado ?? null });
   }
 
   /** Consulta global con filtros. */
