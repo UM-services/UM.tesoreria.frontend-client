@@ -11,5 +11,8 @@ import { ShellMenuItem, UiShellComponent } from '@tesoreria/ui-layout';
 export class AppComponent {
   title = 'contable';
 
-  readonly menuItems: ShellMenuItem[] = [{ label: 'Inicio', path: '/' }];
+  readonly menuItems: ShellMenuItem[] = [
+    { label: 'Inicio', path: '/' },
+    { label: 'Plan de cuentas', path: '/plan-cuentas' },
+  ];
 }
