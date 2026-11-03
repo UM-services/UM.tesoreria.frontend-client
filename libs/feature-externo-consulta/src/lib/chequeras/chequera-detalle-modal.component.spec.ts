@@ -507,6 +507,65 @@ describe('ChequeraDetalleModalComponent', () => {
       expect((seccion() as HTMLElement).querySelectorAll('li')).toHaveLength(13);
     });
 
+    it('con SIUM y dos elementos de Guaraní muestra tres bloques: SIUM arriba y Guaraní debajo, cada uno con sus materias', async () => {
+      // protects=un bloque por elemento de `materias`, SIUM primero y los de Guaraní después en el orden del JSON, sin mezclar materias;
+      // fails_when=falta un bloque, se reordenan los bloques o las materias de un elemento de Guaraní caen en otro;
+      // no_claim=no prueba cómo agrupa el core por carrera ni qué materias devuelve Guaraní.
+      const guarani = (carrera: string, materiaId: string, nombre: string): MateriasEstado =>
+        sinMaterias({
+          fuente: 'GUARANI',
+          cursoInscripcion: 2,
+          plan: 'Versión 3',
+          carrera,
+          cursos: [
+            {
+              curso: 2,
+              periodos: [{ periodo: 'ANUAL', materias: [{ materiaId, nombre }] }],
+            },
+          ],
+        });
+      conMaterias([
+        ...MATERIAS_CONTROL,
+        guarani('Carrera Ficticia A', 'G100', 'MATERIA FICTICIA A'),
+        guarani('Carrera Ficticia B', 'G200', 'MATERIA FICTICIA B'),
+      ]);
+      await abrir();
+      const bloques = Array.from(
+        (seccion() as HTMLElement).querySelectorAll('[aria-label^="Materias de "]'),
+      );
+      expect(bloques.map((b) => b.getAttribute('aria-label'))).toEqual([
+        'Materias de SIUM',
+        'Materias de Guaraní',
+        'Materias de Guaraní',
+      ]);
+      expect(bloques[0].querySelectorAll('li')).toHaveLength(13);
+      expect(normalizar(bloques[1])).toContain('Carrera Ficticia A');
+      expect(normalizar(bloques[1])).toContain('G100 - MATERIA FICTICIA A');
+      expect(normalizar(bloques[1])).not.toContain('G200');
+      expect(normalizar(bloques[2])).toContain('Carrera Ficticia B');
+      expect(normalizar(bloques[2])).toContain('G200 - MATERIA FICTICIA B');
+      expect(normalizar(bloques[2])).not.toContain('G100');
+    });
+
+    it('con Guaraní no disponible igual muestra las materias de SIUM y, debajo, el aviso de Guaraní', async () => {
+      // protects=que Guaraní caído no oculta ni pisa las materias de SIUM y que el aviso queda en su propio bloque;
+      // fails_when=desaparece el bloque de SIUM, el aviso aparece dentro del bloque de SIUM o se omite el bloque de Guaraní;
+      // no_claim=no prueba el reintento ni el motivo de la falla (el core no lo informa).
+      conMaterias([...MATERIAS_CONTROL, sinMaterias({ fuente: 'GUARANI', estado: 'NO_DISPONIBLE' })]);
+      await abrir();
+      const bloques = Array.from(
+        (seccion() as HTMLElement).querySelectorAll('[aria-label^="Materias de "]'),
+      );
+      expect(bloques.map((b) => b.getAttribute('aria-label'))).toEqual([
+        'Materias de SIUM',
+        'Materias de Guaraní',
+      ]);
+      expect(bloques[0].querySelectorAll('li')).toHaveLength(13);
+      expect(normalizar(bloques[0])).not.toContain('No se pudieron consultar');
+      expect(normalizar(bloques[1])).toContain('No se pudieron consultar las materias en Guaraní.');
+      expect(bloques[1].querySelectorAll('li')).toHaveLength(0);
+    });
+
     it('mientras carga no muestra la sección', async () => {
       // protects=no aparece un bloque vacío ni un parpadeo mientras responde la fuente académica;
       // fails_when=la sección o un aviso se ven antes de que lleguen las materias;
