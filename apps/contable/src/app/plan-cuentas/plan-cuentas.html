@@ -1,0 +1,223 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Administración / Plan de Cuentas</p>
+      <h1 class="um-page-title">Plan de Cuentas</h1>
+      <p class="um-page-desc">
+        Consulta por sede y jerarquía, alta, edición, baja y visibilidad de las cuentas.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  <div class="um-card p-6">
+    <h2 class="text-base font-semibold text-um-ink">Cuenta</h2>
+    <form class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-12" (ngSubmit)="grabar()">
+      <div class="md:col-span-3">
+        <label for="plan-numero" class="um-label">Número de cuenta</label>
+        <input
+          id="plan-numero"
+          name="numero"
+          type="text"
+          inputmode="numeric"
+          maxlength="11"
+          class="um-input mt-1 w-full"
+          [class.um-input-invalid]="numero() !== '' && !formatoValido()"
+          [ngModel]="numero()"
+          (ngModelChange)="alCambiarNumero($event)"
+          placeholder="11 dígitos"
+          autocomplete="off"
+        />
+        @if (numero() !== '' && !formatoValido()) {
+          <p class="mt-1 text-xs text-red-700">El número debe tener 11 dígitos.</p>
+        }
+      </div>
+
+      <div class="md:col-span-5">
+        <label for="plan-nombre" class="um-label">Nombre</label>
+        <input
+          id="plan-nombre"
+          name="nombre"
+          type="text"
+          class="um-input mt-1 w-full"
+          [ngModel]="nombre()"
+          (ngModelChange)="nombre.set($event)"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="md:col-span-4">
+        <label for="plan-sede" class="um-label">Sede</label>
+        <select
+          id="plan-sede"
+          name="sede"
+          class="um-input mt-1 w-full"
+          [ngModel]="sedeId()"
+          (ngModelChange)="sedeId.set($event)"
+        >
+          <option value="">Sin sede</option>
+          @for (sede of sedes(); track sede.geograficaId) {
+            <option [value]="'' + sede.geograficaId">{{ sede.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      @if (superiores().length) {
+        <div class="md:col-span-12">
+          <p class="um-label">Cuentas superiores</p>
+          <ol class="mt-1 flex flex-wrap gap-x-2 text-sm text-um-muted">
+            @for (superior of superiores(); track superior.numeroCuenta) {
+              <li>{{ superior.numeroCuenta }} - {{ superior.nombre }} ›</li>
+            }
+          </ol>
+        </div>
+      }
+
+      <div class="flex flex-wrap gap-3 md:col-span-12">
+        <button type="submit" class="um-btn-primary" [disabled]="!puedeGrabar()">
+          {{ existente() ? 'Regrabar' : 'Grabar' }}
+        </button>
+        <button type="button" class="um-btn-secondary" (click)="limpiar()">Limpiar</button>
+        <button
+          type="button"
+          class="um-btn-secondary"
+          [disabled]="!existente() || guardando()"
+          (click)="pedirBaja()"
+        >
+          Eliminar
+        </button>
+      </div>
+    </form>
+
+    @if (confirmandoBaja() && existente(); as cuenta) {
+      <div class="um-alert um-alert-warn mt-4">
+        <p class="text-sm text-amber-800">
+          ¿Eliminar la cuenta <strong>{{ cuenta.numeroCuenta }} - {{ cuenta.nombre }}</strong
+          >? Si tiene cuentas hijas o movimientos, el sistema no la elimina.
+        </p>
+        <div class="mt-3 flex justify-end gap-3">
+          <button type="button" class="um-btn-secondary" (click)="cancelarBaja()">Cancelar</button>
+          <button
+            type="button"
+            class="um-btn-primary"
+            [disabled]="guardando()"
+            (click)="confirmarBaja()"
+          >
+            Confirmar baja
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="um-card p-6">
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="w-full max-w-xs">
+        <label for="plan-filtro-sede" class="um-label">Filtrar por sede</label>
+        <select
+          id="plan-filtro-sede"
+          class="um-input mt-1 w-full"
+          [ngModel]="filtroSede()"
+          (ngModelChange)="filtroSede.set($event)"
+        >
+          <option value="">Todas las sedes</option>
+          <option value="sin">Sin sede</option>
+          @for (sede of sedes(); track sede.geograficaId) {
+            <option [value]="'' + sede.geograficaId">{{ sede.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="w-full max-w-md">
+        <label for="plan-filtro-texto" class="um-label">Buscar</label>
+        <input
+          id="plan-filtro-texto"
+          type="search"
+          class="um-input mt-1 w-full"
+          [ngModel]="filtroTexto()"
+          (ngModelChange)="filtroTexto.set($event)"
+          placeholder="Número o nombre"
+          autocomplete="off"
+        />
+      </div>
+      <p class="text-sm text-um-muted">{{ visibles().length }} de {{ cuentas().length }} cuentas</p>
+      <button
+        type="button"
+        class="um-btn-secondary ml-auto"
+        [disabled]="exportando() || cargando()"
+        (click)="exportarExcel()"
+      >
+        {{ exportando() ? 'Generando...' : 'Exportar a Excel' }}
+      </button>
+    </div>
+
+    <div class="mt-4 max-h-[32rem] overflow-auto">
+      <table class="um-table min-w-full">
+        <thead>
+          <tr>
+            <th scope="col" class="w-20">Visible</th>
+            <th scope="col" class="w-40">Cuenta</th>
+            <th scope="col">Nombre</th>
+            <th scope="col" class="w-32">Sede</th>
+            <th scope="col" class="w-28"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando() && cuentas().length === 0) {
+            <tr>
+              <td colspan="5" class="py-8 text-center text-sm text-um-muted">
+                Cargando plan de cuentas...
+              </td>
+            </tr>
+          }
+          @for (cuenta of visibles(); track cuenta.numeroCuenta) {
+            <tr
+              class="cursor-pointer"
+              tabindex="0"
+              [class.bg-um-selected]="existente()?.numeroCuenta === cuenta.numeroCuenta"
+              (click)="seleccionar(cuenta)"
+              (keydown.enter)="seleccionar(cuenta)"
+            >
+              <td>
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-um-border text-um-primary"
+                  [attr.aria-label]="'Visible ' + cuenta.numeroCuenta"
+                  [checked]="cuenta.visible === 1"
+                  (click)="$event.stopPropagation()"
+                  (change)="alternarVisible(cuenta, $event)"
+                />
+              </td>
+              <td class="whitespace-nowrap">{{ cuenta.numeroCuenta }}</td>
+              <td [style.padding-left.rem]="sangria(cuenta) + 0.75">{{ cuenta.nombre }}</td>
+              <td class="text-um-muted">{{ nombreSede(cuenta.geograficaId) }}</td>
+              <td>
+                @if (cuenta.integradora === 1) {
+                  <span class="um-badge">Integradora</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            @if (!cargando()) {
+              <tr>
+                <td colspan="5" class="py-8 text-center text-sm text-um-muted">
+                  No hay cuentas para el filtro elegido.
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
