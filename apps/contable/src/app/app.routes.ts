@@ -19,6 +19,12 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./plan-cuentas/plan-cuentas').then(m => m.PlanCuentasComponent),
     canActivate: [authGuard, usuarioInternoGuard],
   },
+    {
+    // Ejercicios: alta del siguiente, baja, bloqueo y desbloqueo (las reglas las aplica el core).
+    path: 'ejercicios',
+    loadComponent: () => import('./ejercicios/ejercicios').then(m => m.EjerciciosComponent),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
   {
     path: '',
     component: BlankComponent,
