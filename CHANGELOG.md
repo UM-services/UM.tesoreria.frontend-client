@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.0] - 2026-11-03
+ 
+### Added
+- **feat:** Nuevo endpoint `GET /api/tesoreria/report/contable/plan-cuentas/excel` que devuelve un `.xlsx` (`plan-de-cuentas.xlsx`) con todo el plan de cuentas del core ordenado por número: número de cuenta (como texto, para que Excel no lo pase a notación científica), nombre, sede, grado, integradora y visible. La primera fila queda fija y con filtro, para filtrar por sede o grado en Excel.
+- Nuevos `GeneratePlanCuentasExcelUseCase`, puerto `PlanCuentasRepository`, clientes Feign `CuentaClient` y `SedeClient` (`GET /cuenta/` y `GET /geografica/` del core, este último para resolver el nombre de la sede) y adaptador, todo en el slice `hexagonal/contable`.
+- Tests de `GeneratePlanCuentasExcelUseCaseImpl` (columnas, orden, sede, Sí/No, fila fija con filtro) y de `FeignPlanCuentasRepositoryAdapter`.
+> El Excel no calcula ni valida nada del plan: presenta lo que informa el core. Trae siempre el plan completo; no recibe filtros.
+
 ## [0.41.0] - 2026-10-28
  
 ### Added
