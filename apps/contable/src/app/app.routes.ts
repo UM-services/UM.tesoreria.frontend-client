@@ -13,6 +13,12 @@ export const appRoutes: Route[] = [
     path: SIN_ACCESO_RUTA,
     component: NoAccesoComponent,
   },
+    {
+    // Plan de cuentas: consulta por sede y jerarquía, alta, edición, baja y visibilidad.
+    path: 'plan-cuentas',
+    loadComponent: () => import('./plan-cuentas/plan-cuentas').then(m => m.PlanCuentasComponent),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
   {
     path: '',
     component: BlankComponent,
