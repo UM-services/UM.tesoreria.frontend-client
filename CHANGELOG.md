@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.43.0] - 2026-11-04
+ 
+### Added
+ 
+- feat(contable): nueva pantalla **Ejercicios** (`/ejercicios`, `EjerciciosComponent` en `apps/contable/src/app/ejercicios`, entrada de menú «Ejercicios»), con `authGuard` y `usuarioInternoGuard`. Lista los ejercicios en el orden que entrega el core, con inicio y cierre en `dd/MM/aaaa` (sin corrimiento por zona horaria; el cierre de un año bisiesto se ve como `29/02`), estado Abierto/Bloqueado y órdenes contables.
+- feat(contable): **alta** del ejercicio siguiente (`POST /ejercicio/` con cuerpo vacío: fechas, nombre y número los deriva el core), **baja** (`DELETE /ejercicio/{id}`) y **bloqueo/desbloqueo** (`PUT /ejercicio/{id}` con solo `bloqueado`, sin fechas, nombre ni órdenes contables). Cada acción pide confirmación, evita el doble envío y vuelve a leer el listado al terminar.
+- feat(contable): cuando el core rechaza una operación (`409` con `{status, error, codigo, message}`: salto, duplicado, límite de alta, no es el último, no es futuro, en uso) la pantalla muestra su `message` y deja el listado como estaba. El botón de baja se ofrece en todas las filas a propósito: la regla la decide el core.
+- feat(contable): `EjerciciosService` (`GET /ejercicio/`, `POST /ejercicio/`, `DELETE /ejercicio/{id}`, `PUT /ejercicio/{id}`).
+- test(contable): `ejercicios.spec.ts` con 13 casos con ficha (listado y fechas, bisiesto, vacío, alta con confirmación, alta/baja rechazadas, baja, bloqueo y desbloqueo con cuerpo exacto, cancelar, doble envío, fallo de carga, error sin cuerpo).
+> La pantalla no calcula fechas ni decide qué se puede crear o borrar, y no afirma qué operaciones frena el bloqueo: eso lo define y prueba el core.
+
 ## [0.15.0] - 2026-11-03
  
 ### Added

@@ -14,5 +14,6 @@ export class AppComponent {
   readonly menuItems: ShellMenuItem[] = [
     { label: 'Inicio', path: '/' },
     { label: 'Plan de cuentas', path: '/plan-cuentas' },
+    { label: 'Ejercicios', path: '/ejercicios' },
   ];
 }
