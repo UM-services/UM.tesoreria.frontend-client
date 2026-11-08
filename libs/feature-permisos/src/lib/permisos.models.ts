@@ -87,3 +87,16 @@ export interface ModuloGrupo {
   filas: PermisoFila[];
   asignados: number;
 }
+
+/** Resultado de reconciliar el catálogo contra `permisos.yaml`. */
+export interface SyncPermisosResultado {
+  dryRun: boolean;
+  totalManifiesto: number;
+  agregados: number;
+  actualizados: number;
+  retirados: number;
+  sinCambios: number;
+  clavesAgregadas: string[];
+  clavesActualizadas: string[];
+  clavesRetiradas: string[];
+}

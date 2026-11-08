@@ -25,9 +25,14 @@ export class LoginComponent implements OnInit {
   });
 
   public errorMessage = '';
+  public infoMessage = '';
   public isLoading = false;
 
   public ngOnInit(): void {
+    if (this.route.snapshot.queryParams['motivo'] === 'sesion-expirada') {
+      this.infoMessage = 'Tu sesión expiró. Volvé a ingresar para continuar.';
+    }
+
     if (this.authService.isLoggedIn()) {
       void this.router.navigateByUrl(this.returnUrl, { replaceUrl: true });
     }

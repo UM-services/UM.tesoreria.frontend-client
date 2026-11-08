@@ -9,6 +9,7 @@ import {
   Rol,
   RolPermiso,
   RolRequest,
+  SyncPermisosResultado,
   UsuarioPermiso,
   UsuarioResumen,
   UsuarioRol,
@@ -106,5 +107,13 @@ export class PermisosService {
 
   eliminarPermiso(permisoId: number): Observable<void> {
     return this.http.delete<void>(`${this.coreUrl}/permiso/${permisoId}`);
+  }
+
+  /**
+   * Reconcilia el catálogo contra `permisos.yaml`.
+   * `dryRun = true` devuelve el diff sin escribir.
+   */
+  syncPermisos(dryRun: boolean): Observable<SyncPermisosResultado> {
+    return this.http.post<SyncPermisosResultado>(`${this.coreUrl}/permiso/sync`, { dryRun });
   }
 }

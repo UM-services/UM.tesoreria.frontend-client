@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { Observable, catchError, map, of } from 'rxjs';
+import { AccesoDenegadoService } from './acceso-denegado.service';
 import { AuthService } from './auth.service';
 import { esAdministrador, esUsuarioExterno } from './auth.flags';
 
@@ -11,6 +12,15 @@ import { esAdministrador, esUsuarioExterno } from './auth.flags';
  * un bucle `/login -> ruta protegida -> /login`.
  */
 export const SIN_ACCESO_RUTA = 'sin-acceso';
+
+function denegar(
+  router: Router,
+  accesoDenegado: AccesoDenegadoService,
+  mensaje: string,
+): UrlTree {
+  accesoDenegado.reportar({ tipo: 'modulo', mensaje });
+  return router.parseUrl(`/${SIN_ACCESO_RUTA}`);
+}
 
 /**
  * Restringe el módulo a usuarios con `administrador = 1`.
@@ -24,20 +34,23 @@ export const SIN_ACCESO_RUTA = 'sin-acceso';
 export const administradorGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  const accesoDenegado = inject(AccesoDenegadoService);
 
   const user = authService.currentUserSignal();
   if (!user) {
     return router.parseUrl(`/login?returnUrl=${state.url}`);
   }
 
-  const sinAcceso = router.parseUrl(`/${SIN_ACCESO_RUTA}`);
+  const mensaje = 'Este módulo requiere permisos de administrador.';
   if (user.administrador != null) {
-    return esAdministrador(user) ? true : sinAcceso;
+    return esAdministrador(user) ? true : denegar(router, accesoDenegado, mensaje);
   }
 
   return authService.getUser(user.userId).pipe(
-    map((perfil) => (esAdministrador(perfil) ? true : sinAcceso)),
-    catchError(() => of(sinAcceso)),
+    map((perfil) =>
+      esAdministrador(perfil) ? true : denegar(router, accesoDenegado, mensaje),
+    ),
+    catchError(() => of(denegar(router, accesoDenegado, mensaje))),
   );
 };
 
@@ -50,19 +63,22 @@ export const administradorGuard: CanActivateFn = (_route, state) => {
 export const usuarioInternoGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  const accesoDenegado = inject(AccesoDenegadoService);
 
   const user = authService.currentUserSignal();
   if (!user) {
     return router.parseUrl(`/login?returnUrl=${state.url}`);
   }
 
-  const sinAcceso = router.parseUrl(`/${SIN_ACCESO_RUTA}`);
+  const mensaje = 'Este módulo no está disponible para usuarios externos.';
   if (user.usuarioExterno != null) {
-    return esUsuarioExterno(user) ? sinAcceso : true;
+    return esUsuarioExterno(user) ? denegar(router, accesoDenegado, mensaje) : true;
   }
 
   return authService.getUser(user.userId).pipe(
-    map((perfil) => (esUsuarioExterno(perfil) ? sinAcceso : true)),
+    map((perfil) =>
+      esUsuarioExterno(perfil) ? denegar(router, accesoDenegado, mensaje) : true,
+    ),
     catchError((): Observable<boolean | UrlTree> => of(true)),
   );
 };

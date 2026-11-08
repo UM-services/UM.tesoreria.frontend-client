@@ -1,12 +1,12 @@
 import { Route } from '@angular/router';
 import { authGuard, SIN_ACCESO_RUTA, usuarioInternoGuard } from '@tesoreria/shared-api';
 import { NoAccesoComponent } from '@tesoreria/ui-layout';
-import { NxWelcomeComponent } from './nx-welcome.component';
+import { DashboardComponent } from './dashboard.component';
 
 export const appRoutes: Route[] = [
   {
     path: 'login',
-    loadComponent: () => import('@tesoreria/ui-auth').then(m => m.LoginComponent),
+    loadComponent: () => import('@tesoreria/ui-auth').then((m) => m.LoginComponent),
   },
   {
     // Ruta pública de las guards de acceso; debe ir antes del wildcard.
@@ -15,17 +15,23 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'personas',
-    loadComponent: () => import('@tesoreria/feature-personas').then(m => m.PersonasComponent),
+    loadComponent: () => import('@tesoreria/feature-personas').then((m) => m.PersonasComponent),
     canActivate: [authGuard, usuarioInternoGuard],
     data: { eyebrow: 'Chequeras / Personas' },
   },
   {
+    path: 'cobranzas',
+    loadChildren: () => import('@tesoreria/feature-chequeras').then((m) => m.cobranzaRoutes),
+    canActivate: [authGuard, usuarioInternoGuard],
+    data: { eyebrow: 'Chequeras / Cobranzas' },
+  },
+  {
     path: '',
-    component: NxWelcomeComponent,
+    component: DashboardComponent,
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
     path: '**',
     redirectTo: '',
-  }
+  },
 ];

@@ -1,5 +1,16 @@
 # UM Tesorería - Frontend Client
 
+![Angular](https://img.shields.io/badge/Angular-22.1.8-DD0031?logo=angular&logoColor=white)
+![Nx](https://img.shields.io/badge/Nx-23.3.0-143055?logo=nx&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.2.4-06B6D4?logo=tailwindcss&logoColor=white)
+![RxJS](https://img.shields.io/badge/RxJS-7.8-B7178C?logo=reactivex&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-4.0.8-6E9F18?logo=vitest&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-E2E-2EAD33?logo=playwright&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
+![npm](https://img.shields.io/badge/npm-11.6.2-CB3837?logo=npm&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Multistage-2496ED?logo=docker&logoColor=white)
+
 Sistema de gestión de tesorería construido con Angular 22 y Nx Workspace.
 
 ## Estructura del Proyecto
@@ -10,7 +21,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - **compras** - Gestión de compras y proveedores (puerto 4201)
 - **pagos** - Gestión de facturas pendientes (puerto 4202)
-- **chequeras** - Gestión de chequeras (puerto 4203)
+- **chequeras** - Gestión de chequeras y cobranzas (puerto 4203)
 - **administrador** - Gestión administrativa (puerto 4204)
 - **contable** - Módulo contable (puerto 4205)
 - **contratados** - Gestión de contratados (puerto 4206)
@@ -19,17 +30,18 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 ### Librerías
 
-- `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard` y `permisoAlgunoGuard`)
+- `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard`, `permisoAlgunoGuard`, `AccesoDenegadoService`, `SolicitudAccesoService` y `INACTIVIDAD_CONFIG`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`), buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el render de solo lectura `ui-texto-enriquecido` y la directiva `*uiPermiso`
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso` y las directivas `*uiPermiso` y `*uiPermisoAlguno`
 - `@tesoreria/ui-rich-text` - Editor de texto enriquecido (WYSIWYG) compartido (`ui-editor-enriquecido`, Quill 2 vía `ngx-quill@31`); vive en su propia lib para mantener Quill en chunks lazy
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta, edición, bandeja de envío, revisión de compras, autorización de presupuesto, consulta y detalle) montado por la app compras en `/pedido`, de los procesos de cotización (lista, armado, detalle, bandeja «Cotizaciones pedidas» y adjudicación) montados en `/cotizacion`, de la formalización de la Orden de Compra montada en `/formalizacion` y de la recepción y conformidad montada en `/recepcion`
 - `@tesoreria/feature-administrador` - Módulo administrativo: dependencias, usuarios, asignaciones de usuario, autorizantes de envío, autoridades de presupuesto y cotizaciones mínimas por monto
-- `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` y `/simulador` (app administrador)
+- `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` (inventario de sólo lectura y sincronización con `permisos.yaml`), `/simulador` y `/solicitudes` (app administrador)
 - `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
 - `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
+- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas (`cobranzaRoutes`) de Cobranzas montadas por la app chequeras en `/cobranzas` (importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera)
 
 La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
 
@@ -203,7 +215,7 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 
 - **Tokens**: paleta `um-*` (p. ej. `bg-um-sidebar`, `text-um-ink`, `border-um-border`), tipografía, espaciados y radios. Es la única fuente de colores: no agregar hex sueltos en templates.
 - **Shell**: `<ui-shell moduleName="..." [menuItems]="...">` (`@tesoreria/ui-layout`) aporta sidebar oscuro, badge de entorno con color por ambiente, usuario, logout y layout responsive. Las apps solo definen marca y menú.
-- **Permisos**: los ítems del menú con `permiso` y las acciones con `*uiPermiso="'modulo.accion'"` sólo se muestran si el bundle efectivo del usuario (`PermisosService`, convención `modulo.accion`) incluye la clave; sin backend o ante error el bundle queda vacío (fail-closed). Las rutas se protegen con `permisoGuard('<clave>')` o, en vistas compartidas por varios roles, con `permisoAlgunoGuard(['<clave>', ...])` (autoriza con al menos una).
+- **Permisos**: los ítems del menú con `permiso` y las acciones con `*uiPermiso="'modulo.accion'"` sólo se muestran si el bundle efectivo del usuario (`PermisosService`, convención `modulo.accion`) incluye la clave; sin backend o ante error el bundle queda vacío (fail-closed). Las rutas se protegen con `permisoGuard('<clave>')` o, en vistas compartidas por varios roles, con `permisoAlgunoGuard(['<clave>', ...])` (autoriza con al menos una). Un **401** cierra la sesión y vuelve al login con `motivo=sesion-expirada`; un **403** no cierra la sesión: el shell muestra un aviso descartable, las guards llevan a `sin-acceso` y desde ahí se puede **solicitar acceso** a un administrador.
 - **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`.
 - **Referencia viva**: la vista `libs/feature-externo-consulta/src/lib/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
 
@@ -263,7 +275,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.40.0**
+Versión actual: **0.44.0**
 
 ## Licencia
 
