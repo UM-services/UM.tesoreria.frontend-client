@@ -1,0 +1,102 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Administración / Seguridad</p>
+      <h1 class="um-page-title">Solicitudes de acceso</h1>
+      <p class="mt-1 text-sm text-um-muted">
+        Pedidos enviados desde la pantalla de acceso restringido. Aprobar registra la decisión;
+        para hacerla efectiva, asigná la clave en la pantalla de Usuarios.
+      </p>
+    </div>
+    <button type="button" class="um-btn-secondary" (click)="cargar()" [disabled]="cargando()">
+      Actualizar
+    </button>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">{{ successMessage() }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="rounded-lg border border-um-border bg-white p-12 text-center shadow-sm">
+      <p class="text-sm text-um-muted">Cargando solicitudes...</p>
+    </div>
+  } @else if (vacia()) {
+    <div class="rounded-lg border border-um-border bg-white p-12 text-center shadow-sm">
+      <p class="text-sm font-semibold text-um-ink">No hay solicitudes pendientes</p>
+      <p class="mt-1 text-sm text-um-muted">
+        Cuando un usuario pida un permiso desde una pantalla restringida, el pedido aparece acá.
+      </p>
+    </div>
+  } @else {
+    <div class="overflow-hidden rounded-lg border border-um-border bg-white shadow-sm">
+      <div class="border-b border-um-border bg-um-surface px-6 py-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
+          Pendientes ({{ solicitudes().length }})
+        </h2>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Usuario</th>
+              <th>Permiso</th>
+              <th>Módulo</th>
+              <th>Comentario</th>
+              <th>Observación</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (solicitud of solicitudes(); track solicitud.solicitudAccesoId) {
+              <tr>
+                <td class="whitespace-nowrap text-xs text-um-muted">
+                  {{ solicitud.created | date: 'short' }}
+                </td>
+                <td class="font-mono text-xs">{{ solicitud.userId ?? '—' }}</td>
+                <td class="font-mono text-xs">{{ solicitud.clave ?? '—' }}</td>
+                <td class="text-xs">{{ solicitud.modulo ?? '—' }}</td>
+                <td class="max-w-xs text-xs">{{ solicitud.comentario ?? '—' }}</td>
+                <td class="min-w-48">
+                  <input
+                    type="text"
+                    class="um-input"
+                    maxlength="500"
+                    placeholder="Opcional"
+                    [(ngModel)]="observaciones[solicitud.solicitudAccesoId]"
+                  />
+                </td>
+                <td>
+                  <div class="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      class="um-btn-secondary"
+                      [disabled]="estaResolviendo(solicitud.solicitudAccesoId)"
+                      (click)="resolver(solicitud, 'RECHAZADA')"
+                    >
+                      Rechazar
+                    </button>
+                    <button
+                      type="button"
+                      class="um-btn-primary"
+                      [disabled]="estaResolviendo(solicitud.solicitudAccesoId)"
+                      (click)="resolver(solicitud, 'APROBADA')"
+                    >
+                      Aprobar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

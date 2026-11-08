@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, Provider } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { API_URL, APP_ENV_INFO, AppEnvInfo } from '@tesoreria/shared-api';
+import { API_URL, APP_ENV_INFO, AppEnvInfo, PermisosService } from '@tesoreria/shared-api';
 import { UiShellComponent } from './ui-shell';
 
 @Component({ standalone: true, selector: 'lib-login-stub', template: '' })
@@ -20,6 +20,7 @@ async function createShell(
   overrides: Partial<
     Pick<UiShellComponent, 'moduleName' | 'menuSectionLabel' | 'menuItems' | 'logoUrl'>
   > = {},
+  extraProviders: Provider[] = [],
 ): Promise<ComponentFixture<UiShellComponent>> {
   localStorage.setItem('currentUser', JSON.stringify(STORED_USER));
   await TestBed.configureTestingModule({
@@ -28,6 +29,7 @@ async function createShell(
       provideRouter([{ path: 'login', component: LoginStubComponent }]),
       provideHttpClient(),
       { provide: API_URL, useValue: '' },
+      ...extraProviders,
       ...(envInfo ? [{ provide: APP_ENV_INFO, useValue: envInfo }] : []),
     ],
   }).compileComponents();
@@ -50,6 +52,7 @@ async function createShell(
 describe('UiShellComponent', () => {
   afterEach(() => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('ui-shell:expanded-groups');
   });
 
   it('renders the brand block with the module name', async () => {
@@ -68,6 +71,102 @@ describe('UiShellComponent', () => {
     const links = sidebar.querySelectorAll<HTMLAnchorElement>('nav a');
     expect(links.length).toBe(2);
     expect(links[1].textContent?.trim()).toBe('Gastos');
+  });
+
+  it('muestra los hijos de un grupo recién al expandirlo y recuerda el estado', async () => {
+    const menuItems = [
+      { label: 'Dashboard', path: '/' },
+      {
+        label: 'Cobranzas',
+        path: '/cobranzas',
+        children: [
+          { label: 'Importar archivos', path: '/cobranzas/importar' },
+          { label: 'Carga manual de pago', path: '/cobranzas/pago-manual' },
+        ],
+      },
+    ];
+    const fixture = await createShell(undefined, { menuItems });
+    const sidebar = fixture.nativeElement.querySelector('aside') as HTMLElement;
+
+    expect(sidebar.querySelectorAll('nav a').length).toBe(2);
+    const toggle = sidebar.querySelector<HTMLButtonElement>(
+      'button[aria-label="Expandir Cobranzas"]',
+    );
+    expect(toggle).toBeTruthy();
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+
+    toggle?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(sidebar.querySelectorAll('nav a').length).toBe(4);
+    expect(sidebar.textContent).toContain('Importar archivos');
+    expect(
+      sidebar.querySelector<HTMLButtonElement>('button[aria-label="Contraer Cobranzas"]'),
+    ).toBeTruthy();
+    expect(localStorage.getItem('ui-shell:expanded-groups')).toContain('/cobranzas');
+  });
+
+  it('oculta el grupo cuando ningún hijo queda visible por permisos', async () => {
+    const fixture = await createShell(
+      undefined,
+      {
+        menuItems: [
+          { label: 'Dashboard', path: '/' },
+          {
+            label: 'Cobranzas',
+            path: '/cobranzas',
+            children: [
+              {
+                label: 'Importar archivos',
+                path: '/cobranzas/importar',
+                permiso: 'chequeras.cobranzas.importar',
+              },
+            ],
+          },
+        ],
+      },
+      [{ provide: PermisosService, useValue: { hasPermiso: () => false } }],
+    );
+    const sidebar = fixture.nativeElement.querySelector('aside') as HTMLElement;
+
+    expect(sidebar.textContent).not.toContain('Cobranzas');
+    expect(sidebar.querySelectorAll('nav a').length).toBe(1);
+  });
+
+  it('muestra el grupo y sus hijos cuando el usuario tiene el permiso', async () => {
+    const fixture = await createShell(
+      undefined,
+      {
+        menuItems: [
+          {
+            label: 'Cobranzas',
+            path: '/cobranzas',
+            children: [
+              {
+                label: 'Importar archivos',
+                path: '/cobranzas/importar',
+                permiso: 'chequeras.cobranzas.importar',
+              },
+            ],
+          },
+        ],
+      },
+      [
+        {
+          provide: PermisosService,
+          useValue: { hasPermiso: (clave: string) => clave === 'chequeras.cobranzas.importar' },
+        },
+      ],
+    );
+    const sidebar = fixture.nativeElement.querySelector('aside') as HTMLElement;
+
+    expect(sidebar.textContent).toContain('Cobranzas');
+    sidebar.querySelector<HTMLButtonElement>('button[aria-label="Expandir Cobranzas"]')?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(sidebar.textContent).toContain('Importar archivos');
   });
 
   it('shows the environment badge with its label and version tooltip', async () => {
@@ -153,8 +252,8 @@ describe('UiShellComponent', () => {
     expect(component.isCambioClaveOpen()).toBe(false);
     expect(fixture.nativeElement.querySelector('#modal-title')).toBeNull();
 
-    const changePasswordBtn = [...fixture.nativeElement.querySelectorAll('aside button')].find((b) =>
-      b.textContent?.includes('Cambiar clave'),
+    const changePasswordBtn = [...fixture.nativeElement.querySelectorAll('aside button')].find(
+      (b) => b.textContent?.includes('Cambiar clave'),
     ) as HTMLButtonElement;
     expect(changePasswordBtn).toBeTruthy();
 
@@ -163,7 +262,9 @@ describe('UiShellComponent', () => {
     await fixture.whenStable();
 
     expect(component.isCambioClaveOpen()).toBe(true);
-    expect(fixture.nativeElement.querySelector('#modal-title')?.textContent?.trim()).toBe('Cambiar Clave');
+    expect(fixture.nativeElement.querySelector('#modal-title')?.textContent?.trim()).toBe(
+      'Cambiar Clave',
+    );
 
     component.cerrarCambioClave();
     fixture.detectChanges();
@@ -173,4 +274,3 @@ describe('UiShellComponent', () => {
     expect(fixture.nativeElement.querySelector('#modal-title')).toBeNull();
   });
 });
-

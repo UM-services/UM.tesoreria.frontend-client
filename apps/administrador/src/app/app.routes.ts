@@ -74,6 +74,13 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
+    // Sólo administradores: bandeja de pedidos de acceso enviados desde `sin-acceso`.
+    path: 'solicitudes',
+    loadComponent: () =>
+      import('@tesoreria/feature-permisos').then(m => m.SolicitudesAccesoComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
     // Sólo administradores: ABM de roles y matriz rol × permiso.
     path: 'roles',
     loadComponent: () => import('@tesoreria/feature-permisos').then(m => m.RolesComponent),

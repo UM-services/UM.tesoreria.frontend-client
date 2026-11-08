@@ -1,0 +1,210 @@
+<section class="p-6">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Chequeras / Cobranzas / Importaciones</p>
+    <h1 class="um-page-title">Importaciones</h1>
+    <p class="um-page-desc">
+      Archivos procesados por canal y registros que no llegaron a imputarse.
+    </p>
+  </header>
+
+  <div class="mt-5 flex flex-wrap gap-2">
+    @for (opcion of canales; track opcion.codigo) {
+      <button
+        type="button"
+        class="um-btn-secondary"
+        [class.font-bold]="canal().codigo === opcion.codigo"
+        (click)="cambiarCanal(opcion)"
+      >
+        {{ opcion.nombre }}
+      </button>
+    }
+  </div>
+
+  <input
+    #reacreditarInput
+    type="file"
+    class="hidden"
+    accept=".txt,.dat,.ren"
+    (change)="onArchivoReacreditacion($event)"
+  />
+
+  @if (error(); as error) {
+    <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+  }
+  @if (aviso(); as aviso) {
+    <div class="um-alert um-alert-success mt-4">{{ aviso }}</div>
+  }
+
+  <div class="mt-5 overflow-x-auto">
+    <table class="um-table">
+      <thead>
+        <tr>
+          <th scope="col">Archivo</th>
+          <th scope="col">Fecha</th>
+          <th scope="col">Registros</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (importacion of importaciones(); track importacion.id) {
+          <tr>
+            <td class="font-mono">{{ importacion.nombre }}</td>
+            <td>{{ fecha(importacion.fecha) }}</td>
+            <td>{{ importacion.registros ?? '—' }}</td>
+            <td class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="um-link-btn"
+                (click)="verNoRegistrados(importacion)"
+              >
+                Ver no registrados
+              </button>
+              @if (esDebito()) {
+                <button
+                  type="button"
+                  class="um-link-btn"
+                  (click)="verRechazos(importacion)"
+                >
+                  Ver rechazos
+                </button>
+              }
+              @if (canal().codigo === 'RAPIPAGO') {
+                <button
+                  type="button"
+                  class="um-link-btn"
+                  (click)="reacreditar(importacion)"
+                >
+                  Re-acreditar
+                </button>
+              }
+              <button type="button" class="um-link-btn" (click)="eliminar(importacion)">
+                Eliminar importación
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="text-center text-um-muted">
+              {{ cargando() ? 'Cargando…' : 'No hay importaciones para este canal.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (seleccionada(); as seleccionada) {
+    <div class="um-card mt-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-um-ink">
+            Registros de {{ seleccionada.nombre }}
+          </h2>
+          <p class="mt-1 text-sm text-um-muted">
+            Filas del archivo que no se imputaron y, en los canales de débito, los rechazos
+            informados por el banco.
+          </p>
+        </div>
+        @if (esDebito()) {
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [class.font-bold]="vista() === 'noRegistrados'"
+              (click)="verNoRegistrados(seleccionada)"
+            >
+              No registrados
+            </button>
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [class.font-bold]="vista() === 'rechazos'"
+              (click)="verRechazos(seleccionada)"
+            >
+              Rechazos
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (vista() === 'rechazos' && esDebito()) {
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table">
+            <thead>
+              <tr>
+                <th scope="col">Débito</th>
+                <th scope="col">Facultad / Tipo / Chequera</th>
+                <th scope="col">Producto / Cuota</th>
+                <th scope="col">Importe</th>
+                <th scope="col">Fecha</th>
+                <th scope="col">Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (rechazo of rechazos(); track rechazo.debitoId) {
+                <tr>
+                  <td class="font-mono">{{ rechazo.debitoId }}</td>
+                  <td>
+                    {{ rechazo.facultadId ?? '—' }} / {{ rechazo.tipoChequeraId ?? '—' }} /
+                    {{ rechazo.chequeraSerieId ?? '—' }}
+                  </td>
+                  <td>{{ rechazo.productoId ?? '—' }} / {{ rechazo.cuotaId ?? '—' }}</td>
+                  <td class="font-mono tabular-nums">{{ importe(rechazo.importe) }}</td>
+                  <td>{{ fecha(rechazo.fechaPago) }}</td>
+                  <td>{{ rechazo.motivoRechazo ?? '—' }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="text-center text-um-muted">
+                    No hay rechazos para esta importación.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table">
+            <thead>
+              <tr>
+                <th scope="col">Identificación</th>
+                <th scope="col">Producto</th>
+                <th scope="col">Mes/Año</th>
+                <th scope="col">Cuota</th>
+                <th scope="col">Importe</th>
+                <th scope="col">Pago</th>
+                <th scope="col">Acreditación</th>
+                <th scope="col">Marca</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of noRegistrados(); track fila.id) {
+                <tr>
+                  <td class="font-mono">
+                    {{ fila.codigoEmpresa }}-{{ fila.identificacion }}
+                  </td>
+                  <td>{{ fila.productoId ?? '—' }}</td>
+                  <td>{{ fila.mesPago ?? '—' }}/{{ fila.anhoPago ?? '—' }}</td>
+                  <td>{{ fila.cuotaId ?? '—' }}</td>
+                  <td class="font-mono tabular-nums">{{ importe(fila.importe) }}</td>
+                  <td>{{ fecha(fila.fechaPago) }}</td>
+                  <td>{{ fecha(fila.fechaAcreditacion) }}</td>
+                  <td>{{ fila.marcaAcreditacion ?? '—' }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="text-center text-um-muted">
+                    No hay registros pendientes.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <a class="um-link-btn mt-6 inline-block" routerLink="/cobranzas">Volver a Cobranzas</a>
+</section>

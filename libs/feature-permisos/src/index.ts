@@ -4,3 +4,4 @@ export * from './lib/permisos/permisos';
 export * from './lib/roles/roles';
 export * from './lib/simulador/simulador';
 export * from './lib/catalogo/catalogo';
+export * from './lib/solicitudes/solicitudes';

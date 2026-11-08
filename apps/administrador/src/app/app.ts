@@ -22,6 +22,7 @@ export class AppComponent {
     { label: 'Autoridades de presupuesto', path: '/autoridades-presupuesto' },
     { label: 'Cotizaciones mínimas', path: '/cotizaciones-minimas', permiso: 'compras.cotizaciones.configurar' },
     { label: 'Permisos', path: '/permisos' },
+    { label: 'Solicitudes de acceso', path: '/solicitudes' },
     { label: 'Roles', path: '/roles' },
     { label: 'Catálogo', path: '/catalogo' },
     { label: 'Simulador', path: '/simulador' },

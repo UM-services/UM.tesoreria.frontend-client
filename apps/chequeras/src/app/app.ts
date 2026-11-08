@@ -13,9 +13,37 @@ export class AppComponent {
 
   readonly menuItems: ShellMenuItem[] = [
     { label: 'Dashboard', path: '/' },
-    { label: 'Emisión', path: '/emision' },
-    { label: 'Cobranzas', path: '/cobranzas' },
-    { label: 'Consultas', path: '/consultas' },
+    {
+      label: 'Cobranzas',
+      path: '/cobranzas',
+      children: [
+        {
+          label: 'Importar archivos',
+          path: '/cobranzas/importar',
+          permiso: 'chequeras.cobranzas.importar',
+        },
+        {
+          label: 'Importaciones',
+          path: '/cobranzas/importaciones',
+          permiso: 'chequeras.cobranzas.importar',
+        },
+        {
+          label: 'Generar archivos',
+          path: '/cobranzas/generar',
+          permiso: 'chequeras.cobranzas.generar',
+        },
+        {
+          label: 'Carga manual de pago',
+          path: '/cobranzas/pago-manual',
+          permiso: 'chequeras.cobranzas.pagoManual',
+        },
+        {
+          label: 'Baja de chequera',
+          path: '/cobranzas/baja',
+          permiso: 'chequeras.cobranzas.baja',
+        },
+      ],
+    },
     { label: 'Personas', path: '/personas' },
   ];
 }

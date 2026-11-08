@@ -1,0 +1,129 @@
+<section class="p-6">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Chequeras / Cobranzas / Baja</p>
+    <h1 class="um-page-title">Baja de chequera</h1>
+    <p class="um-page-desc">
+      Buscá la persona, seleccioná la chequera y registrá o anulá la baja.
+    </p>
+  </header>
+
+  <div class="um-card mt-6">
+    <ui-buscador-persona
+      label="Apellido y nombre"
+      inputId="bajaChequeraPersona"
+      [(texto)]="texto"
+      (seleccionada)="elegirPersona($event)"
+    />
+    @if (persona(); as persona) {
+      <p class="mt-3 text-sm text-um-muted">
+        {{ persona.apellido }}, {{ persona.nombre }} · {{ persona.personaId }}.{{ persona.documentoId }}
+      </p>
+    }
+  </div>
+
+  @if (error(); as error) {
+    <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+  }
+  @if (aviso(); as aviso) {
+    <div class="um-alert um-alert-success mt-4">{{ aviso }}</div>
+  }
+
+  @if (series().length > 0) {
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">Chequeras</h2>
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Facultad</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Chequera</th>
+              <th scope="col">Arancel</th>
+              <th scope="col">Sede</th>
+              <th scope="col">Baja</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of series(); track item.serie.chequeraId) {
+              <tr [class.font-bold]="seleccionada()?.serie?.chequeraId === item.serie.chequeraId">
+                <td>{{ item.serie.facultad?.nombre ?? item.serie.facultadId }}</td>
+                <td>{{ item.serie.tipoChequera?.nombre ?? item.serie.tipoChequeraId }}</td>
+                <td class="font-mono">
+                  {{ item.serie.facultadId }}/{{ item.serie.tipoChequeraId }}/{{ item.serie.chequeraSerieId }}
+                </td>
+                <td>{{ item.serie.arancelTipo?.descripcion ?? '—' }}</td>
+                <td>{{ item.serie.geografica?.nombre ?? '—' }}</td>
+                <td>
+                  @if (item.baja) {
+                    <span class="um-badge">Baja {{ fecha(item.baja.fecha) }}</span>
+                  } @else {
+                    <span class="um-badge">Activa</span>
+                  }
+                </td>
+                <td>
+                  <button type="button" class="um-link-btn" (click)="seleccionar(item)">
+                    Seleccionar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (seleccionada(); as item) {
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">
+        Baja de la chequera {{ item.serie.chequeraSerieId }}
+      </h2>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <label class="block">
+          <span class="um-label">Fecha</span>
+          <input
+            type="date"
+            class="um-input mt-1"
+            [value]="fechaBaja()"
+            [disabled]="item.baja !== null"
+            (input)="fechaBaja.set($any($event.target).value)"
+          />
+        </label>
+        <label class="block">
+          <span class="um-label">Observaciones</span>
+          <input
+            type="text"
+            class="um-input mt-1"
+            [value]="observaciones()"
+            [disabled]="item.baja !== null"
+            (input)="observaciones.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+
+      @if (item.baja) {
+        <p class="mt-3 text-sm text-um-muted">
+          La chequera tiene una baja vigente desde {{ fecha(item.baja.fecha) }}.
+        </p>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="anular()">
+            Anular baja
+          </button>
+        </div>
+      } @else {
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="darDeBaja()">
+            Dar de baja
+          </button>
+        </div>
+      }
+
+      @if (cargando()) {
+        <p class="mt-3 text-sm text-um-muted">Procesando…</p>
+      }
+    </div>
+  }
+
+  <a class="um-link-btn mt-6 inline-block" routerLink="/cobranzas">Volver a Cobranzas</a>
+</section>
