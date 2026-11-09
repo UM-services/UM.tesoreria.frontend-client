@@ -7,7 +7,9 @@
   @if (isLoading()) {
     <div class="um-card p-6 text-sm text-um-muted">Cargando la Orden de Compra...</div>
   } @else if (errorMessage()) {
-    <div class="um-card"><div class="um-alert-error m-4">{{ errorMessage() }}</div></div>
+    <div class="um-card">
+      <div class="um-alert-error m-4">{{ errorMessage() }}</div>
+    </div>
   } @else if (oc(); as oc) {
     <section class="um-card">
       <div class="flex items-start justify-between">
@@ -15,7 +17,7 @@
           <h2 class="um-section">OC {{ oc.numero || '—' }}</h2>
           <p class="um-page-desc">
             {{ oc.numeroExterno ? 'Nº externo: ' + oc.numeroExterno + ' · ' : '' }}
-            Emitida {{ oc.fecha ? (oc.fecha | date: 'short') : '—' }}
+            Emitida {{ oc.fecha | umFecha }}
           </p>
         </div>
         <a [routerLink]="['/formalizacion']" class="um-link-btn">← Volver</a>
@@ -46,7 +48,7 @@
         </div>
         <div>
           <label class="um-label">Ejercicio</label>
-          <div class="text-um-ink">{{ oc.ejercicioId ?? '—' }}</div>
+          <div class="text-um-ink">{{ nombreEjercicio(oc.ejercicioId) }}</div>
         </div>
       </div>
 
@@ -90,7 +92,9 @@
                   <td class="text-right">{{ item.cantidad ?? '—' }}</td>
                   <td>{{ item.unidad || '—' }}</td>
                   <td class="text-right">
-                    {{ item.precioUnitario !== null ? (item.precioUnitario | number: '1.2-2') : '—' }}
+                    {{
+                      item.precioUnitario !== null ? (item.precioUnitario | number: '1.2-2') : '—'
+                    }}
                   </td>
                   <td class="text-right">
                     {{ item.subtotal !== null ? (item.subtotal | number: '1.2-2') : '—' }}

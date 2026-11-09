@@ -26,16 +26,20 @@
         <div>
           <label class="um-label">Monto estimado (suma de pedidos)</label>
           <p class="text-sm text-um-text">
-            {{ p.montoEstimado !== null && p.montoEstimado !== undefined ? (p.montoEstimado | number: '1.2-2') : '—' }}
+            {{
+              p.montoEstimado !== null && p.montoEstimado !== undefined
+                ? (p.montoEstimado | number: '1.2-2')
+                : '—'
+            }}
           </p>
         </div>
         <div>
-          <label class="um-label">Cotizaciones mínimas requeridas</label>
+          <label class="um-label">Presupuestos mínimos requeridos</label>
           <p class="text-sm text-um-text">{{ p.cantidadMinima ?? '—' }}</p>
         </div>
         <div>
           <label class="um-label">Fecha de envío</label>
-          <p class="text-sm text-um-text">{{ p.fechaEnvio ? (p.fechaEnvio | date: 'short') : '—' }}</p>
+          <p class="text-sm text-um-text">{{ p.fechaEnvio | umFecha }}</p>
         </div>
         @if (p.excepcionMotivo) {
           <div class="md:col-span-3">
@@ -100,7 +104,11 @@
                   </span>
                 </td>
                 <td class="text-right">
-                  {{ proveedor.total !== null && proveedor.total !== undefined ? (proveedor.total | number: '1.2-2') : '—' }}
+                  {{
+                    proveedor.total !== null && proveedor.total !== undefined
+                      ? (proveedor.total | number: '1.2-2')
+                      : '—'
+                  }}
                 </td>
                 <td>{{ proveedor.plazoEntrega || '—' }}</td>
                 <td>{{ proveedor.condicionPago || '—' }}</td>
@@ -109,7 +117,9 @@
                     <button type="button" class="um-link-btn" (click)="abrirRespuesta(proveedor)">
                       Cargar respuesta
                     </button>
-                    <button type="button" class="um-link-btn" (click)="marcarNoCotiza(proveedor)">No cotiza</button>
+                    <button type="button" class="um-link-btn" (click)="marcarNoCotiza(proveedor)">
+                      No cotiza
+                    </button>
                   }
                 </td>
               </tr>
@@ -154,14 +164,20 @@
                           </tr>
                         </thead>
                         <tbody>
-                          @for (item of itemsRespuesta(); track item.compraCotizacionItemId; let i = $index) {
+                          @for (
+                            item of itemsRespuesta();
+                            track item.compraCotizacionItemId;
+                            let i = $index
+                          ) {
                             <tr>
                               <td>#{{ item.compraCotizacionItemId }}</td>
                               <td>
                                 <input
                                   type="checkbox"
                                   [checked]="item.cotiza"
-                                  (change)="actualizarItem(i, 'cotiza', $any($event.target).checked)"
+                                  (change)="
+                                    actualizarItem(i, 'cotiza', $any($event.target).checked)
+                                  "
                                 />
                               </td>
                               <td class="text-right">
@@ -185,7 +201,13 @@
                       </table>
 
                       <div class="flex justify-end gap-3">
-                        <button type="button" class="um-btn-secondary" (click)="cancelarRespuesta()">Cancelar</button>
+                        <button
+                          type="button"
+                          class="um-btn-secondary"
+                          (click)="cancelarRespuesta()"
+                        >
+                          Cancelar
+                        </button>
                         <button type="button" class="um-btn-primary" (click)="guardarRespuesta()">
                           Guardar respuesta
                         </button>
@@ -218,7 +240,10 @@
               <tr>
                 <td>#{{ item.compraPedidoItemId }}</td>
                 <td class="text-right">{{ item.cantidad }}</td>
-                @for (proveedor of p.proveedores ?? []; track proveedor.compraCotizacionProveedorId) {
+                @for (
+                  proveedor of p.proveedores ?? [];
+                  track proveedor.compraCotizacionProveedorId
+                ) {
                   <td class="text-right">{{ precio(proveedor, item.compraCotizacionItemId) }}</td>
                 }
               </tr>
@@ -241,7 +266,10 @@
                 (ngModelChange)="recomendandoId.set($event)"
               >
                 <option [ngValue]="null">Seleccione...</option>
-                @for (proveedor of proveedoresRespondidos; track proveedor.compraCotizacionProveedorId) {
+                @for (
+                  proveedor of proveedoresRespondidos;
+                  track proveedor.compraCotizacionProveedorId
+                ) {
                   <option [ngValue]="proveedor.compraCotizacionProveedorId">
                     Proveedor {{ proveedor.proveedorId }} — {{ proveedor.total | number: '1.2-2' }}
                   </option>
@@ -266,11 +294,17 @@
       <section class="um-card mb-4">
         <div class="flex flex-wrap items-center justify-end gap-3">
           @if (esAnulable) {
-            <input class="um-input max-w-xs" placeholder="Motivo de anulación" [(ngModel)]="motivoAnulacion" />
+            <input
+              class="um-input max-w-xs"
+              placeholder="Motivo de anulación"
+              [(ngModel)]="motivoAnulacion"
+            />
             <button type="button" class="um-btn-secondary" (click)="anular()">Anular</button>
           }
           @if (esEditable) {
-            <button type="button" class="um-btn-primary" (click)="enviar()">Enviar a proveedores</button>
+            <button type="button" class="um-btn-primary" (click)="enviar()">
+              Enviar a proveedores
+            </button>
           }
         </div>
       </section>

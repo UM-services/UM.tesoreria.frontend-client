@@ -244,25 +244,46 @@
       <h2 class="text-sm font-bold uppercase tracking-[0.08em] text-um-ink">Cabecera</h2>
       <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
+          <label class="um-label">Dependencia</label>
+          <p class="text-sm text-um-text">{{ p.dependenciaNombre || p.dependenciaId || '—' }}</p>
+        </div>
+        <div>
+          <label class="um-label">Solicitante</label>
+          <p class="text-sm text-um-text">
+            {{ solicitanteLabel(p.solicitanteNombre, p.solicitanteLogin, p.solicitanteId) }}
+          </p>
+        </div>
+        <div>
           <label class="um-label">Fecha</label>
-          <p class="text-sm text-um-text">{{ p.fecha | date: 'short' }}</p>
+          <p class="text-sm text-um-text">{{ p.fecha | umFecha }}</p>
         </div>
         <div>
           <label class="um-label">Fecha requerida</label>
           <p class="text-sm text-um-text">
-            {{ p.fechaRequerida ? (p.fechaRequerida | date: 'short') : '—' }}
+            {{ p.fechaRequerida | umFecha }}
           </p>
         </div>
         <div>
           <label class="um-label">Fecha de envío a compras</label>
           <p class="text-sm text-um-text">
-            {{ p.fechaEnvio ? (p.fechaEnvio | date: 'short') : '—' }}
+            {{ p.fechaEnvio | umFecha }}
           </p>
         </div>
         @if (p.montoEstimado !== null && p.montoEstimado !== undefined) {
           <div>
             <label class="um-label">Valor estimado</label>
             <p class="text-sm text-um-text">{{ p.montoEstimado | number: '1.2-2' }}</p>
+          </div>
+        } @else {
+          <div>
+            <label class="um-label">Valor estimado</label>
+            <p class="text-sm text-um-muted">
+              Sin estimación{{
+                p.estado === 'PENDIENTE_ENVIO' || p.estado === 'EN_REVISION_COMPRAS'
+                  ? ' — la cargará Compras'
+                  : ''
+              }}.
+            </p>
           </div>
         }
         @if (p.fuenteEstimacion) {
@@ -273,7 +294,7 @@
         }
         @if (p.cantidadCotizacionesMinima !== null && p.cantidadCotizacionesMinima !== undefined) {
           <div>
-            <label class="um-label">Cotizaciones mínimas requeridas</label>
+            <label class="um-label">Presupuestos mínimos requeridos</label>
             <p class="text-sm text-um-text">{{ p.cantidadCotizacionesMinima }}</p>
           </div>
         }
@@ -304,7 +325,7 @@
             <tr>
               <th scope="col">Cantidad</th>
               <th scope="col">Unidad</th>
-              <th scope="col">Bien / servicio</th>
+              <th scope="col">Objeto / Bien / Servicio</th>
               <th scope="col">Especificaciones</th>
               <th scope="col">Referencia web</th>
             </tr>
@@ -351,7 +372,7 @@
                 <p class="text-sm font-semibold text-um-ink">
                   {{ estadoLabel(entrada.estado) }}
                   <span class="ml-2 text-xs font-normal text-um-muted">
-                    {{ entrada.fecha | date: 'short' }}
+                    {{ entrada.fecha | umFecha }}
                   </span>
                 </p>
                 @if (entrada.observacion) {

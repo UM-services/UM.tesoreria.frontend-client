@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FechaPipe } from '@tesoreria/ui-layout';
 import { RecepcionService } from '../data-access/recepcion.service';
 import {
   Recepcion,
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'app-recepcion-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, FechaPipe],
   templateUrl: './recepcion-detalle.component.html',
 })
 export class RecepcionDetalleComponent implements OnInit {

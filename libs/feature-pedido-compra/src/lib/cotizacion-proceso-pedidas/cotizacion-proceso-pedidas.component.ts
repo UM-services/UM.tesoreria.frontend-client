@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { FechaPipe } from '@tesoreria/ui-layout';
 import { CotizacionProcesoService } from '../data-access/cotizacion-proceso.service';
 import {
   CotizacionProcesoProveedorPendiente,
@@ -23,7 +24,7 @@ interface RespuestaItemDraft {
 @Component({
   selector: 'app-cotizacion-proceso-pedidas',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, FechaPipe],
   templateUrl: './cotizacion-proceso-pedidas.component.html',
 })
 export class CotizacionProcesoPedidasComponent implements OnInit {
@@ -56,7 +57,7 @@ export class CotizacionProcesoPedidasComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('No se pudieron cargar las cotizaciones pedidas.');
+        this.errorMessage.set('No se pudieron cargar los presupuestos pedidos.');
         this.isLoading.set(false);
       },
     });
@@ -85,7 +86,11 @@ export class CotizacionProcesoPedidasComponent implements OnInit {
     this.respondiendo.set(null);
   }
 
-  actualizarItem(index: number, campo: 'cotiza' | 'precioUnitario' | 'marca', valor: unknown): void {
+  actualizarItem(
+    index: number,
+    campo: 'cotiza' | 'precioUnitario' | 'marca',
+    valor: unknown,
+  ): void {
     this.itemsRespuesta.update((items) =>
       items.map((item, i) => (i === index ? { ...item, [campo]: valor } : item)),
     );
@@ -102,7 +107,10 @@ export class CotizacionProcesoPedidasComponent implements OnInit {
         (p) => p.compraCotizacionItemId === item.compraCotizacionItemId,
       )?.cantidad;
       const precio = item.precioUnitario;
-      const subtotal = item.cotiza && precio != null && cantidad != null ? Number(precio) * Number(cantidad) : null;
+      const subtotal =
+        item.cotiza && precio != null && cantidad != null
+          ? Number(precio) * Number(cantidad)
+          : null;
       return {
         compraCotizacionItemId: item.compraCotizacionItemId,
         cotiza: item.cotiza,
@@ -123,17 +131,19 @@ export class CotizacionProcesoPedidasComponent implements OnInit {
       items,
     };
     this.guardando.set(true);
-    this.cotizacionProcesoService.registrarRespuesta(pendiente.compraCotizacionId, cpId, request).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.respondiendo.set(null);
-        this.cargar();
-      },
-      error: () => {
-        this.guardando.set(false);
-        this.errorMessage.set('No se pudo guardar la respuesta del proveedor.');
-      },
-    });
+    this.cotizacionProcesoService
+      .registrarRespuesta(pendiente.compraCotizacionId, cpId, request)
+      .subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.respondiendo.set(null);
+          this.cargar();
+        },
+        error: () => {
+          this.guardando.set(false);
+          this.errorMessage.set('No se pudo guardar la respuesta del proveedor.');
+        },
+      });
   }
 
   marcarNoCotiza(pendiente: CotizacionProcesoProveedorPendiente): void {
@@ -142,9 +152,11 @@ export class CotizacionProcesoPedidasComponent implements OnInit {
       return;
     }
     this.errorMessage.set('');
-    this.cotizacionProcesoService.marcarNoCotiza(pendiente.compraCotizacionId, cpId, 'Sin cotización').subscribe({
-      next: () => this.cargar(),
-      error: () => this.errorMessage.set('No se pudo marcar el proveedor.'),
-    });
+    this.cotizacionProcesoService
+      .marcarNoCotiza(pendiente.compraCotizacionId, cpId, 'Sin presupuesto')
+      .subscribe({
+        next: () => this.cargar(),
+        error: () => this.errorMessage.set('No se pudo marcar el proveedor.'),
+      });
   }
 }

@@ -33,6 +33,7 @@ export interface PedidoCompra {
   descartadoMotivo?: string | null;
   dependenciaNombre?: string | null;
   solicitanteNombre?: string | null;
+  solicitanteLogin?: string | null;
   items?: PedidoCompraItem[];
 }
 
@@ -100,22 +101,28 @@ export interface ContextoInicioPedido {
   } | null;
 }
 
-/** Etiquetas legibles de los estados (el backend persiste las claves). */
+/**
+ * Estados del pedido en el orden del circuito definido en `PLANIFICACION_COMPRAS.md`:
+ * primero el flujo principal y después los estados alternativos y terminales.
+ */
 export const ESTADOS_PEDIDO = [
+  // Flujo principal
   'BORRADOR',
-  'PENDIENTE_ESTIMACION',
   'PENDIENTE_ENVIO',
-  'ACLARACION_REQUERIDA',
   'EN_REVISION_COMPRAS',
   'PENDIENTE_AUTORIZACION_PRESUPUESTO',
   'AUTORIZADO_PRESUPUESTO',
+  // Alternativos
+  'ACLARACION_REQUERIDA',
   'RECHAZADO',
+  // Terminal
   'DESCARTADO',
 ] as const;
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: 'Borrador',
-  PENDIENTE_ESTIMACION: 'Pendiente de estimación',
+  // Sólo para leer el historial previo a la eliminación del estado.
+  PENDIENTE_ESTIMACION: 'Pendiente de estimación (histórico)',
   PENDIENTE_ENVIO: 'Pendiente de envío',
   ACLARACION_REQUERIDA: 'Aclaración requerida',
   ENVIADO: 'Enviado a compras',
@@ -133,6 +140,24 @@ export function estadoLabel(estado?: string | null): string {
   return ESTADO_LABEL[estado] ?? estado;
 }
 
+/**
+ * Texto del usuario que inició el pedido. Prefiere nombre y login juntos; si falta alguno,
+ * muestra el disponible y, como último recurso, el `solicitanteId`.
+ */
+export function solicitanteLabel(
+  nombre?: string | null,
+  login?: string | null,
+  id?: number | null,
+): string {
+  if (nombre && login) {
+    return `${nombre} (${login})`;
+  }
+  if (nombre || login) {
+    return nombre || login || '—';
+  }
+  return id ? String(id) : '—';
+}
+
 /** Clases de color del badge por estado (`um-badge`). */
 export function estadoBadgeClass(estado?: string | null): string {
   switch (estado) {
@@ -145,7 +170,6 @@ export function estadoBadgeClass(estado?: string | null): string {
       return 'bg-gray-200 text-gray-700';
     case 'PENDIENTE_ENVIO':
       return 'bg-amber-100 text-amber-800';
-    case 'PENDIENTE_ESTIMACION':
     case 'ACLARACION_REQUERIDA':
       return 'bg-blue-100 text-blue-800';
     case 'PENDIENTE_AUTORIZACION_PRESUPUESTO':
