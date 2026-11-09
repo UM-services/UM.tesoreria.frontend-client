@@ -1,0 +1,140 @@
+<section class="p-6">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Chequeras / Consultas</p>
+    <h1 class="um-page-title">Detalle de cuotas por facultad y sede</h1>
+    <p class="um-page-desc">
+      Elegí un lectivo, seleccioná las facultades y sedes y descargá las planillas en formato
+      horizontal o vertical. El servidor arma un único ZIP con todas las planillas.
+    </p>
+  </header>
+
+  <div class="um-card mt-6">
+    <div class="max-w-md">
+      <label class="um-label" for="detalleCuotasLectivo">Lectivo</label>
+      <select
+        id="detalleCuotasLectivo"
+        class="um-input mt-1"
+        [value]="lectivoId() ?? ''"
+        [disabled]="cargando() || generando() !== null"
+        (change)="cambiarLectivo($any($event.target).value)"
+      >
+        @for (lectivo of lectivos(); track lectivo.lectivoId) {
+          <option [value]="lectivo.lectivoId" [selected]="lectivo.lectivoId === lectivoId()">
+            {{ lectivo.nombre }}
+          </option>
+        }
+      </select>
+      @if (lectivos().length === 0 && !cargando() && !error()) {
+        <p class="mt-2 text-sm text-um-muted">No hay lectivos disponibles.</p>
+      }
+    </div>
+  </div>
+
+  @if (error(); as error) {
+    <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+  }
+  @if (aviso(); as aviso) {
+    <div class="um-alert um-alert-success mt-4">{{ aviso }}</div>
+  }
+
+  @if (cargando()) {
+    <p class="mt-6 text-sm text-um-muted" aria-busy="true">Cargando chequeras…</p>
+  } @else if (!error() && filas().length === 0) {
+    <div class="um-alert mt-6">No hay chequeras para el lectivo seleccionado.</div>
+  } @else if (filas().length > 0) {
+    <div class="um-card mt-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-um-ink">Facultades y sedes</h2>
+          <p class="mt-1 text-sm text-um-muted">
+            {{ cantidadSeleccionada() }} de {{ filas().length }} seleccionadas
+          </p>
+        </div>
+        <button
+          type="button"
+          class="um-link-btn"
+          [disabled]="filas().length === 0 || generando() !== null"
+          (click)="invertir()"
+        >
+          Invertir selección
+        </button>
+      </div>
+
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table" aria-label="Facultades y sedes con chequeras en el lectivo">
+          <thead>
+            <tr>
+              <th scope="col" class="w-10">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-um-border text-um-primary"
+                  [checked]="todasSeleccionadas()"
+                  [indeterminate]="seleccionParcial()"
+                  [disabled]="generando() !== null"
+                  (change)="toggleTodas($any($event.target).checked)"
+                  aria-label="Seleccionar todas las facultades y sedes"
+                />
+              </th>
+              <th scope="col">#</th>
+              <th scope="col">Facultad</th>
+              <th scope="col">Sede</th>
+              <th scope="col">Chequeras</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of filas(); track clave(fila); let indice = $index) {
+              <tr class="cursor-pointer" (click)="toggleFila(fila)">
+                <td (click)="$event.stopPropagation()">
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-um-border text-um-primary"
+                    [checked]="estaSeleccionada(fila)"
+                    [disabled]="generando() !== null"
+                    (change)="toggleFila(fila)"
+                    [attr.aria-label]="'Seleccionar ' + fila.facultad + ', ' + fila.geografica"
+                  />
+                </td>
+                <td>{{ indice + 1 }}</td>
+                <td>{{ fila.facultad }}</td>
+                <td>{{ fila.geografica }}</td>
+                <td class="font-mono tabular-nums">{{ fila.cantidad }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button
+          type="button"
+          class="um-btn-primary"
+          [disabled]="!algunaSeleccionada() || generando() !== null"
+          (click)="descargar('horizontal')"
+        >
+          @if (generando() === 'horizontal') {
+            Generando ZIP…
+          } @else {
+            Descargar horizontal ({{ cantidadSeleccionada() }})
+          }
+        </button>
+        <button
+          type="button"
+          class="um-btn-secondary"
+          [disabled]="!algunaSeleccionada() || generando() !== null"
+          (click)="descargar('vertical')"
+        >
+          @if (generando() === 'vertical') {
+            Generando ZIP…
+          } @else {
+            Descargar vertical ({{ cantidadSeleccionada() }})
+          }
+        </button>
+      </div>
+      <p class="mt-3 text-sm text-um-muted">
+        El ZIP contiene una planilla por cada facultad y sede seleccionada.
+      </p>
+    </div>
+  }
+
+  <a class="um-link-btn mt-6 inline-block" routerLink="/consultas">Volver a Consultas</a>
+</section>

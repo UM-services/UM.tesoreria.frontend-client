@@ -44,6 +44,17 @@ export class AppComponent {
         },
       ],
     },
+    {
+      label: 'Consultas',
+      path: '/consultas',
+      children: [
+        {
+          label: 'Detalle de cuotas por facultad y sede',
+          path: '/consultas/detalle-cuotas',
+          permiso: 'chequeras.consultas.detalleCuotas',
+        },
+      ],
+    },
     { label: 'Personas', path: '/personas' },
   ];
 }

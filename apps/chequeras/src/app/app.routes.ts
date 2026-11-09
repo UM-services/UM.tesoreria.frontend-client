@@ -26,6 +26,12 @@ export const appRoutes: Route[] = [
     data: { eyebrow: 'Chequeras / Cobranzas' },
   },
   {
+    path: 'consultas',
+    loadChildren: () => import('@tesoreria/feature-chequeras').then((m) => m.consultaRoutes),
+    canActivate: [authGuard, usuarioInternoGuard],
+    data: { eyebrow: 'Chequeras / Consultas' },
+  },
+  {
     path: '',
     component: DashboardComponent,
     canActivate: [authGuard, usuarioInternoGuard],
