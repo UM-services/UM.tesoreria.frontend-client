@@ -28,7 +28,7 @@
             FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent (sólo lectura + sync)<br/>SolicitudesAccesoComponent<br/>SimuladorComponent"]
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
-            FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera"]
+            FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes, consultaRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera<br/>ConsultasHome, DetalleCuotas"]
         end
     end
 
@@ -277,6 +277,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
     AppRoutes --> Dashboard["Dashboard Component<br/>accesos filtrados por permiso"]
     AppRoutes --> Personas["Personas Component<br/>@tesoreria/feature-personas"]
     AppRoutes --> Cobranzas["cobranzaRoutes<br/>@tesoreria/feature-chequeras<br/>permisoAlgunoGuard"]
+    AppRoutes --> Consultas["consultaRoutes<br/>@tesoreria/feature-chequeras<br/>permisoAlgunoGuard"]
 
     Cobranzas --> CobranzasHome["CobranzasHome Component<br/>chequeras.cobranzas.*"]
     Cobranzas --> Importar["ImportarLista e ImportarProceso<br/>chequeras.cobranzas.importar"]
@@ -285,11 +286,16 @@ asignación efectiva se hace en la pantalla de Usuarios.
     Cobranzas --> PagoManual["PagoManual Component<br/>chequeras.cobranzas.pagoManual"]
     Cobranzas --> Baja["BajaChequera Component<br/>chequeras.cobranzas.baja"]
 
+    Consultas --> ConsultasHome["ConsultasHome Component<br/>chequeras.consultas.detalleCuotas"]
+    Consultas --> DetalleCuotas["DetalleCuotasFacultadSede Component<br/>chequeras.consultas.detalleCuotas"]
+
     Importar --> CobranzaAPI["Fachada de cobranzas del core<br/>/cobranza/importacion"]
     Importaciones --> CobranzaAPI
     Generar --> GeneracionAPI["/cobranza/generacion"]
     PagoManual --> PagoAPI["/cobranza/pago-manual"]
     Baja --> ChequeraAPI["/chequeraSerie, /chequeraCuota,<br/>/chequeraPago, /baja y /processBaja"]
+    DetalleCuotas --> ResumenAPI["core: /chequeraSerie/resumen/lectivo/{lectivoId}"]
+    DetalleCuotas --> ReportZip["report: /chequeras/planilla/detalle/zip"]
     PagoManual --> BuscadorPersona["BuscadorPersona Component<br/>@tesoreria/ui-layout"]
     Baja --> BuscadorPersona
 ```

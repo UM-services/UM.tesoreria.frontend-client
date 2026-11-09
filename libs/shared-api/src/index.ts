@@ -5,6 +5,7 @@ export * from './lib/auth.flags';
 export * from './lib/auth.guard';
 export * from './lib/module-access.guard';
 export * from './lib/permisos.service';
+export * from './lib/ejercicios.service';
 export * from './lib/acceso-denegado.service';
 export * from './lib/solicitud-acceso.service';
 export * from './lib/inactividad.config';

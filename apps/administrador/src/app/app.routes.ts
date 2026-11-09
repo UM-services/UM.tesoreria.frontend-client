@@ -56,7 +56,7 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
-    // Tramos de cotizaciones mínimas por monto (configuración del proceso de compras).
+    // Tramos de presupuestos mínimos por monto (configuración del proceso de compras).
     path: 'cotizaciones-minimas',
     loadComponent: () =>
       import('@tesoreria/feature-administrador').then(m => m.CotizacionesMinimasComponent),

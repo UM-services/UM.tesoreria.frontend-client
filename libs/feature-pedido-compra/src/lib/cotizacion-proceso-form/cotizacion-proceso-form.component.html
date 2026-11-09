@@ -1,8 +1,10 @@
 <div class="mx-auto max-w-6xl p-4">
   <header class="um-page-header">
     <p class="um-eyebrow">Compras</p>
-    <h1 class="um-page-title">Nuevo proceso de cotización</h1>
-    <p class="um-page-desc">Combiná ítems de uno o varios pedidos autorizados en presupuesto y agregá proveedores.</p>
+    <h1 class="um-page-title">Nuevo proceso de presupuesto</h1>
+    <p class="um-page-desc">
+      Combiná ítems de uno o varios pedidos autorizados en presupuesto y agregá proveedores.
+    </p>
   </header>
 
   @if (errorMessage()) {
@@ -14,14 +16,22 @@
     @if (isLoading()) {
       <div class="p-4 text-sm text-um-muted">Cargando ítems disponibles...</div>
     } @else if (grupos().length === 0) {
-      <div class="p-4 text-sm text-um-muted">No hay ítems de pedidos autorizados pendientes de cotizar.</div>
+      <div class="p-4 text-sm text-um-muted">
+        No hay ítems de pedidos autorizados pendientes de cotizar.
+      </div>
     } @else {
       @for (grupo of grupos(); track grupo.compraPedidoId) {
         <div class="mb-4 rounded border border-um-line p-3">
           <div class="mb-2 flex items-center justify-between">
-            <p class="font-semibold text-um-ink">Pedido {{ grupo.numero || grupo.compraPedidoId }}</p>
+            <p class="font-semibold text-um-ink">
+              Pedido {{ grupo.numero || grupo.compraPedidoId }}
+            </p>
             <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" [checked]="pedidoCompleto(grupo)" (change)="togglePedido(grupo)" />
+              <input
+                type="checkbox"
+                [checked]="pedidoCompleto(grupo)"
+                (change)="togglePedido(grupo)"
+              />
               Pedido completo
             </label>
           </div>
@@ -48,7 +58,9 @@
                   <td>{{ item.descripcion }}</td>
                   <td>{{ item.cantidad }}</td>
                   <td>{{ item.unidad }}</td>
-                  <td class="align-top"><ui-texto-enriquecido [texto]="item.especificaciones" /></td>
+                  <td class="align-top">
+                    <ui-texto-enriquecido [texto]="item.especificaciones" />
+                  </td>
                 </tr>
               }
             </tbody>
@@ -66,7 +78,11 @@
         @for (proveedor of proveedores(); track proveedor.proveedorId) {
           <li class="flex items-center justify-between rounded border border-um-line px-3 py-2">
             <span>{{ proveedor.razonSocial }}</span>
-            <button type="button" class="um-link-btn" (click)="quitarProveedor(proveedor.proveedorId)">
+            <button
+              type="button"
+              class="um-link-btn"
+              (click)="quitarProveedor(proveedor.proveedorId)"
+            >
               Quitar
             </button>
           </li>
@@ -85,19 +101,26 @@
         <input id="observacion" type="text" class="um-input" [(ngModel)]="observacion" />
       </div>
       <div>
-        <label class="um-label" for="excepcion">Motivo de excepción (si se solicitan menos del mínimo)</label>
+        <label class="um-label" for="excepcion"
+          >Motivo de excepción (si se solicitan menos del mínimo)</label
+        >
         <input id="excepcion" type="text" class="um-input" [(ngModel)]="excepcionMotivo" />
       </div>
     </div>
     <p class="mt-3 text-sm text-um-muted">
-      El monto estimado del proceso y el mínimo de cotizaciones se calculan con la suma de los montos
-      estimados de los pedidos seleccionados.
+      El monto estimado del proceso y el mínimo de presupuestos se calculan con la suma de los
+      montos estimados de los pedidos seleccionados.
     </p>
   </section>
 
   <div class="flex justify-end gap-3">
     <button type="button" class="um-btn-secondary" (click)="cancelar()">Cancelar</button>
-    <button type="button" class="um-btn-secondary" [disabled]="guardando()" (click)="guardar(false)">
+    <button
+      type="button"
+      class="um-btn-secondary"
+      [disabled]="guardando()"
+      (click)="guardar(false)"
+    >
       Guardar borrador
     </button>
     <button type="button" class="um-btn-primary" [disabled]="guardando()" (click)="guardar(true)">

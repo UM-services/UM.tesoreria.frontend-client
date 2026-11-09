@@ -124,4 +124,14 @@ describe('UsuariosComponent', () => {
     expect(servicio.crear).not.toHaveBeenCalled();
     expect(componente.errorMessage()).toContain('apellido');
   });
+
+  it('ordena el listado alfabéticamente por login', () => {
+    componente.usuarios.set([
+      { ...usuario, userId: 3, login: 'mperez', nombre: 'María Pérez' },
+      { ...usuario, userId: 1, login: 'jperez', nombre: 'Juan Pérez' },
+      { ...usuario, userId: 2, login: 'ablanco', nombre: 'Ana Blanco' },
+    ]);
+
+    expect(componente.filtrados.map(u => u.login)).toEqual(['ablanco', 'jperez', 'mperez']);
+  });
 });

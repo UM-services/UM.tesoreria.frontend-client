@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
+import { FechaPipe, TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
   DependenciaResumen,
@@ -10,6 +10,7 @@ import {
   PedidoCompra,
   estadoBadgeClass,
   estadoLabel,
+  solicitanteLabel,
 } from '../models/pedido-compra.models';
 
 /**
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'app-pedido-consulta',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent, FechaPipe],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-consulta.component.html',
 })
@@ -34,6 +35,7 @@ export class PedidoConsultaComponent implements OnInit {
   readonly estados = ESTADOS_PEDIDO;
   readonly estadoLabel = estadoLabel;
   readonly estadoBadgeClass = estadoBadgeClass;
+  readonly solicitanteLabel = solicitanteLabel;
 
   estado = '';
   dependenciaId: number | null = null;
@@ -42,7 +44,7 @@ export class PedidoConsultaComponent implements OnInit {
 
   ngOnInit(): void {
     this.pedidoCompraService.dependencias().subscribe({
-      next: dependencias => this.dependencias.set(dependencias ?? []),
+      next: (dependencias) => this.dependencias.set(dependencias ?? []),
       error: () => this.dependencias.set([]),
     });
     this.buscar();
@@ -59,7 +61,7 @@ export class PedidoConsultaComponent implements OnInit {
         fechaHasta: this.fechaHasta ? `${this.fechaHasta}T23:59:59` : null,
       })
       .subscribe({
-        next: pedidos => {
+        next: (pedidos) => {
           this.pedidos.set(pedidos ?? []);
           this.isLoading.set(false);
         },

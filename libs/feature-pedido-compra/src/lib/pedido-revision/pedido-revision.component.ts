@@ -2,13 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
+import { FechaPipe, TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
   ESTADOS_PEDIDO,
   PedidoCompra,
   estadoBadgeClass,
   estadoLabel,
+  solicitanteLabel,
 } from '../models/pedido-compra.models';
 
 /**
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'app-pedido-revision',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent, FechaPipe],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-revision.component.html',
 })
@@ -36,6 +37,7 @@ export class PedidoRevisionComponent implements OnInit {
   readonly estados = ESTADOS_PEDIDO;
   readonly estadoLabel = estadoLabel;
   readonly estadoBadgeClass = estadoBadgeClass;
+  readonly solicitanteLabel = solicitanteLabel;
 
   estadoFiltro = 'EN_REVISION_COMPRAS';
   montoEstimado: number | null = null;
@@ -49,7 +51,7 @@ export class PedidoRevisionComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.pedidoCompraService.revision(this.estadoFiltro || null).subscribe({
-      next: pedidos => {
+      next: (pedidos) => {
         this.pedidos.set(pedidos ?? []);
         this.isLoading.set(false);
       },
@@ -85,7 +87,7 @@ export class PedidoRevisionComponent implements OnInit {
     this.pedidoCompraService
       .estimar(id, this.montoEstimado, this.fuenteEstimacion.trim() || null)
       .subscribe({
-        next: actualizado => {
+        next: (actualizado) => {
           this.marcarPendiente(id, false);
           this.cancelarEstimacion();
           this.reemplazar(actualizado);
@@ -100,7 +102,9 @@ export class PedidoRevisionComponent implements OnInit {
 
   private reemplazar(actualizado: PedidoCompra): void {
     this.pedidos.set(
-      this.pedidos().map(p => (p.compraPedidoId === actualizado.compraPedidoId ? actualizado : p)),
+      this.pedidos().map((p) =>
+        p.compraPedidoId === actualizado.compraPedidoId ? actualizado : p,
+      ),
     );
   }
 

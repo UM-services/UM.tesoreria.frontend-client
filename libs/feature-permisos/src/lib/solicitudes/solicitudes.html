@@ -4,8 +4,8 @@
       <p class="um-eyebrow">Administración / Seguridad</p>
       <h1 class="um-page-title">Solicitudes de acceso</h1>
       <p class="mt-1 text-sm text-um-muted">
-        Pedidos enviados desde la pantalla de acceso restringido. Aprobar registra la decisión;
-        para hacerla efectiva, asigná la clave en la pantalla de Usuarios.
+        Pedidos enviados desde la pantalla de acceso restringido. Aprobar registra la decisión; para
+        hacerla efectiva, asigná la clave en la pantalla de Usuarios.
       </p>
     </div>
     <button type="button" class="um-btn-secondary" (click)="cargar()" [disabled]="cargando()">
@@ -57,7 +57,7 @@
             @for (solicitud of solicitudes(); track solicitud.solicitudAccesoId) {
               <tr>
                 <td class="whitespace-nowrap text-xs text-um-muted">
-                  {{ solicitud.created | date: 'short' }}
+                  {{ solicitud.created | umFecha }}
                 </td>
                 <td class="font-mono text-xs">{{ solicitud.userId ?? '—' }}</td>
                 <td class="font-mono text-xs">{{ solicitud.clave ?? '—' }}</td>

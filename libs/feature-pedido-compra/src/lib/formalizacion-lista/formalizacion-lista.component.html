@@ -3,8 +3,8 @@
     <p class="um-eyebrow">Compras</p>
     <h1 class="um-page-title">Formalización de la Orden de Compra</h1>
     <p class="um-page-desc">
-      Adjudicaciones pendientes de emitir su Orden de Compra. El proveedor, el monto y las condiciones
-      se toman de la oferta adjudicada y pueden ajustarse antes de formalizar.
+      Adjudicaciones pendientes de emitir su Orden de Compra. El proveedor, el monto y las
+      condiciones se toman de la oferta adjudicada y pueden ajustarse antes de formalizar.
     </p>
   </header>
 
@@ -45,8 +45,14 @@
                 <td>{{ pendiente.garantia || '—' }}</td>
                 <td class="text-right">{{ pendiente.items?.length ?? 0 }}</td>
                 <td class="text-right">
-                  <button type="button" class="um-link-btn" (click)="abrir(pendiente)">Formalizar</button>
-                  <a [routerLink]="['/cotizacion', pendiente.compraCotizacionId]" class="um-link-btn">Ver proceso</a>
+                  <button type="button" class="um-link-btn" (click)="abrir(pendiente)">
+                    Formalizar
+                  </button>
+                  <a
+                    [routerLink]="['/cotizacion', pendiente.compraCotizacionId]"
+                    class="um-link-btn"
+                    >Ver proceso</a
+                  >
                 </td>
               </tr>
             }
@@ -163,9 +169,11 @@
                 <td class="text-right">
                   {{ oc.monto !== null ? (oc.monto | number: '1.2-2') : '—' }} {{ oc.moneda || '' }}
                 </td>
-                <td>{{ oc.fecha ? (oc.fecha | date: 'short') : '—' }}</td>
+                <td>{{ oc.fecha | umFecha }}</td>
                 <td class="text-right">
-                  <a [routerLink]="['/formalizacion', oc.compraFormalizacionId]" class="um-link-btn">Ver OC</a>
+                  <a [routerLink]="['/formalizacion', oc.compraFormalizacionId]" class="um-link-btn"
+                    >Ver OC</a
+                  >
                 </td>
               </tr>
             }

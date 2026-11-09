@@ -43,9 +43,9 @@
         <div class="um-alert um-alert-warn">
           <p class="font-semibold">Tu usuario no tiene dependencias habilitadas.</p>
           <p class="mt-1">
-            La bandeja sólo muestra pedidos de las dependencias asignadas como autorizante de
-            envío, así que por ahora va a quedar vacía aunque existan solicitudes pendientes.
-            Pedí que te asignen una en
+            La bandeja sólo muestra pedidos de las dependencias asignadas como autorizante de envío,
+            así que por ahora va a quedar vacía aunque existan solicitudes pendientes. Pedí que te
+            asignen una en
             <strong>Administrador → Autorizantes de envío</strong>.
           </p>
         </div>
@@ -60,6 +60,7 @@
               <th scope="col">Número</th>
               <th scope="col">Estado</th>
               <th scope="col">Dependencia</th>
+              <th scope="col">Solicitante</th>
               <th scope="col">Fecha</th>
               <th scope="col">Motivo/Urgencia</th>
               <th scope="col">Necesidad</th>
@@ -67,7 +68,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (pedido of pedidos(); track pedido.compraPedidoId) {
+            @for (pedido of pedidosOrdenados(); track pedido.compraPedidoId) {
               <tr>
                 <td class="font-semibold text-um-ink">{{ pedido.numero || 'Borrador' }}</td>
                 <td>
@@ -76,7 +77,16 @@
                   </span>
                 </td>
                 <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
-                <td>{{ pedido.fecha | date: 'short' }}</td>
+                <td>
+                  {{
+                    solicitanteLabel(
+                      pedido.solicitanteNombre,
+                      pedido.solicitanteLogin,
+                      pedido.solicitanteId
+                    )
+                  }}
+                </td>
+                <td>{{ pedido.fecha | umFecha }}</td>
                 <td class="align-top">
                   @if (pedido.urgente) {
                     <span class="um-badge bg-red-100 text-red-800">Urgente</span>

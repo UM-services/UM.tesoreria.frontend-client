@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { PermisosService } from '@tesoreria/shared-api';
-import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
+import { EjerciciosService, PermisosService } from '@tesoreria/shared-api';
+import { FechaPipe, TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { Observable } from 'rxjs';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
@@ -12,6 +12,7 @@ import {
   PedidoCompraHistorial,
   estadoBadgeClass,
   estadoLabel,
+  solicitanteLabel,
 } from '../models/pedido-compra.models';
 
 /**
@@ -22,16 +23,18 @@ import {
 @Component({
   selector: 'app-pedido-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent, FechaPipe],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-detalle.component.html',
 })
 export class PedidoDetalleComponent implements OnInit {
   private readonly pedidoCompraService = inject(PedidoCompraService);
   private readonly permisos = inject(PermisosService);
+  private readonly ejerciciosService = inject(EjerciciosService);
   private readonly route = inject(ActivatedRoute);
 
   readonly pedido = signal<PedidoCompra | null>(null);
+  readonly nombresEjercicio = signal<Map<number, string>>(new Map());
   readonly historial = signal<PedidoCompraHistorial[]>([]);
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
@@ -45,6 +48,7 @@ export class PedidoDetalleComponent implements OnInit {
 
   readonly estadoLabel = estadoLabel;
   readonly estadoBadgeClass = estadoBadgeClass;
+  readonly solicitanteLabel = solicitanteLabel;
 
   motivoRechazo = '';
   motivoDescarte = '';
@@ -56,7 +60,12 @@ export class PedidoDetalleComponent implements OnInit {
 
   ngOnInit(): void {
     this.compraPedidoId = Number(this.route.snapshot.paramMap.get('id'));
+    this.cargarEjercicios();
     this.cargar();
+  }
+
+  private cargarEjercicios(): void {
+    this.ejerciciosService.nombres().subscribe((nombres) => this.nombresEjercicio.set(nombres));
   }
 
   cargar(): void {
@@ -159,16 +168,28 @@ export class PedidoDetalleComponent implements OnInit {
 
   textoLimite(): string {
     const l = this.limite();
+    const etiqueta = this.etiquetaEjercicio(l?.ejercicioId ?? this.pedido()?.ejercicioId);
     if (!l || !l.tieneAutoridad) {
-      return 'No tenés un perfil de autoridad asignado para este ejercicio.';
+      return `No tenés un perfil de autoridad asignado para ${etiqueta}.`;
     }
     if (l.ilimitado) {
-      return 'Autoridad sin límite para este ejercicio.';
+      return `Autoridad sin límite para ${etiqueta}.`;
     }
     if (l.limite == null) {
-      return 'No hay referencia cargada para este ejercicio; no se puede autorizar por monto.';
+      return `No hay referencia cargada para ${etiqueta}; no se puede autorizar por monto.`;
     }
-    return `Límite para este ejercicio: ${this.money(l.limite)} (${l.multiplico} × ${this.money(l.referencia)}).`;
+    return `Límite para ${etiqueta}: ${this.money(l.limite)} (${l.multiplico} × ${this.money(l.referencia)}).`;
+  }
+
+  nombreEjercicio(ejercicioId: number | null | undefined): string {
+    if (ejercicioId == null) {
+      return '—';
+    }
+    return this.nombresEjercicio().get(ejercicioId) ?? `Ejercicio ${ejercicioId}`;
+  }
+
+  private etiquetaEjercicio(ejercicioId: number | null | undefined): string {
+    return ejercicioId == null ? 'este ejercicio' : this.nombreEjercicio(ejercicioId);
   }
 
   money(valor: number | null | undefined): string {

@@ -21,7 +21,9 @@
   }
 
   <div class="bg-white border border-um-border rounded-lg shadow-sm px-6 py-4">
-    <p class="text-xs font-semibold uppercase tracking-wider text-um-muted">Tu límite de autorización</p>
+    <p class="text-xs font-semibold uppercase tracking-wider text-um-muted">
+      Tu límite de autorización
+    </p>
     <p class="mt-1 text-sm text-um-ink">{{ textoLimite() }}</p>
   </div>
 
@@ -38,6 +40,7 @@
               <th scope="col">Número</th>
               <th scope="col">Estado</th>
               <th scope="col">Dependencia</th>
+              <th scope="col">Solicitante</th>
               <th scope="col">Monto estimado</th>
               <th scope="col">Necesidad</th>
               <th scope="col" class="text-right">Acciones</th>
@@ -53,6 +56,15 @@
                   </span>
                 </td>
                 <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
+                <td>
+                  {{
+                    solicitanteLabel(
+                      pedido.solicitanteNombre,
+                      pedido.solicitanteLogin,
+                      pedido.solicitanteId
+                    )
+                  }}
+                </td>
                 <td>{{ money(pedido.montoEstimado) }}</td>
                 <td class="align-top">
                   <div class="max-w-md">

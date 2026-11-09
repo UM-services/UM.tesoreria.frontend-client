@@ -10,6 +10,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-11.6.2-CB3837?logo=npm&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Multistage-2496ED?logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions&logoColor=white)
 
 Sistema de gestión de tesorería construido con Angular 22 y Nx Workspace.
 
@@ -21,7 +22,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - **compras** - Gestión de compras y proveedores (puerto 4201)
 - **pagos** - Gestión de facturas pendientes (puerto 4202)
-- **chequeras** - Gestión de chequeras y cobranzas (puerto 4203)
+- **chequeras** - Gestión de chequeras, cobranzas y consultas (puerto 4203)
 - **administrador** - Gestión administrativa (puerto 4204)
 - **contable** - Módulo contable (puerto 4205)
 - **contratados** - Gestión de contratados (puerto 4206)
@@ -32,16 +33,16 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard`, `permisoAlgunoGuard`, `AccesoDenegadoService`, `SolicitudAccesoService` y `INACTIVIDAD_CONFIG`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso` y las directivas `*uiPermiso` y `*uiPermisoAlguno`
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso`, el pipe `umFecha` (fechas `dd/MM/yyyy` con hora opcional) y las directivas `*uiPermiso` y `*uiPermisoAlguno`
 - `@tesoreria/ui-rich-text` - Editor de texto enriquecido (WYSIWYG) compartido (`ui-editor-enriquecido`, Quill 2 vía `ngx-quill@31`); vive en su propia lib para mantener Quill en chunks lazy
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
-- `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta, edición, bandeja de envío, revisión de compras, autorización de presupuesto, consulta y detalle) montado por la app compras en `/pedido`, de los procesos de cotización (lista, armado, detalle, bandeja «Cotizaciones pedidas» y adjudicación) montados en `/cotizacion`, de la formalización de la Orden de Compra montada en `/formalizacion` y de la recepción y conformidad montada en `/recepcion`
-- `@tesoreria/feature-administrador` - Módulo administrativo: dependencias, usuarios, asignaciones de usuario, autorizantes de envío, autoridades de presupuesto y cotizaciones mínimas por monto
+- `@tesoreria/feature-pedido-compra` - Módulo de pedidos de compra (lista, alta, edición, bandeja de envío, revisión de compras, autorización de presupuesto, consulta y detalle) montado por la app compras en `/pedido`, de los procesos de presupuesto (lista, armado, detalle, bandeja «Presupuestos pedidos» y adjudicación) montados en `/cotizacion`, de la formalización de la Orden de Compra montada en `/formalizacion` y de la recepción y conformidad montada en `/recepcion`
+- `@tesoreria/feature-administrador` - Módulo administrativo: dependencias, usuarios, asignaciones de usuario, autorizantes de envío, autoridades de presupuesto y presupuestos mínimos por monto
 - `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` (inventario de sólo lectura y sincronización con `permisos.yaml`), `/simulador` y `/solicitudes` (app administrador)
 - `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
 - `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
-- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas (`cobranzaRoutes`) de Cobranzas montadas por la app chequeras en `/cobranzas` (importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera)
+- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas de **Cobranzas** (`cobranzaRoutes`, montadas por la app chequeras en `/cobranzas`: importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera) y de **Consultas** (`consultaRoutes`, `/consultas`: planillas de cuotas por facultad y sede para un lectivo)
 
 La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
 
@@ -144,11 +145,12 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
         LAYOUT["ui-layout<br/>Shell J2, buscadores y *uiPermiso"]
         FPROV["feature-proveedores"]
         FGAST["feature-gastos"]
-        FPED["feature-pedido-compra<br/>Lista, alta, edición, bandeja, revisión,<br/>presupuesto, consulta y detalle de pedido<br/>Cotizaciones (armado, detalle y pedidas),<br/>adjudicación, formalización y recepción"]
-        FADM["feature-administrador<br/>Dependencias, usuarios, asignaciones,<br/>autorizantes, autoridades de presupuesto<br/>y cotizaciones mínimas"]
+        FPED["feature-pedido-compra<br/>Lista, alta, edición, bandeja, revisión,<br/>presupuesto, consulta y detalle de pedido<br/>Presupuestos (armado, detalle y pedidos),<br/>adjudicación, formalización y recepción"]
+        FADM["feature-administrador<br/>Dependencias, usuarios, asignaciones,<br/>autorizantes, autoridades de presupuesto<br/>y presupuestos mínimos"]
         FPERM["feature-permisos<br/>Permisos, roles, catálogo y simulador"]
         FGUAR["feature-guarani<br/>GUARANI_ROUTES y vistas"]
         FEXT["feature-externo-consulta<br/>Vista chequeras del portal externo"]
+        FCHQ["feature-chequeras<br/>cobranzaRoutes y consultaRoutes<br/>Cobranzas y Consultas"]
     end
 
     C --> API
@@ -169,6 +171,7 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     Q --> API
     Q --> AUTH
     Q --> LAYOUT
+    Q --> FCHQ
 
     A --> API
     A --> AUTH
@@ -203,6 +206,8 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     EC --> FEXT
     FEXT --> API
     FEXT --> LAYOUT
+    FCHQ --> API
+    FCHQ --> LAYOUT
 
     LAYOUT --> AUTH
     API --> AUTH
@@ -275,7 +280,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.44.0**
+Versión actual: **0.45.0**
 
 ## Licencia
 
