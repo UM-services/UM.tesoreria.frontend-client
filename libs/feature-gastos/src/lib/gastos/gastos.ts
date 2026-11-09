@@ -584,6 +584,8 @@ export class GastosComponent implements OnInit {
 
   private showError(msg: string) {
     this.errorMessage = msg;
+    // Zoneless: sin esto el aviso espera al próximo ciclo y puede borrarse antes de verse.
+    this.cdr.detectChanges();
     setTimeout(() => {
       this.zone.run(() => {
         this.errorMessage = '';
@@ -594,6 +596,8 @@ export class GastosComponent implements OnInit {
 
   private showSuccess(msg: string) {
     this.successMessage = msg;
+    // Zoneless: sin esto el aviso espera al próximo ciclo y puede borrarse antes de verse.
+    this.cdr.detectChanges();
     setTimeout(() => {
       this.zone.run(() => {
         this.successMessage = '';
