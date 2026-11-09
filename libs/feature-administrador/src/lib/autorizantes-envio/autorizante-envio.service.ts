@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from '@tesoreria/shared-api';
 
@@ -38,8 +38,9 @@ export class AutorizanteEnvioService {
   private readonly coreUrl = inject(API_URL).replace(/\/auth\/?$/, '');
 
   buscarUsuarios(texto: string): Observable<UsuarioResumen[]> {
-    const params = new HttpParams().set('q', texto);
-    return this.http.get<UsuarioResumen[]>(`${this.coreUrl}/usuario/search`, { params });
+    return this.http.get<UsuarioResumen[]>(
+      `${this.coreUrl}/usuario/search/${encodeURIComponent(texto)}`,
+    );
   }
 
   dependencias(): Observable<Dependencia[]> {

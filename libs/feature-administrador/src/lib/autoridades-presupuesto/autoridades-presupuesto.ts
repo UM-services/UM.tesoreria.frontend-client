@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { EjercicioResumen, EjerciciosService } from '@tesoreria/shared-api';
 import { Subject, of } from 'rxjs';
 import { catchError, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AutoridadPresupuestoService,
   CompraAutoridadPerfil,
+  CompraAutoridadUsuarioAsignacion,
   LimiteAutorizacion,
   UsuarioResumen,
 } from './autoridad-presupuesto.service';
@@ -23,18 +25,22 @@ import {
 })
 export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
   private readonly service = inject(AutoridadPresupuestoService);
+  private readonly ejerciciosService = inject(EjerciciosService);
 
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
 
   // Referencia por ejercicio
+  readonly ejercicios = signal<EjercicioResumen[]>([]);
   ejercicioId: number | null = null;
   importe: number | null = null;
   readonly referenciaCargando = signal(false);
+  private referenciaRequestId = 0;
 
   // Perfiles
   readonly perfiles = signal<CompraAutoridadPerfil[]>([]);
   readonly perfilesCargando = signal(false);
+  readonly usuariosPorPerfil = signal<Map<number, CompraAutoridadUsuarioAsignacion[]>>(new Map());
   readonly editandoId = signal<number | null>(null);
   nuevoPerfilNombre = '';
   nuevoPerfilMultiplico: number | null = null;
@@ -54,12 +60,14 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
 
   // Vista previa del límite
   readonly limite = signal<LimiteAutorizacion | null>(null);
+  readonly limiteError = signal('');
   ejercicioLimite: number | null = null;
 
   private readonly busqueda$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.cargarEjercicios();
     this.cargarPerfiles();
     this.busqueda$
       .pipe(
@@ -84,28 +92,65 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
 
   // ---- Referencia por ejercicio ----
 
-  cargarReferencia(): void {
-    if (this.ejercicioId == null) {
-      this.showError('Ingrese el número de ejercicio.');
+  private cargarEjercicios(): void {
+    this.ejerciciosService.listado().subscribe(ejercicios => this.ejercicios.set(ejercicios ?? []));
+  }
+
+  /**
+   * Al cambiar de ejercicio se consulta su referencia automáticamente. Si no existe,
+   * el importe queda en 0 para que se distinga de "sin selección" y se pueda cargar.
+   */
+  onEjercicioChange(ejercicioId: number | null): void {
+    this.ejercicioId = ejercicioId;
+    if (ejercicioId == null) {
+      this.referenciaRequestId++;
+      this.referenciaCargando.set(false);
+      this.importe = null;
       return;
     }
+    this.cargarReferencia();
+  }
+
+  cargarReferencia(): void {
+    if (this.ejercicioId == null) {
+      this.referenciaRequestId++;
+      this.referenciaCargando.set(false);
+      this.importe = null;
+      return;
+    }
+    const requestId = ++this.referenciaRequestId;
     this.referenciaCargando.set(true);
+    this.importe = 0;
     this.service.getReferencia(this.ejercicioId).subscribe({
       next: referencia => {
+        if (requestId !== this.referenciaRequestId) {
+          return;
+        }
         this.importe = referencia.importe;
         this.referenciaCargando.set(false);
       },
-      error: () => {
-        this.importe = null;
+      error: (err: unknown) => {
+        if (requestId !== this.referenciaRequestId) {
+          return;
+        }
         this.referenciaCargando.set(false);
-        this.showError('No hay referencia cargada para ese ejercicio.');
+        if (this.esNoEncontrada(err)) {
+          this.importe = 0;
+          return;
+        }
+        this.importe = null;
+        this.showError('No se pudo cargar la referencia del ejercicio.');
       },
     });
   }
 
+  private esNoEncontrada(err: unknown): boolean {
+    return (err as { status?: number } | null)?.status === 404;
+  }
+
   guardarReferencia(): void {
     if (this.ejercicioId == null) {
-      this.showError('Ingrese el número de ejercicio.');
+      this.showError('Seleccione un ejercicio.');
       return;
     }
     if (this.importe == null || this.importe <= 0) {
@@ -115,7 +160,7 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
     this.service.guardarReferencia(this.ejercicioId, this.importe).subscribe({
       next: referencia => {
         this.importe = referencia.importe;
-        this.showSuccess(`Referencia del ejercicio ${referencia.ejercicioId} guardada.`);
+        this.showSuccess(`Referencia de ${this.nombreEjercicio(referencia.ejercicioId)} guardada.`);
       },
       error: (err: unknown) => this.showError(this.extraerError(err, 'al guardar la referencia')),
     });
@@ -129,12 +174,32 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
       next: perfiles => {
         this.perfiles.set(perfiles ?? []);
         this.perfilesCargando.set(false);
+        this.cargarAsignaciones();
       },
       error: () => {
         this.errorMessage.set('No se pudieron cargar los perfiles de autoridad.');
         this.perfilesCargando.set(false);
       },
     });
+  }
+
+  private cargarAsignaciones(): void {
+    this.service.asignaciones().subscribe({
+      next: asignaciones => {
+        const porPerfil = new Map<number, CompraAutoridadUsuarioAsignacion[]>();
+        for (const asignacion of asignaciones ?? []) {
+          const usuarios = porPerfil.get(asignacion.autoridadPerfilId) ?? [];
+          usuarios.push(asignacion);
+          porPerfil.set(asignacion.autoridadPerfilId, usuarios);
+        }
+        this.usuariosPorPerfil.set(porPerfil);
+      },
+      error: () => this.usuariosPorPerfil.set(new Map()),
+    });
+  }
+
+  usuariosDePerfil(autoridadPerfilId: number): CompraAutoridadUsuarioAsignacion[] {
+    return this.usuariosPorPerfil().get(autoridadPerfilId) ?? [];
   }
 
   crearPerfil(): void {
@@ -212,6 +277,7 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
     this.textoBusqueda = '';
     this.candidatos.set([]);
     this.limite.set(null);
+    this.limiteError.set('');
     this.cargarAsignados(usuario.userId);
     if (this.ejercicioLimite != null) {
       this.calcularLimite();
@@ -222,6 +288,12 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
     this.usuarioSeleccionado.set(null);
     this.perfilesAsignados.set(new Set());
     this.limite.set(null);
+    this.limiteError.set('');
+  }
+
+  onEjercicioLimiteChange(ejercicioId: number | null): void {
+    this.ejercicioLimite = ejercicioId;
+    this.calcularLimite();
   }
 
   togglePerfil(perfil: CompraAutoridadPerfil): void {
@@ -245,6 +317,7 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
         this.asignacionPendiente.set(restantes);
         this.perfilesAsignados.set(new Set(respuesta.autoridadPerfilIds ?? []));
         this.showSuccess(asignado ? 'Perfil quitado al usuario.' : 'Perfil asignado al usuario.');
+        this.cargarAsignaciones();
         if (this.ejercicioLimite != null) {
           this.calcularLimite();
         }
@@ -261,11 +334,18 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
   calcularLimite(): void {
     const userId = this.usuarioSeleccionado()?.userId;
     if (userId === undefined || this.ejercicioLimite == null) {
+      this.limite.set(null);
+      this.limiteError.set('');
       return;
     }
+    this.limite.set(null);
+    this.limiteError.set('');
     this.service.limite(userId, this.ejercicioLimite).subscribe({
       next: limite => this.limite.set(limite),
-      error: () => this.limite.set(null),
+      error: () => {
+        this.limite.set(null);
+        this.limiteError.set('No se pudo calcular el límite.');
+      },
     });
   }
 
@@ -275,15 +355,23 @@ export class AutoridadesPresupuestoComponent implements OnInit, OnDestroy {
       return '';
     }
     if (!l.tieneAutoridad) {
-      return 'Sin perfil de autoridad asignado para ese ejercicio.';
+      return `Sin perfil de autoridad asignado para ${this.nombreEjercicio(l.ejercicioId)}.`;
     }
     if (l.ilimitado) {
-      return 'Autoridad sin límite.';
+      return `Autoridad sin límite para ${this.nombreEjercicio(l.ejercicioId)}.`;
     }
     if (l.limite == null) {
-      return 'Sin referencia cargada para ese ejercicio.';
+      return `Sin referencia cargada para ${this.nombreEjercicio(l.ejercicioId)}.`;
     }
-    return `${this.money(l.limite)} (${l.multiplico} × ${this.money(l.referencia)})`;
+    return `${this.money(l.limite)} (${l.multiplico} × ${this.money(l.referencia)}) para ${this.nombreEjercicio(l.ejercicioId)}`;
+  }
+
+  nombreEjercicio(ejercicioId: number | null | undefined): string {
+    if (ejercicioId == null) {
+      return '—';
+    }
+    const ejercicio = this.ejercicios().find(item => item.ejercicioId === ejercicioId);
+    return ejercicio?.nombre?.trim() || `Ejercicio ${ejercicioId}`;
   }
 
   money(valor: number | null | undefined): string {
