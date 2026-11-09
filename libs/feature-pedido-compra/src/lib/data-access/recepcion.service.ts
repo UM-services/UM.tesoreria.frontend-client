@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { API_URL } from '@tesoreria/shared-api';
 import { Observable } from 'rxjs';
@@ -16,11 +16,11 @@ export class RecepcionService {
 
   /** Órdenes de Compra con recepción pendiente. */
   pendientes(ejercicioId?: number | null): Observable<RecepcionPendiente[]> {
-    let params = new HttpParams();
-    if (ejercicioId != null) {
-      params = params.set('ejercicioId', ejercicioId);
-    }
-    return this.http.get<RecepcionPendiente[]>(`${this.baseUrl}/pendientes`, { params });
+    const url =
+      ejercicioId != null
+        ? `${this.baseUrl}/pendientes/${ejercicioId}`
+        : `${this.baseUrl}/pendientes`;
+    return this.http.get<RecepcionPendiente[]>(url);
   }
 
   /** Recepciones registradas, con filtros opcionales. */
@@ -29,17 +29,13 @@ export class RecepcionService {
     compraFormalizacionId?: number | null;
     resultado?: string | null;
   }): Observable<Recepcion[]> {
-    let params = new HttpParams();
-    if (filtros?.ejercicioId != null) {
-      params = params.set('ejercicioId', filtros.ejercicioId);
-    }
-    if (filtros?.compraFormalizacionId != null) {
-      params = params.set('compraFormalizacionId', filtros.compraFormalizacionId);
-    }
-    if (filtros?.resultado) {
-      params = params.set('resultado', filtros.resultado);
-    }
-    return this.http.get<Recepcion[]>(this.baseUrl, { params });
+    return this.http.post<Recepcion[]>(`${this.baseUrl}/search`, {
+      ejercicioId: filtros?.ejercicioId ?? null,
+      compraFormalizacionId: filtros?.compraFormalizacionId ?? null,
+      resultado: filtros?.resultado ?? null,
+      fechaDesde: null,
+      fechaHasta: null,
+    });
   }
 
   getById(compraRecepcionId: number): Observable<Recepcion> {
@@ -48,7 +44,9 @@ export class RecepcionService {
 
   /** Recepciones y saldos de una Orden de Compra. */
   porFormalizacion(compraFormalizacionId: number): Observable<RecepcionPendiente> {
-    return this.http.get<RecepcionPendiente>(`${this.baseUrl}/por-formalizacion/${compraFormalizacionId}`);
+    return this.http.get<RecepcionPendiente>(
+      `${this.baseUrl}/por-formalizacion/${compraFormalizacionId}`,
+    );
   }
 
   /** Registra una entrega (total o parcial) contra una Orden de Compra. */
@@ -58,6 +56,8 @@ export class RecepcionService {
 
   /** Cierre manual de la recepción de una OC con saldo abierto (motivo obligatorio). */
   cerrar(compraFormalizacionId: number, motivo: string): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/formalizacion/${compraFormalizacionId}/cerrar`, { motivo });
+    return this.http.post<void>(`${this.baseUrl}/formalizacion/${compraFormalizacionId}/cerrar`, {
+      motivo,
+    });
   }
 }
