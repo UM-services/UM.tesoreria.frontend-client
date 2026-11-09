@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -8,6 +15,7 @@ import {
   SolicitudAcceso,
   SolicitudAccesoService,
 } from '@tesoreria/shared-api';
+import { FechaPipe } from '@tesoreria/ui-layout';
 
 /**
  * Bandeja del administrador con los pedidos de acceso enviados desde el banner
@@ -20,7 +28,7 @@ import {
 @Component({
   selector: 'app-solicitudes-acceso',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FechaPipe],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './solicitudes.html',
 })
@@ -45,7 +53,7 @@ export class SolicitudesAccesoComponent implements OnInit {
     this.cargando.set(true);
     this.errorMessage.set('');
     this.service.pendientes().subscribe({
-      next: solicitudes => {
+      next: (solicitudes) => {
         this.solicitudes.set(solicitudes);
         this.cargando.set(false);
       },
@@ -73,8 +81,8 @@ export class SolicitudesAccesoComponent implements OnInit {
       .subscribe({
         next: () => {
           this.marcarResolviendo(solicitud.solicitudAccesoId, false);
-          this.solicitudes.update(lista =>
-            lista.filter(s => s.solicitudAccesoId !== solicitud.solicitudAccesoId),
+          this.solicitudes.update((lista) =>
+            lista.filter((s) => s.solicitudAccesoId !== solicitud.solicitudAccesoId),
           );
           this.successMessage.set(
             estado === 'APROBADA'
@@ -98,7 +106,7 @@ export class SolicitudesAccesoComponent implements OnInit {
   }
 
   private marcarResolviendo(id: number, activo: boolean): void {
-    this.resolviendo.update(actual => {
+    this.resolviendo.update((actual) => {
       const siguiente = new Set(actual);
       if (activo) siguiente.add(id);
       else siguiente.delete(id);
