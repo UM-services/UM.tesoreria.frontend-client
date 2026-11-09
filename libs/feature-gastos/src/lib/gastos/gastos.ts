@@ -1,4 +1,11 @@
-import { Component, inject, OnInit, ChangeDetectorRef, NgZone, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  ChangeDetectorRef,
+  NgZone,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -7,7 +14,8 @@ import {
   FormControl,
   FormsModule,
 } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { mensajeDeError } from '@tesoreria/shared-api';
 import {
   BuscadorProveedorComponent,
   BuscadorCuentaContableComponent,
@@ -15,8 +23,8 @@ import {
   PermisoDirective,
   ProveedorSearchResponse,
 } from '@tesoreria/ui-layout';
-import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, timeout } from 'rxjs/operators';
+import { of, TimeoutError } from 'rxjs';
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -47,6 +55,12 @@ export interface Ubicacion {
   dependenciaId: number;
   geograficaId: number;
 }
+
+export type TipoAviso = 'error' | 'warn' | 'success';
+
+/** Límite de espera de cada pedido de la cadena de guardado. */
+const LIMITE_GUARDADO_MS = 30_000;
+const SIN_CONFIRMAR = 'No se pudo confirmar si el gasto quedó guardado; vuelva a intentar.';
 
 export interface UbicacionArticulo {
   ubicacionArticuloId?: number;
@@ -90,6 +104,12 @@ export class GastosComponent implements OnInit {
   public successMessage = '';
 
   public isModalOpen = false;
+  /** Aviso fijo dentro del modal; error y advertencia no se borran solos. */
+  public modalAviso: { tipo: TipoAviso; texto: string } | null = null;
+  /** Fase de la cadena de guardado (POST/PUT → GET /articulo/{id} → /new). */
+  public estadoGuardado: 'guardando' | 'comprobando' | null = null;
+  public isAsignando = false;
+  private avisoTimer: ReturnType<typeof setTimeout> | null = null;
   public isBuscadorCuentaOpen = false;
 
   // Imputaciones State
@@ -110,7 +130,8 @@ export class GastosComponent implements OnInit {
     articuloId: [{ value: null as number | null, disabled: true }],
     nombre: ['', Validators.required],
     directo: [false],
-    numeroCuenta: [null as number | null, Validators.required],
+    // Cuenta opcional, como en frmGasto de VB6 (sin cuenta se guarda null).
+    numeroCuenta: [null as number | null],
     nombreCuenta: [{ value: '', disabled: true }],
   });
 
@@ -143,7 +164,11 @@ export class GastosComponent implements OnInit {
       .pipe(
         catchError((err) => {
           console.error('Error al cargar la lista de gastos.', err);
-          this.showError('Error de conexión con el servidor.');
+          this.showError(
+            err?.status === 403
+              ? 'No tiene permiso para ver los gastos.'
+              : 'Error de conexión con el servidor.',
+          );
           return of(null);
         }),
       )
@@ -262,12 +287,12 @@ export class GastosComponent implements OnInit {
   }
 
   asignarUbicacion() {
-    if (
-      !this.selectedUbicacionId ||
-      !this.selectedImputacionCuenta ||
-      !this.selectedGasto?.articuloId
-    ) {
-      this.showError('Seleccione ubicación y cuenta para asignar.');
+    if (!this.selectedGasto?.articuloId) {
+      this.avisar('error', 'Guarde el gasto antes de asignarle ubicaciones.');
+      return;
+    }
+    if (!this.selectedUbicacionId || !this.selectedImputacionCuenta) {
+      this.avisar('error', 'Seleccione ubicación y cuenta para asignar.');
       return;
     }
 
@@ -277,22 +302,22 @@ export class GastosComponent implements OnInit {
       numeroCuenta: this.selectedImputacionCuenta.numeroCuenta,
     };
 
-    this.isLoading = true;
+    this.isAsignando = true;
     this.cdr.detectChanges();
 
     this.http.post<UbicacionArticulo>(`${this.ubicacionArticuloUrl}/`, payload).subscribe({
       next: () => {
         this.zone.run(() => {
-          this.isLoading = false;
+          this.isAsignando = false;
           this.selectedImputacionCuenta = null;
           this.loadImputaciones(payload.articuloId);
-          this.showSuccess('Ubicación asignada correctamente.');
+          this.avisar('success', 'Ubicación asignada.');
         });
       },
-      error: () => {
+      error: (err) => {
         this.zone.run(() => {
-          this.isLoading = false;
-          this.showError('Error al asignar la ubicación.');
+          this.isAsignando = false;
+          this.avisar('error', mensajeDeError(err, 'Error al asignar la ubicación.'));
         });
       },
     });
@@ -302,6 +327,7 @@ export class GastosComponent implements OnInit {
     this.zone.run(() => {
       this.errorMessage = '';
       this.successMessage = '';
+      this.limpiarAvisoModal();
       this.imputaciones = [];
       this.selectedImputacionCuenta = null;
       this.selectedUbicacionId = null;
@@ -342,60 +368,167 @@ export class GastosComponent implements OnInit {
     });
   }
 
+  get isSaving(): boolean {
+    return this.estadoGuardado !== null;
+  }
+
   cerrarModal() {
+    // Con un guardado en curso el modal no se cierra (fondo, Esc, cruz ni Cancelar): una respuesta
+    // tardía no debe tocar otro formulario.
+    if (this.isSaving) return;
     this.zone.run(() => {
       this.isModalOpen = false;
       this.selectedGasto = null;
+      this.limpiarAvisoModal();
       this.gastoForm.reset();
       this.cdr.detectChanges();
     });
   }
 
   guardar() {
-    if (this.gastoForm.invalid) {
-      this.gastoForm.markAllAsTouched();
-      this.showError('Por favor, complete los campos obligatorios.');
+    if (this.isSaving) return;
+    this.limpiarAvisoModal();
+    const formValue = this.gastoForm.getRawValue();
+    const nombre = (formValue.nombre || '').trim();
+    // frmGasto de VB6: "ERROR: Falta NOMBRE" (también con sólo espacios).
+    if (!nombre) {
+      this.gastoForm.get('nombre')?.markAsTouched();
+      this.avisar('error', 'Falta el nombre del gasto.');
       return;
     }
-    const formValue = this.gastoForm.getRawValue();
-    const payload: Articulo = {
-      articuloId: formValue.articuloId || undefined,
-      nombre: formValue.nombre || '',
-      numeroCuenta: formValue.numeroCuenta,
-      directo: formValue.directo ? 1 : 0,
-      tipo: 'gasto',
-      descripcion: '',
-      unidad: '',
-      precio: 0,
-      inventariable: 0,
-      stockMinimo: 0,
-      habilitado: 0,
-    };
-    this.isLoading = true;
+    const numeroCuenta = formValue.numeroCuenta ? Number(formValue.numeroCuenta) : null;
+    const directo = formValue.directo ? 1 : 0;
+    const articuloId = formValue.articuloId;
+    const esEdicion = !!(articuloId && this.selectedGasto);
+
+    // El PUT no puede vaciar la cuenta (nulo = sin cambios): se avisa en vez de mostrar «guardado».
+    if (esEdicion && this.selectedGasto?.numeroCuenta && numeroCuenta === null) {
+      this.avisar('error', 'La cuenta no se puede quitar; elija otra o deje la actual.');
+      return;
+    }
+
+    // Core (8.0.0+) aplica el PUT por fusión: un campo ausente o nulo no cambia, pero un 0 o ''
+    // explícito sí. Por eso la edición manda sólo lo que muestra la pantalla; mandar el artículo
+    // completo pisaría precio, unidad, habilitado, etc.
+    const request$ = esEdicion
+      ? this.http.put<Articulo>(`${this.articuloUrl}/${articuloId}`, {
+          nombre,
+          numeroCuenta,
+          directo,
+          tipo: 'gasto',
+        })
+      : this.http.post<Articulo>(`${this.articuloUrl}/`, {
+          articuloId: articuloId ?? undefined,
+          nombre,
+          numeroCuenta,
+          directo,
+          tipo: 'gasto',
+          descripcion: '',
+          unidad: '',
+          precio: 0,
+          inventariable: 0,
+          stockMinimo: 0,
+          habilitado: 1,
+        } satisfies Articulo);
+
+    this.estadoGuardado = 'guardando';
     this.cdr.detectChanges();
-    const request$ =
-      payload.articuloId && this.selectedGasto
-        ? this.http.put<Articulo>(`${this.articuloUrl}/${payload.articuloId}`, payload)
-        : this.http.post<Articulo>(`${this.articuloUrl}/`, payload);
-    request$
-      .pipe(
-        catchError(() => {
+    request$.pipe(timeout(LIMITE_GUARDADO_MS)).subscribe({
+      next: (guardado) => {
+        this.zone.run(() => {
+          const id = guardado?.articuloId ?? articuloId;
+          this.terminarGuardado(`Gasto N.º ${id} «${nombre}» guardado.`);
+        });
+      },
+      error: (err) => {
+        this.zone.run(() => {
+          if (!esEdicion && err instanceof HttpErrorResponse && err.status === 409) {
+            this.comprobarAlta(articuloId, { nombre, numeroCuenta, directo });
+            return;
+          }
+          this.estadoGuardado = null;
+          if (err instanceof TimeoutError) {
+            // En el alta no se sabe si quedó: se conserva el número y el próximo Guardar repite
+            // el POST (y, si da 409, la comprobación).
+            if (esEdicion) this.avisar('error', 'El servidor no respondió; vuelva a intentar.');
+            else this.avisar('warn', SIN_CONFIRMAR);
+          } else {
+            this.avisar('error', mensajeDeError(err, 'Error al guardar el gasto.'));
+          }
+        });
+      },
+    });
+  }
+
+  /**
+   * 409 en el alta: el número ya existe. Puede ser el mismo gasto, guardado por un intento anterior
+   * cuya respuesta se perdió (guía de core, «resultado incierto»). Se lee `GET /articulo/{id}`:
+   * si coincide con lo enviado, el alta ya estaba hecha; si no, otro gasto tomó el número.
+   */
+  private comprobarAlta(
+    id: number | null,
+    enviado: { nombre: string; numeroCuenta: number | null; directo: number },
+  ) {
+    this.estadoGuardado = 'comprobando';
+    this.cdr.detectChanges();
+    this.http
+      .get<Articulo>(`${this.articuloUrl}/${id}`)
+      .pipe(timeout(LIMITE_GUARDADO_MS))
+      .subscribe({
+        next: (actual) => {
           this.zone.run(() => {
-            this.isLoading = false;
-            this.showError('Error al guardar el gasto.');
+            const coincide =
+              (actual?.nombre ?? '').trim() === enviado.nombre &&
+              (actual?.tipo ?? '').toLowerCase() === 'gasto' &&
+              (actual?.numeroCuenta ?? null) === enviado.numeroCuenta &&
+              actual?.directo === enviado.directo;
+            if (coincide) this.terminarGuardado(`El gasto N.º ${id} ya estaba guardado.`);
+            else this.renovarIdAlta(id);
           });
-          return of(null);
-        }),
-      )
-      .subscribe((result) => {
-        if (result) {
+        },
+        // «No se pudo leer» no significa «es otro gasto»: se conserva el número para no duplicar.
+        error: () => {
           this.zone.run(() => {
-            this.cerrarModal();
-            this.showSuccess('Gasto guardado correctamente.');
-            this.loadGastos(0);
+            this.estadoGuardado = null;
+            this.avisar('warn', SIN_CONFIRMAR);
           });
-        }
+        },
       });
+  }
+
+  /**
+   * Otro gasto ya usa el número. Como `cleanForm` de VB6, se pide uno nuevo con `/new`;
+   * se conservan los datos cargados para volver a guardar.
+   */
+  private renovarIdAlta(idAnterior: number | null) {
+    this.http
+      .get<Articulo>(`${this.articuloUrl}/new`)
+      .pipe(timeout(LIMITE_GUARDADO_MS))
+      .subscribe({
+        next: (nuevo) => {
+          this.zone.run(() => {
+            this.estadoGuardado = null;
+            this.gastoForm.patchValue({ articuloId: nuevo.articuloId });
+            this.avisar(
+              'warn',
+              `El número ${idAnterior} ya lo usa otro gasto. Se asignó el ${nuevo.articuloId}; revise los datos y vuelva a guardar.`,
+            );
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.estadoGuardado = null;
+            this.avisar('error', 'El número ya lo usa otro gasto y no se pudo obtener uno nuevo.');
+          });
+        },
+      });
+  }
+
+  private terminarGuardado(mensaje: string) {
+    this.estadoGuardado = null;
+    this.cerrarModal();
+    this.showSuccess(mensaje);
+    this.loadGastos(0);
   }
 
   eliminar(gasto: Articulo) {
@@ -406,18 +539,47 @@ export class GastosComponent implements OnInit {
       this.http.delete(`${this.articuloUrl}/${gasto.articuloId}`).subscribe({
         next: () => {
           this.zone.run(() => {
-            this.showSuccess('Gasto eliminado correctamente.');
+            this.showSuccess('Gasto eliminado.');
             this.loadGastos(0);
           });
         },
-        error: () => {
+        // 409: el gasto está usado en entregas o facturas; core no borra nada.
+        error: (err) => {
           this.zone.run(() => {
-            this.showError('Error al eliminar el gasto.');
+            this.showError(mensajeDeError(err, 'Error al eliminar el gasto.'));
             this.isLoading = false;
           });
         },
       });
     }
+  }
+
+  /** Con el modal abierto el aviso va dentro del modal; si no, arriba de la página. */
+  private avisar(tipo: TipoAviso, texto: string) {
+    if (!this.isModalOpen) {
+      if (tipo === 'success') this.showSuccess(texto);
+      else this.showError(texto);
+      this.cdr.detectChanges();
+      return;
+    }
+    this.limpiarAvisoModal();
+    const aviso = { tipo, texto };
+    this.modalAviso = aviso;
+    if (tipo === 'success') {
+      this.avisoTimer = setTimeout(() => {
+        this.zone.run(() => {
+          if (this.modalAviso === aviso) this.modalAviso = null;
+          this.cdr.detectChanges();
+        });
+      }, 5000);
+    }
+    this.cdr.detectChanges();
+  }
+
+  private limpiarAvisoModal() {
+    if (this.avisoTimer) clearTimeout(this.avisoTimer);
+    this.avisoTimer = null;
+    this.modalAviso = null;
   }
 
   private showError(msg: string) {

@@ -17,9 +17,5 @@ export function cuitValido(cuit: string | null | undefined): boolean {
   return verificador === Number(digitos[10]);
 }
 
-/** Saca el mensaje que manda el core ({status, error, message}) o devuelve el genérico. */
-export function mensajeDeError(err: unknown, generico: string): string {
-  const body = (err as { error?: { message?: unknown } } | null)?.error;
-  const message = body && typeof body === 'object' ? body.message : undefined;
-  return typeof message === 'string' && message.trim() ? message : generico;
-}
+// El lector de errores del backend vive en shared-api; se reexporta para no romper la API de la lib.
+export { mensajeDeError } from '@tesoreria/shared-api';

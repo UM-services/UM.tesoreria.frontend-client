@@ -97,6 +97,15 @@ describe('ProveedoresComponent', () => {
     expect(component.errorMessage).toBe('Ya existe un proveedor con ese CUIT');
   });
 
+  it('muestra el detail del ProblemDetail de la fachada al guardar (409)', () => {
+    llenar();
+    component.guardar();
+    http
+      .expectOne(`${base}/`)
+      .flush({ status: 409, detail: 'Ya existe un proveedor con ese CUIT.' }, { status: 409, statusText: 'Conflict' });
+    expect(component.errorMessage).toBe('Ya existe un proveedor con ese CUIT.');
+  });
+
   it('usa texto genérico si el error no trae body', () => {
     llenar();
     component.guardar();
@@ -111,6 +120,16 @@ describe('ProveedoresComponent', () => {
       .expectOne(`${base}/5`)
       .flush({ status: 409, error: 'Conflict', message: 'Tiene movimientos asociados' }, { status: 409, statusText: 'Conflict' });
     expect(component.errorMessage).toBe('Tiene movimientos asociados');
+    expect(component.successMessage).toBe('');
+  });
+
+  it('baja con 409 y ProblemDetail: muestra el detail y no la da por exitosa', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    component.eliminar({ proveedorId: 5, razonSocial: 'X', cuit: '' } as never);
+    http
+      .expectOne(`${base}/5`)
+      .flush({ status: 409, detail: 'El proveedor tiene movimientos asociados.' }, { status: 409, statusText: 'Conflict' });
+    expect(component.errorMessage).toBe('El proveedor tiene movimientos asociados.');
     expect(component.successMessage).toBe('');
   });
 });
