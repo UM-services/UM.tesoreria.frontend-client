@@ -28,6 +28,7 @@
             FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent (sólo lectura + sync)<br/>SolicitudesAccesoComponent<br/>SimuladorComponent"]
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
+            FeatureContable["@tesoreria/feature-contable<br/>CUENTAS_BANCARIAS_ROUTES<br/>CuentasBancariasComponent<br/>BancariaService"]
             FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes, consultaRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera<br/>ConsultasHome, DetalleCuotas"]
         end
     end
@@ -63,6 +64,9 @@
     Contable --> SharedAPI
     Contable --> UIAuth
     Contable --> UILayout
+    Contable -->|"loadChildren"| FeatureContable
+    FeatureContable --> SharedAPI
+    FeatureContable --> UILayout
 
     Contratados --> SharedAPI
     Contratados --> UIAuth
