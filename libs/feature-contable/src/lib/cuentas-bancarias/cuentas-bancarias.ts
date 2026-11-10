@@ -27,7 +27,7 @@ type CampoTexto = 'banco' | 'numero' | 'cbu' | 'titular' | 'cuit';
 type Campo = CampoTexto | 'numeroCuenta';
 export type ErroresFormato = Partial<Record<Campo, string>>;
 
-/** Límite de espera de cada pedido de escritura o de la consulta previa a la baja. */
+/** Límite de espera de cada pedido al core: lista, lectura, escritura y consulta de uso. */
 const LIMITE_MS = 30_000;
 /** Largo máximo de banco, número y titular (columnas `varchar(64)`). */
 const LARGO_TEXTO = 64;
@@ -35,6 +35,9 @@ const LARGO_TEXTO = 64;
 const STATUS_INCIERTOS = [0, 502, 503, 504];
 const SIN_CONFIRMAR_ALTA =
   'No se pudo confirmar si la cuenta quedó guardada. Revise la lista antes de volver a intentar.';
+const SIN_CONFIRMAR_BAJA =
+  'No se pudo confirmar si la cuenta se eliminó. Revise la lista antes de volver a intentar.';
+const LISTA_NO_ACTUALIZADA = 'La lista no se pudo actualizar.';
 const CAMPOS_TEXTO: CampoTexto[] = ['banco', 'numero', 'cbu', 'titular', 'cuit'];
 const CBU = /^\d{22}$/;
 /** 11 dígitos, con o sin guiones (`XX-XXXXXXXX-X`). El dígito verificador lo controla el core. */
@@ -50,7 +53,7 @@ export function erroresDeFormato(
   original: CuentaBancaria | null,
 ): ErroresFormato {
   const errores: ErroresFormato = {};
-  const cambio = (campo: CampoTexto) => !original || valores[campo] !== (original[campo] ?? '');
+  const cambio = (campo: CampoTexto) => !original || cambioTexto(valores[campo], original[campo]);
   for (const campo of ['banco', 'numero', 'titular'] as const) {
     if (cambio(campo) && valores[campo].trim().length > LARGO_TEXTO) {
       errores[campo] = `Máximo ${LARGO_TEXTO} caracteres.`;
@@ -69,6 +72,20 @@ export function erroresDeFormato(
     errores.numeroCuenta = 'Elija la cuenta contable.';
   }
   return errores;
+}
+
+/** Agregar o quitar solo espacios no cuenta como cambio: el core recibe el valor recortado. */
+function cambioTexto(nuevo: string, anterior: string | null | undefined): boolean {
+  return nuevo.trim() !== (anterior ?? '').trim();
+}
+
+function esIncierto(err: unknown): boolean {
+  if (err instanceof TimeoutError) return true;
+  return err instanceof HttpErrorResponse && STATUS_INCIERTOS.includes(err.status);
+}
+
+function fueraDelPanel(evento: MouseEvent): boolean {
+  return !(evento.target as HTMLElement | null)?.closest('[data-modal-panel]');
 }
 
 function codigoDeError(err: unknown): string | null {
@@ -101,11 +118,16 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
   readonly cuentas = signal<CuentaBancaria[]>([]);
   readonly filtro = signal('');
   readonly filtradas = computed(() => {
-    const texto = this.filtro().trim().toLowerCase();
+    // Sin guiones: el CUIT se encuentra con o sin ellos.
+    const normalizar = (v: unknown) =>
+      String(v ?? '')
+        .toLowerCase()
+        .replace(/-/g, '');
+    const texto = normalizar(this.filtro().trim());
     if (!texto) return this.cuentas();
     return this.cuentas().filter((c) =>
       [c.banco, c.numero, c.titular, c.cbu, c.cuit, c.numeroCuenta, c.cuenta?.nombre]
-        .map((v) => String(v ?? '').toLowerCase())
+        .map(normalizar)
         .some((v) => v.includes(texto)),
     );
   });
@@ -117,6 +139,8 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
   readonly successMessage = signal('');
   /** El aviso de error es de la carga de la lista: ofrece «Reintentar». */
   readonly errorDeLista = signal(false);
+  /** La última carga de la lista funcionó: sin esto, una tabla vacía no significa «no hay cuentas». */
+  readonly listaCargada = signal(false);
 
   /** Baja esperando confirmación; nada se borra hasta confirmarla. */
   readonly pendiente = signal<CuentaBancaria | null>(null);
@@ -132,6 +156,10 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
   readonly errores = signal<ErroresFormato>({});
   readonly cuentaElegida = signal<{ numeroCuenta: number; nombre: string } | null>(null);
   readonly buscadorAbierto = signal(false);
+  /** El último guardado de la edición quedó incierto: un 409 posterior puede venir de ese guardado. */
+  private edicionIncierta = false;
+  /** El clic empezó en el fondo del modal (no es el final de un arrastre desde un campo). */
+  private clicEnFondo = false;
 
   readonly form = new FormGroup({
     banco: new FormControl('', { nonNullable: true }),
@@ -164,13 +192,24 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
         next: (cuentas) => {
           this.cuentas.set(cuentas ?? []);
           this.cargando.set(false);
+          this.listaCargada.set(true);
+          this.limpiarErrorDeLista();
         },
         error: (err: unknown) => {
           this.cargando.set(false);
+          // La tabla vacía ya no significa «no hay cuentas»: la lista no se pudo leer.
+          this.listaCargada.set(false);
           // El 403 ya lo muestra la franja del shell (errorInterceptor → AccesoDenegadoService).
-          // Un aviso anterior (p. ej. el de una baja sin respuesta) es más importante: no se pisa.
-          if (!this.esProhibido(err) && !this.errorMessage()) {
-            this.errorDeLista.set(true);
+          if (this.esProhibido(err)) return;
+          this.errorDeLista.set(true);
+          // Un aviso anterior (p. ej. el de una baja sin respuesta) es más importante: no se pisa,
+          // pero se avisa que la lista que pide revisar no se actualizó.
+          const previo = this.errorMessage();
+          if (previo) {
+            if (!previo.includes(LISTA_NO_ACTUALIZADA)) {
+              this.errorMessage.set(`${previo} ${LISTA_NO_ACTUALIZADA}`);
+            }
+          } else {
             this.errorMessage.set(
               err instanceof TimeoutError
                 ? 'El servidor no respondió al cargar la lista; vuelva a intentar.'
@@ -179,6 +218,31 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
           }
         },
       });
+  }
+
+  /** La lista ya está al día: se quita lo que avisaba que no lo estaba y se conserva el resto. */
+  private limpiarErrorDeLista(): void {
+    if (!this.errorDeLista()) return;
+    this.errorDeLista.set(false);
+    const previo = this.errorMessage();
+    const resto = previo.includes(LISTA_NO_ACTUALIZADA)
+      ? previo.replace(` ${LISTA_NO_ACTUALIZADA}`, '').replace(LISTA_NO_ACTUALIZADA, '').trim()
+      : '';
+    this.errorMessage.set(resto);
+  }
+
+  /**
+   * Un clic en el fondo cierra el modal solo si empezó y terminó fuera del panel. Un arrastre que
+   * empieza en un campo (por ejemplo, al seleccionar un CBU) y termina en el fondo no lo cierra.
+   */
+  marcarClicEnFondo(evento: MouseEvent): void {
+    this.clicEnFondo = fueraDelPanel(evento);
+  }
+
+  clicFondo(evento: MouseEvent): void {
+    const enFondo = this.clicEnFondo && fueraDelPanel(evento);
+    this.clicEnFondo = false;
+    if (enFondo) this.cerrarModal();
   }
 
   reintentar(): void {
@@ -193,7 +257,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
   // --- Alta y edición ---
 
   nueva(): void {
-    if (this.procesando()) return;
+    if (this.ocupado()) return;
     this.limpiarMensajes();
     this.editando.set(null);
     this.cargarFormulario(null, null);
@@ -202,7 +266,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
 
   /** La edición parte de `GET /bancaria/{id}`: datos frescos y el `updated` de la precondición. */
   editar(fila: CuentaBancaria): void {
-    if (this.procesando()) return;
+    if (this.ocupado()) return;
     this.limpiarMensajes();
     this.procesando.set(true);
     this.service
@@ -231,6 +295,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
     if (this.guardando()) return;
     this.modalAbierto.set(false);
     this.buscadorAbierto.set(false);
+    this.edicionIncierta = false;
     this.editando.set(null);
     this.modalAviso.set(null);
     this.errores.set({});
@@ -297,7 +362,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
   ): CuentaBancariaCambios {
     const cambios: CuentaBancariaCambios = {};
     for (const campo of CAMPOS_TEXTO) {
-      if (valores[campo] !== (original[campo] ?? '')) cambios[campo] = valores[campo].trim();
+      if (cambioTexto(valores[campo], original[campo])) cambios[campo] = valores[campo].trim();
     }
     if (numeroCuenta !== null && numeroCuenta !== original.numeroCuenta) {
       cambios.numeroCuenta = numeroCuenta;
@@ -314,8 +379,9 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
       next: (guardada) => {
         this.marcarGuardando(false);
         const id = guardada?.bancariaId ?? original?.bancariaId;
+        const numero = id != null ? ` N.º ${id}` : '';
         this.cerrarModal();
-        this.exito(original ? `Cuenta N.º ${id} modificada.` : `Cuenta N.º ${id} creada.`);
+        this.exito(original ? `Cuenta${numero} modificada.` : `Cuenta${numero} creada.`);
         this.recargar();
       },
       error: (err: unknown) => {
@@ -328,19 +394,20 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
   private errorAlGuardar(err: unknown, original: CuentaBancaria | null): void {
     // Alta sin respuesta clara: el core pudo grabar igual. Se cierra el modal para que no se repita
     // el POST y se recarga la lista para que el usuario vea si la cuenta quedó.
-    const status = err instanceof HttpErrorResponse ? err.status : null;
-    if (!original && (err instanceof TimeoutError || STATUS_INCIERTOS.includes(status ?? -1))) {
+    if (!original && esIncierto(err)) {
       this.cerrarModal();
       this.errorMessage.set(SIN_CONFIRMAR_ALTA);
       this.recargar();
       return;
     }
-    if (err instanceof TimeoutError) {
+    if (esIncierto(err)) {
       // El PUT pudo aplicarse igual cuando el servidor respondió tarde.
+      this.edicionIncierta = true;
       this.avisar(
         'warn',
         'No se pudo confirmar si los cambios quedaron guardados. Cierre y vuelva a abrir la cuenta para ver los datos actuales.',
       );
+      this.recargar();
       return;
     }
     if (this.esProhibido(err)) return;
@@ -375,8 +442,11 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
           this.cargarFormulario(actual, nombre);
           this.avisar(
             'warn',
-            'Otra persona modificó la cuenta mientras la editaba. Se cargaron los datos actuales; revíselos y vuelva a guardar.',
+            this.edicionIncierta
+              ? 'La cuenta cambió, quizás por su guardado anterior. Se cargaron los datos actuales; revíselos y vuelva a guardar.'
+              : 'Otra persona modificó la cuenta mientras la editaba. Se cargaron los datos actuales; revíselos y vuelva a guardar.',
           );
+          this.edicionIncierta = false;
           this.recargar();
         },
         error: (err: unknown) => {
@@ -419,7 +489,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
 
   /** Antes de pedir confirmación se consultan las referencias (`GET /bancaria/{id}/uso`). */
   pedirBaja(cuenta: CuentaBancaria): void {
-    if (this.procesando()) return;
+    if (this.ocupado()) return;
     this.limpiarMensajes();
     this.procesando.set(true);
     this.service
@@ -471,10 +541,8 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
         // 409 EN_USO: alguien agregó un movimiento después de la consulta; el core no borra nada.
         error: (err: unknown) => {
           this.procesando.set(false);
-          if (err instanceof TimeoutError) {
-            this.errorMessage.set(
-              'El servidor no respondió. Revise la lista antes de volver a intentar.',
-            );
+          if (esIncierto(err)) {
+            this.errorMessage.set(SIN_CONFIRMAR_BAJA);
             this.recargar();
             return;
           }
@@ -515,6 +583,11 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
     this.successMessage.set('');
     this.pendiente.set(null);
     this.bloqueada.set(null);
+  }
+
+  /** Hay una acción en curso o el modal está abierto: los botones de la lista no hacen nada. */
+  private ocupado(): boolean {
+    return this.procesando() || this.modalAbierto();
   }
 
   private esProhibido(err: unknown): boolean {

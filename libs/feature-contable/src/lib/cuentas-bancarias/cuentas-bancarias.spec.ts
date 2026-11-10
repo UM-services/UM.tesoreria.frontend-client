@@ -335,6 +335,8 @@ describe('CuentasBancariasComponent', () => {
     });
     expect(componente.modalAbierto()).toBe(true);
     expect(componente.guardando()).toBe(false);
+    // La lista se recarga: el PUT pudo haberse aplicado.
+    http.expectOne(`${URL}/`).flush([FILA_NACION]);
   });
 
   // protects=si la baja no responde y después falla la recarga de la lista, queda el aviso de la baja; fails_when=el error de la lista pisa el aviso «Revise la lista»; no_claim=-
@@ -347,8 +349,9 @@ describe('CuentasBancariasComponent', () => {
     vi.advanceTimersByTime(30_000);
     http.expectOne(`${URL}/`).flush({}, { status: 503, statusText: 'Service Unavailable' });
     expect(componente.errorMessage()).toBe(
-      'El servidor no respondió. Revise la lista antes de volver a intentar.',
+      'No se pudo confirmar si la cuenta se eliminó. Revise la lista antes de volver a intentar. La lista no se pudo actualizar.',
     );
+    expect(componente.errorDeLista()).toBe(true);
     expect(componente.successMessage()).toBe('');
   });
 
@@ -459,5 +462,165 @@ describe('CuentasBancariasComponent', () => {
     expect(componente.guardando()).toBe(false);
     expect(componente.modalAviso()?.tipo).toBe('error');
     expect(componente.modalAbierto()).toBe(true);
+  });
+  // --- Segunda pasada de /review ---
+
+  // protects=si después de un alta incierta también falla la recarga, la página lo dice y ofrece reintentar; fails_when=la tabla queda vieja sin marca y el usuario repite el alta; no_claim=-
+  it('avisa si la recarga falla después de un alta incierta', () => {
+    prepararAlta();
+    componente.guardar();
+    http.expectOne(`${URL}/`).flush({}, { status: 504, statusText: 'Gateway Timeout' });
+    http.expectOne(`${URL}/`).flush({}, { status: 502, statusText: 'Bad Gateway' });
+    expect(componente.errorMessage()).toContain(
+      'No se pudo confirmar si la cuenta quedó guardada.',
+    );
+    expect(componente.errorMessage()).toContain('La lista no se pudo actualizar.');
+    expect(componente.errorDeLista()).toBe(true);
+  });
+
+  // protects=un PUT con 0/502/503/504 se trata como resultado incierto; fails_when=se muestra un error común y al reintentar aparece un falso CAMBIO_CONCURRENTE; no_claim=-
+  it.each([0, 502, 503, 504])(
+    'trata la edición con status %i como resultado incierto',
+    (status) => {
+      abrirEdicion(FILA_NACION, NACION);
+      componente.form.patchValue({ titular: 'Otro' });
+      componente.guardar();
+      http.expectOne(`${URL}/7`).flush({}, { status, statusText: 'Error' });
+      expect(componente.modalAviso()?.tipo).toBe('warn');
+      expect(componente.modalAviso()?.texto).toContain(
+        'No se pudo confirmar si los cambios quedaron guardados.',
+      );
+      http.expectOne(`${URL}/`).flush([FILA_NACION]);
+      expect(componente.modalAbierto()).toBe(true);
+    },
+  );
+
+  // protects=un DELETE con resultado incierto recarga la lista; fails_when=queda visible una fila que quizás ya se borró; no_claim=-
+  it('recarga la lista si la baja termina con 504', () => {
+    componente.pedirBaja(HISTORICA);
+    http.expectOne(`${URL}/9/uso`).flush({ valores: 0, libroBanco: 0, eliminable: true });
+    componente.confirmarBaja();
+    http.expectOne(`${URL}/9`).flush({}, { status: 504, statusText: 'Gateway Timeout' });
+    http.expectOne(`${URL}/`).flush([FILA_NACION]);
+    expect(componente.successMessage()).toBe('');
+    expect(componente.errorMessage()).not.toBe('');
+  });
+
+  // protects=con el modal abierto, las acciones de la lista no corren; fails_when=Tab y Enter sobre «Nueva cuenta» o «Eliminar» detrás del modal pisan el formulario o borran la cuenta en edición; no_claim=-
+  it('ignora las acciones de la lista con el modal abierto', () => {
+    abrirEdicion(FILA_NACION, NACION);
+    componente.nueva();
+    expect(componente.editando()?.bancariaId).toBe(7);
+    componente.editar(HISTORICA);
+    componente.pedirBaja(HISTORICA);
+    http.expectNone(`${URL}/9`);
+    http.expectNone(`${URL}/9/uso`);
+  });
+
+  // protects=agregar o quitar solo espacios no cuenta como cambio; fails_when=se manda un PUT que no cambia nada y la pantalla dice «modificada»; no_claim=-
+  it('no cuenta como cambio agregar solo espacios', () => {
+    abrirEdicion(FILA_NACION, NACION);
+    componente.form.patchValue({ banco: 'Banco Nación  ', cbu: ' 0110599520000001234567' });
+    componente.guardar();
+    http.expectNone(`${URL}/7`);
+    expect(componente.modalAviso()?.texto).toBe('No hay cambios para guardar.');
+  });
+
+  // protects=el aviso de éxito no muestra «undefined» si la respuesta no trae el id; fails_when=«Cuenta N.º undefined creada.»; no_claim=-
+  it('no muestra undefined si el alta no devuelve el id', () => {
+    prepararAlta();
+    componente.guardar();
+    http.expectOne(`${URL}/`).flush(null);
+    http.expectOne(`${URL}/`).flush([]);
+    expect(componente.successMessage()).toBe('Cuenta creada.');
+  });
+
+  // protects=la búsqueda por CUIT ignora los guiones; fails_when=«30504641300» no encuentra «30-50464130-0»; no_claim=-
+  it('busca el CUIT con o sin guiones', () => {
+    componente.filtro.set('30504641300');
+    expect(componente.filtradas().map((c) => c.bancariaId)).toEqual([7]);
+  });
+
+  // protects=cambiar la cuenta contable la manda en el PUT; fails_when=la pantalla dice «modificada» y la cuenta contable no cambia; no_claim=-
+  it('manda numeroCuenta si se cambia la cuenta contable', () => {
+    abrirEdicion(FILA_NACION, NACION);
+    componente.onCuentaSelected({ numeroCuenta: 11102, nombre: 'Otra', cuentaContableId: 2 });
+    componente.guardar();
+    const req = http.expectOne(`${URL}/7`);
+    expect(req.request.body).toEqual({ numeroCuenta: 11102, updated: '2026-10-01T09:30:15' });
+    req.flush({ ...NACION, numeroCuenta: 11102 });
+    http.expectOne(`${URL}/`).flush([]);
+  });
+
+  // protects=si la cuenta contable cambió desde la lista, no se muestra el nombre viejo; fails_when=el modal muestra el número nuevo con el nombre de otra cuenta; no_claim=-
+  it('no usa el nombre de la lista si la cuenta contable cambió', () => {
+    abrirEdicion(FILA_NACION, { ...NACION, numeroCuenta: 11102 });
+    expect(componente.cuentaElegida()).toEqual({ numeroCuenta: 11102, nombre: '' });
+  });
+
+  // protects=un 403 al cargar la lista no agrega aviso propio ni «Reintentar»; fails_when=el 403 aparece dos veces; no_claim=no prueba la franja del shell
+  it('no agrega aviso propio con 403 en la lista', () => {
+    componente.recargar();
+    http.expectOne(`${URL}/`).flush({}, { status: 403, statusText: 'Forbidden' });
+    expect(componente.errorMessage()).toBe('');
+    expect(componente.errorDeLista()).toBe(false);
+  });
+  // --- Tercera pasada de /review ---
+
+  // protects=una recarga exitosa borra el aviso de lista vieja; fails_when=«Reintentar» y «La lista no se pudo actualizar» siguen aunque la lista ya está al día; no_claim=-
+  it('borra el aviso de la lista cuando una recarga posterior funciona', () => {
+    prepararAlta();
+    componente.guardar();
+    http.expectOne(`${URL}/`).flush({}, { status: 504, statusText: 'Gateway Timeout' });
+    http.expectOne(`${URL}/`).flush({}, { status: 502, statusText: 'Bad Gateway' });
+    componente.recargar();
+    http.expectOne(`${URL}/`).flush([FILA_NACION]);
+    expect(componente.errorDeLista()).toBe(false);
+    expect(componente.errorMessage()).toBe(
+      'No se pudo confirmar si la cuenta quedó guardada. Revise la lista antes de volver a intentar.',
+    );
+  });
+
+  // protects=si la lista no cargó, la tabla no dice que no hay cuentas; fails_when=«No hay cuentas bancarias cargadas.» con la lista sin cargar; no_claim=-
+  it('no dice que no hay cuentas si la lista no cargó', () => {
+    componente.recargar();
+    http.expectOne(`${URL}/`).flush({}, { status: 502, statusText: 'Bad Gateway' });
+    componente.cuentas.set([]);
+    fixture.detectChanges();
+    expect(texto()).not.toContain('No hay cuentas bancarias cargadas.');
+    expect(texto()).toContain('La lista no está disponible.');
+  });
+
+  // protects=después de una edición incierta, la lista se recarga y un 409 posterior no culpa a otra persona; fails_when=«Otra persona modificó la cuenta» por el guardado del propio usuario; no_claim=-
+  it('recarga y no culpa a otra persona después de una edición incierta', () => {
+    abrirEdicion(FILA_NACION, NACION);
+    componente.form.patchValue({ titular: 'Otro' });
+    componente.guardar();
+    http.expectOne(`${URL}/7`).flush({}, { status: 504, statusText: 'Gateway Timeout' });
+    http.expectOne(`${URL}/`).flush([FILA_NACION]);
+    componente.guardar();
+    const conflicto = errorCore(409, 'CAMBIO_CONCURRENTE', 'La cuenta cambió.');
+    http.expectOne(`${URL}/7`).flush(conflicto.body, conflicto.opts);
+    http.expectOne({ method: 'GET', url: `${URL}/7` }).flush({ ...NACION, titular: 'Otro' });
+    http.expectOne(`${URL}/`).flush([FILA_NACION]);
+    expect(componente.modalAviso()?.texto).not.toContain('Otra persona');
+    expect(componente.modalAviso()?.texto).toContain('quizás por su guardado anterior');
+  });
+
+  // protects=un arrastre que empieza en un campo y termina en el fondo no cierra el modal; fails_when=al seleccionar texto con el mouse se cierra el modal y se pierde lo escrito; no_claim=-
+  it('no cierra el modal si el clic no empezó en el fondo', () => {
+    componente.nueva();
+    fixture.detectChanges();
+    // En el navegador, el clic en el fondo cae sobre el div que centra el panel.
+    const fondo = fixture.nativeElement.querySelector(
+      '[data-testid="modal-fondo"] > div',
+    ) as HTMLElement;
+    const campo = fixture.nativeElement.querySelector('#cb-banco') as HTMLElement;
+    campo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    fondo.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(componente.modalAbierto()).toBe(true);
+    fondo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    fondo.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(componente.modalAbierto()).toBe(false);
   });
 });

@@ -142,11 +142,13 @@
             @if (!cargando()) {
               <tr>
                 <td colspan="8" class="py-8 text-center text-sm text-um-muted">
-                  {{
-                    cuentas().length
-                      ? 'Ninguna cuenta coincide con la búsqueda.'
-                      : 'No hay cuentas bancarias cargadas.'
-                  }}
+                  @if (!listaCargada()) {
+                    La lista no está disponible.
+                  } @else if (cuentas().length) {
+                    Ninguna cuenta coincide con la búsqueda.
+                  } @else {
+                    No hay cuentas bancarias cargadas.
+                  }
                 </td>
               </tr>
             }
@@ -164,7 +166,9 @@
     <div
       tabindex="-1"
       class="fixed inset-0 z-10 w-screen overflow-y-auto"
-      (click)="cerrarModal()"
+      data-testid="modal-fondo"
+      (mousedown)="marcarClicEnFondo($event)"
+      (click)="clicFondo($event)"
       (keydown.escape)="cerrarModal()"
     >
       <div class="flex min-h-full items-center justify-center p-4 sm:p-0">
@@ -173,6 +177,7 @@
           (click)="$event.stopPropagation()"
           (keydown)="$event.stopPropagation()"
           (keydown.escape)="cerrarModal()"
+          data-modal-panel
           class="relative flex w-full flex-col overflow-hidden rounded-lg bg-white text-left shadow-xl sm:my-8 sm:max-w-3xl"
         >
           <div
