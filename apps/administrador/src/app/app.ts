@@ -18,7 +18,7 @@ export class AppComponent {
     { label: 'Dependencias', path: '/dependencias' },
     { label: 'Usuarios', path: '/usuarios' },
     { label: 'Asignaciones de Chequeras', path: '/asignaciones' },
-    { label: 'Autorizantes de envío', path: '/autorizantes-envio' },
+    { label: 'Autorizantes de envío', path: '/autorizantes-envio', permiso: 'compras.autorizantes.configurar' },
     { label: 'Autoridades de presupuesto', path: '/autoridades-presupuesto' },
     { label: 'Presupuestos mínimos', path: '/cotizaciones-minimas', permiso: 'compras.cotizaciones.configurar' },
     { label: 'Permisos', path: '/permisos' },

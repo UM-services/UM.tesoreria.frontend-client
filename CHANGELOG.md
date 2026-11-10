@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.46.0] - 2026-11-09
+
+### Added
+
+- feat(administrador): la pantalla **Autorizantes de envío** consume el contexto independiente
+  `compras/autorizanteEnvio` del core: `GET`/`PUT /usuario/{usuarioId}` para leer y reemplazar el
+  conjunto, y `POST`/`DELETE` por dependencia disponibles en el servicio. Los cambios se acumulan
+  en un borrador local y se persisten juntos con **Guardar cambios**; **Descartar** vuelve al
+  conjunto original. `AutorizanteDependencias` pasa de `autorizanteId` a `usuarioId`.
+- test(administrador): spec de `AutorizantesEnvioComponent` con carga del conjunto, guardado
+  múltiple en un solo `PUT`, no-op sin cambios y descarte.
+
+### Changed
+
+- feat(administrador): el acceso a la pantalla y el ítem del menú pasan de `administradorGuard`
+  a `permisoGuard('compras.autorizantes.configurar')`, para que un administrador de compras pueda
+  gestionarla sin ser administrador del sistema.
+- docs: `docs/architecture.md` documenta la pantalla con su permiso y el contexto
+  `compras/autorizanteEnvio` del core (`usuarioId` + conjunto de dependencias).
+
 ## [0.45.0] - 2026-11-09
 
 ### Added

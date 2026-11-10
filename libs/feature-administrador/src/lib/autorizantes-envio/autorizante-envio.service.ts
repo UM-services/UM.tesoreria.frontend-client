@@ -23,19 +23,20 @@ export interface Dependencia {
 
 /** Dependencias habilitadas de un usuario autorizante de envío. */
 export interface AutorizanteDependencias {
-  autorizanteId: number;
+  usuarioId: number;
   dependenciaIds: number[];
 }
 
 /**
- * Acceso a los endpoints del core para la pantalla "Autorizantes de envío":
- * búsqueda de usuarios, catálogo de dependencias y el slice compraPedidoAutorizante
- * (GET dependencias, POST asignar, DELETE quitar).
+ * Acceso al contexto de autorizantes de envío del core:
+ * búsqueda de usuarios, catálogo de dependencias y el slice
+ * `compras/autorizanteEnvio` (GET, PUT del conjunto, POST/DELETE por dependencia).
  */
 @Injectable({ providedIn: 'root' })
 export class AutorizanteEnvioService {
   private readonly http = inject(HttpClient);
   private readonly coreUrl = inject(API_URL).replace(/\/auth\/?$/, '');
+  private readonly baseUrl = `${this.coreUrl}/compras/autorizanteEnvio`;
 
   buscarUsuarios(texto: string): Observable<UsuarioResumen[]> {
     return this.http.get<UsuarioResumen[]>(
@@ -48,22 +49,30 @@ export class AutorizanteEnvioService {
   }
 
   dependenciasPorUsuario(userId: number): Observable<AutorizanteDependencias> {
-    return this.http.get<AutorizanteDependencias>(
-      `${this.coreUrl}/compraPedidoAutorizante/dependencias/${userId}`,
-    );
+    return this.http.get<AutorizanteDependencias>(`${this.baseUrl}/usuario/${userId}`);
+  }
+
+  /** Reemplaza el conjunto completo de dependencias del autorizante. */
+  reemplazarDependencias(
+    userId: number,
+    dependenciaIds: number[],
+  ): Observable<AutorizanteDependencias> {
+    return this.http.put<AutorizanteDependencias>(`${this.baseUrl}/usuario/${userId}`, {
+      dependenciaIds,
+    });
   }
 
   /** Idempotente en el core: si la dependencia ya estaba asignada, la deja igual. */
   asignarDependencia(userId: number, dependenciaId: number): Observable<AutorizanteDependencias> {
-    return this.http.post<AutorizanteDependencias>(`${this.coreUrl}/compraPedidoAutorizante/`, {
-      autorizanteId: userId,
-      dependenciaId,
-    });
+    return this.http.post<AutorizanteDependencias>(
+      `${this.baseUrl}/usuario/${userId}/dependencia/${dependenciaId}`,
+      {},
+    );
   }
 
   desasignarDependencia(userId: number, dependenciaId: number): Observable<AutorizanteDependencias> {
     return this.http.delete<AutorizanteDependencias>(
-      `${this.coreUrl}/compraPedidoAutorizante/${userId}/${dependenciaId}`,
+      `${this.baseUrl}/usuario/${userId}/dependencia/${dependenciaId}`,
     );
   }
 }
