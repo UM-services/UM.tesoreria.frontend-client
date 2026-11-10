@@ -39,6 +39,13 @@ export interface ShellMenuItem {
    * completo se oculta.
    */
   children?: ShellMenuItem[];
+  /**
+   * Con `children`: el ítem es sólo un encabezado desplegable. No navega a ninguna
+   * pantalla: al hacer clic en su texto se despliega o pliega el grupo. `path` queda
+   * como identificador del grupo (y prefijo para expandirlo cuando la ruta activa es
+   * una de sus hijas). Se ignora si no tiene `children`.
+   */
+  soloGrupo?: boolean;
 }
 
 const ENV_BADGE_BASE_CLASSES =
@@ -130,6 +137,33 @@ function persistExpandedGroups(groups: ReadonlySet<string>): void {
             @for (item of visibleMenuItems(); track item.path) {
               @if (item.children?.length) {
                 <div class="mb-1">
+                  @if (item.soloGrupo) {
+                    <button
+                      type="button"
+                      (click)="toggleGroup(item.path)"
+                      [attr.aria-expanded]="isGroupExpanded(item.path)"
+                      [attr.aria-controls]="groupPanelId('desktop', item.path)"
+                      class="flex w-full items-center justify-between rounded px-3 py-3 text-left text-sm font-semibold text-um-sidebar-text hover:bg-um-sidebar-active focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    >
+                      <span>{{ item.label }}</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 transition-transform"
+                        [class.rotate-180]="isGroupExpanded(item.path)"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                  } @else {
                   <div class="flex items-center">
                     <a
                       [routerLink]="item.path"
@@ -166,6 +200,7 @@ function persistExpandedGroups(groups: ReadonlySet<string>): void {
                       </svg>
                     </button>
                   </div>
+                  }
                   @if (isGroupExpanded(item.path)) {
                     <div
                       [id]="groupPanelId('desktop', item.path)"
@@ -262,6 +297,18 @@ function persistExpandedGroups(groups: ReadonlySet<string>): void {
             <div class="flex gap-2 overflow-x-auto px-4 py-2">
               @for (item of visibleMenuItems(); track item.path) {
                 <div class="flex shrink-0 items-center">
+                  @if (item.soloGrupo && item.children?.length) {
+                    <button
+                      type="button"
+                      (click)="toggleGroup(item.path)"
+                      [attr.aria-expanded]="isGroupExpanded(item.path)"
+                      [attr.aria-controls]="groupPanelId('mobile', item.path)"
+                      class="rounded px-3 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
+                    >
+                      {{ item.label }}
+                      <span aria-hidden="true">{{ isGroupExpanded(item.path) ? '▴' : '▾' }}</span>
+                    </button>
+                  } @else {
                   <a
                     [routerLink]="item.path"
                     routerLinkActive="bg-um-selected text-um-primary"
@@ -269,7 +316,8 @@ function persistExpandedGroups(groups: ReadonlySet<string>): void {
                     class="rounded px-3 py-2 text-sm font-semibold"
                     >{{ item.label }}</a
                   >
-                  @if (item.children?.length) {
+                  }
+                  @if (item.children?.length && !(item.soloGrupo && item.children?.length)) {
                     <button
                       type="button"
                       (click)="toggleGroup(item.path)"
