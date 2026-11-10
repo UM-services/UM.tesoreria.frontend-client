@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.47.0] - 2026-11-09
+
+### Changed
+
+- feat(gastos): la pantalla de **Gastos** (`libs/feature-gastos`, compartida por `compras`, `pagos` y `administrador`) se alinea con `frmGasto` de VB6 y con las reglas de core 8.0.0+ (#405), en el marco de #93. La **cuenta Directa/Puente pasa a ser opcional** (sin cuenta se manda `null`, como en VB6). El **nombre sigue siendo obligatorio** y ahora se rechaza también si sólo tiene espacios («Falta el nombre del gasto.»). El alta crea el gasto con `habilitado: 1` (VB6 lo creaba con `0`; ninguna lectura filtra por ese campo).
+- feat(gastos): si el alta responde `409`, la pantalla lee `GET /articulo/{id}`. Si ese número ya tiene el mismo gasto (nombre, tipo, cuenta y directo), el alta anterior quedó guardada: cierra el modal y avisa «El gasto N.º {id} ya estaba guardado.». Si es otro gasto, pide un número nuevo con `GET /articulo/new`, conserva los datos y avisa para volver a guardar. Si la lectura falla, conserva el número y avisa «No se pudo confirmar si el gasto quedó guardado; vuelva a intentar.», para no duplicar el gasto.
+- feat(gastos): al editar, vaciar la cuenta de un gasto que tenía cuenta no llama a la API y avisa «La cuenta no se puede quitar; elija otra o deje la actual.» (el `PUT` toma `null` como «sin cambios»).
+- feat(gastos): mientras se guarda, el modal no se cierra (fondo, Esc, cruz y Cancelar). El botón dice «Guardando…» o «Comprobando…». Cada pedido del guardado tiene un límite de 30 s: en el alta se conserva el número y se avisa que no se pudo confirmar; en la edición se avisa «El servidor no respondió; vuelva a intentar.».
+- feat(gastos): con el modal abierto, los avisos se muestran dentro del modal, fijos entre el encabezado y el formulario (`role="alert"`): error (`um-alert-error`) y advertencia (`um-alert-warn`) quedan hasta volver a guardar o cerrar; éxito (`um-alert-success`) se borra a los 5 s. Asignar una ubicación a un gasto sin guardar avisa «Guarde el gasto antes de asignarle ubicaciones.».
+- feat(shared-api): nuevo `mensajeDeError(err, generico)` en `@tesoreria/shared-api`. Lee el `detail` de un `ProblemDetail` y, si no viene, el `message`. Gastos lo usa al guardar, asignar y eliminar (un `409` de baja muestra el motivo y no da la baja por exitosa). `feature-proveedores` lo reexporta en lugar de su versión, que sólo leía `message` y por eso mostraba el texto genérico con la fachada `compras`.
+- test: `apps/compras/src/app/gastos/gastos.spec.ts` (alta sin cuenta, nombre vacío, `PUT` parcial, cuenta vaciada, las tres ramas del `409` en alta, aviso dentro del modal, modal bloqueado al guardar, límite de 30 s, baja con `409`, asignación sin guardar y con error), `libs/shared-api/src/lib/http-error.spec.ts`, dos casos de Proveedores con `{ detail }` y un caso de `403` en Gastos.
+- feat(gastos): con un `403` al cargar la lista, la pantalla muestra «No tiene permiso para ver los gastos.» en lugar de «Error de conexión con el servidor.».
+- fix(gastos): los avisos de la página se dibujan en el momento (la app es zoneless); antes el aviso de éxito podía borrarse antes de verse.
+- docs: `TODOS.md` registra pasar los otros lectores de `detail` a `mensajeDeError`. `package.json` y `README.md` pasan a **0.47.0**.
+
+### Fixed
+
+- fix(gastos): **editar un gasto ya no borra sus otros datos**. El `PUT /articulo/{id}` mandaba el artículo completo con `descripcion: ''`, `unidad: ''`, `precio: 0`, `habilitado: 0`, etc.; desde core 8.0.0 el `PUT` aplica cualquier valor explícito, así que esos valores pisaban lo guardado. Ahora manda sólo `nombre`, `numeroCuenta`, `directo` y `tipo`.
+
 ## [0.46.0] - 2026-11-09
 
 ### Added

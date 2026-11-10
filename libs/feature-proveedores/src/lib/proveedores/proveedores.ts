@@ -243,7 +243,7 @@ export class ProveedoresComponent implements OnInit {
     const formValue = { ...raw, numeroCuenta: raw.numeroCuenta ? raw.numeroCuenta : null } as Proveedor;
     this.isLoading = true;
     this.cdr.detectChanges();
-    // El core decide si el CUIT está repetido (409) y devuelve el motivo en `message`.
+    // El core decide si el CUIT está repetido (409) y devuelve el motivo en `detail`.
     const req$ = formValue.proveedorId
       ? this.http.put<Proveedor>(`${this.baseUrl}/${formValue.proveedorId}`, formValue)
       : this.http.post<Proveedor>(`${this.baseUrl}/`, formValue);
