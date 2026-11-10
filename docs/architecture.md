@@ -240,7 +240,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
     AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
     AppRoutes --> Dependencias["Dependencias Component<br/>@tesoreria/feature-administrador"]
     AppRoutes --> Asignaciones["AsignacionUsuarios Component<br/>@tesoreria/feature-administrador"]
-    AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compraPedidoAutorizante del core"]
+    AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compras.autorizantes.configurar"]
     AppRoutes --> Usuarios["Usuarios Component<br/>@tesoreria/feature-administrador<br/>alta con login sugerido, configuración y reset de clave"]
     AppRoutes --> Autoridades["AutoridadesPresupuesto Component<br/>@tesoreria/feature-administrador<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario del core"]
     AppRoutes --> CotizacionesMinimas["CotizacionesMinimas Component<br/>@tesoreria/feature-administrador<br/>compras.cotizaciones.configurar"]
@@ -255,7 +255,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
 
     Dependencias --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     Asignaciones --> PermisosAPI["API de seguridad del core<br/>usuario, rol, permiso y overrides"]
-    Autorizantes --> AutorizantesAPI["Slice compraPedidoAutorizante del core<br/>dependencias habilitadas por usuario"]
+    Autorizantes --> AutorizantesAPI["Contexto compras/autorizanteEnvio del core<br/>usuarioId + conjunto de dependencias<br/>GET/PUT /usuario/{usuarioId}"]
     Usuarios --> UsuariosAPI["Slice usuario del core<br/>searchTodos, alta con login generado,<br/>login-sugerido, configuración, activo y password"]
     Autoridades --> AutoridadesAPI["Slices de presupuesto del core<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario"]
     CotizacionesMinimas --> TramosAPI["Fachada tesoreria-compras<br/>/compras/cotizacion/tramos"]

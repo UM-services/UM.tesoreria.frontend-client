@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable, forkJoin, of, Subject } from 'rxjs';
+import { forkJoin, of, Subject } from 'rxjs';
 import { catchError, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AutorizanteEnvioService,
@@ -11,8 +11,9 @@ import {
 
 /**
  * Pantalla de administración para habilitar, por usuario, las dependencias sobre las
- * que puede aprobar o rechazar el envío de pedidos de compra, sobre el slice
- * compraPedidoAutorizante del core. Cada checkbox aplica el cambio de inmediato.
+ * que puede aprobar o rechazar el envío de pedidos de compra, sobre el contexto
+ * `compras/autorizanteEnvio` del core. Los cambios se acumulan en la pantalla y se
+ * persisten juntos con un único PUT.
  */
 @Component({
   selector: 'app-autorizantes-envio',
@@ -32,10 +33,11 @@ export class AutorizantesEnvioComponent implements OnInit, OnDestroy {
   public usuarioSeleccionado: UsuarioResumen | null = null;
 
   public dependencias: Dependencia[] = [];
-  public dependenciasAsignadas = new Set<number>();
-  public dependenciasPendientes = new Set<number>();
+  public dependenciasSeleccionadas = new Set<number>();
+  public dependenciasOriginales = new Set<number>();
 
   public cargando = false;
+  public guardando = false;
   public errorMessage = '';
   public successMessage = '';
 
@@ -72,6 +74,10 @@ export class AutorizantesEnvioComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  get hayCambios(): boolean {
+    return !this.mismosConjuntos(this.dependenciasSeleccionadas, this.dependenciasOriginales);
+  }
+
   onBuscar() {
     this.buscando = true;
     this.busqueda$.next(this.textoBusqueda);
@@ -93,8 +99,8 @@ export class AutorizantesEnvioComponent implements OnInit, OnDestroy {
     this.zone.run(() => {
       this.usuarioSeleccionado = null;
       this.dependencias = [];
-      this.dependenciasAsignadas = new Set<number>();
-      this.dependenciasPendientes = new Set<number>();
+      this.dependenciasSeleccionadas = new Set<number>();
+      this.dependenciasOriginales = new Set<number>();
       this.errorMessage = '';
       this.successMessage = '';
       this.cdr.detectChanges();
@@ -102,39 +108,53 @@ export class AutorizantesEnvioComponent implements OnInit, OnDestroy {
   }
 
   toggleDependencia(dependencia: Dependencia) {
-    const userId = this.usuarioSeleccionado?.userId;
-    if (userId === undefined || this.dependenciasPendientes.has(dependencia.dependenciaId)) {
+    if (this.guardando) {
       return;
     }
-    const asignar = !this.dependenciasAsignadas.has(dependencia.dependenciaId);
-    this.dependenciasPendientes.add(dependencia.dependenciaId);
+    const seleccionadas = new Set(this.dependenciasSeleccionadas);
+    if (seleccionadas.has(dependencia.dependenciaId)) {
+      seleccionadas.delete(dependencia.dependenciaId);
+    } else {
+      seleccionadas.add(dependencia.dependenciaId);
+    }
+    this.dependenciasSeleccionadas = seleccionadas;
+    this.successMessage = '';
+    this.cdr.detectChanges();
+  }
 
-    const peticion$: Observable<unknown> = asignar
-      ? this.service.asignarDependencia(userId, dependencia.dependenciaId)
-      : this.service.desasignarDependencia(userId, dependencia.dependenciaId);
+  descartarCambios() {
+    if (this.guardando) {
+      return;
+    }
+    this.dependenciasSeleccionadas = new Set(this.dependenciasOriginales);
+    this.successMessage = '';
+    this.cdr.detectChanges();
+  }
 
-    peticion$.subscribe({
-      next: () =>
+  guardar() {
+    const userId = this.usuarioSeleccionado?.userId;
+    if (userId === undefined || this.guardando || !this.hayCambios) {
+      return;
+    }
+    this.guardando = true;
+    const dependenciaIds = [...this.dependenciasSeleccionadas].sort((a, b) => a - b);
+
+    this.service.reemplazarDependencias(userId, dependenciaIds).subscribe({
+      next: response =>
         this.zone.run(() => {
-          this.dependenciasPendientes.delete(dependencia.dependenciaId);
-          if (asignar) {
-            this.dependenciasAsignadas.add(dependencia.dependenciaId);
-          } else {
-            this.dependenciasAsignadas.delete(dependencia.dependenciaId);
-          }
+          const ids = response.dependenciaIds ?? [];
+          this.dependenciasOriginales = new Set(ids);
+          this.dependenciasSeleccionadas = new Set(ids);
+          this.guardando = false;
           this.showSuccess(
-            asignar
-              ? `Dependencia "${dependencia.nombre}" habilitada para ${this.usuarioSeleccionado?.nombre}.`
-              : `Dependencia "${dependencia.nombre}" quitada de ${this.usuarioSeleccionado?.nombre}.`,
+            `Dependencias actualizadas para ${this.usuarioSeleccionado?.nombre}.`,
           );
           this.cdr.detectChanges();
         }),
       error: (err: unknown) =>
         this.zone.run(() => {
-          this.dependenciasPendientes.delete(dependencia.dependenciaId);
-          this.showError(
-            this.extraerError(err, asignar ? 'al habilitar la dependencia' : 'al quitar la dependencia'),
-          );
+          this.guardando = false;
+          this.showError(this.extraerError(err, 'al guardar las dependencias'));
           this.cdr.detectChanges();
         }),
     });
@@ -147,12 +167,13 @@ export class AutorizantesEnvioComponent implements OnInit, OnDestroy {
       return;
     }
     this.cargando = true;
-    this.dependenciasAsignadas = new Set<number>();
+    this.dependenciasSeleccionadas = new Set<number>();
+    this.dependenciasOriginales = new Set<number>();
 
     forkJoin({
       dependencias: this.service.dependencias(),
       autorizante: this.service.dependenciasPorUsuario(userId).pipe(
-        catchError(() => of({ autorizanteId: userId, dependenciaIds: [] as number[] })),
+        catchError(() => of({ usuarioId: userId, dependenciaIds: [] as number[] })),
       ),
     })
       .pipe(
@@ -165,12 +186,18 @@ export class AutorizantesEnvioComponent implements OnInit, OnDestroy {
         this.zone.run(() => {
           if (data) {
             this.dependencias = data.dependencias;
-            this.dependenciasAsignadas = new Set(data.autorizante.dependenciaIds ?? []);
+            const ids = data.autorizante.dependenciaIds ?? [];
+            this.dependenciasOriginales = new Set(ids);
+            this.dependenciasSeleccionadas = new Set(ids);
           }
           this.cargando = false;
           this.cdr.detectChanges();
         }),
       );
+  }
+
+  private mismosConjuntos(a: Set<number>, b: Set<number>): boolean {
+    return a.size === b.size && [...a].every(id => b.has(id));
   }
 
   private extraerError(err: unknown, accion: string): string {

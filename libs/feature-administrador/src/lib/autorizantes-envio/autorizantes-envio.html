@@ -144,11 +144,16 @@
     } @else {
       <div class="bg-white border border-um-border rounded-lg shadow-sm overflow-hidden">
         <div
-          class="flex items-center justify-between border-b border-um-border bg-um-surface px-6 py-4"
+          class="flex flex-wrap items-center justify-between gap-3 border-b border-um-border bg-um-surface px-6 py-4"
         >
-          <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">Dependencias</h2>
+          <div>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">Dependencias</h2>
+            <p class="mt-1 text-xs text-um-muted">
+              Marque una o varias dependencias y guarde los cambios juntos.
+            </p>
+          </div>
           <span class="text-sm text-um-muted"
-            >{{ dependenciasAsignadas.size }} de {{ dependencias.length }}</span
+            >{{ dependenciasSeleccionadas.size }} de {{ dependencias.length }}</span
           >
         </div>
         <ul class="max-h-[560px] divide-y divide-um-border overflow-y-auto">
@@ -157,8 +162,8 @@
               <input
                 type="checkbox"
                 [id]="'dependencia-' + dependencia.dependenciaId"
-                [checked]="dependenciasAsignadas.has(dependencia.dependenciaId)"
-                [disabled]="dependenciasPendientes.has(dependencia.dependenciaId)"
+                [checked]="dependenciasSeleccionadas.has(dependencia.dependenciaId)"
+                [disabled]="guardando"
                 (change)="toggleDependencia(dependencia)"
                 class="h-4 w-4 rounded border-um-border text-um-primary focus:ring-um-primary"
               />
@@ -171,28 +176,6 @@
                   <span class="text-um-muted">({{ dependencia.acronimo }})</span>
                 }
               </label>
-              @if (dependenciasPendientes.has(dependencia.dependenciaId)) {
-                <svg
-                  class="animate-spin h-4 w-4 text-um-primary"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  ></path>
-                </svg>
-              }
             </li>
           } @empty {
             <li class="px-6 py-8 text-center text-sm text-um-muted">
@@ -200,6 +183,30 @@
             </li>
           }
         </ul>
+        <div
+          class="flex flex-wrap items-center justify-end gap-3 border-t border-um-border bg-um-surface px-6 py-4"
+        >
+          <button
+            type="button"
+            class="um-btn-secondary"
+            [disabled]="!hayCambios || guardando"
+            (click)="descartarCambios()"
+          >
+            Descartar
+          </button>
+          <button
+            type="button"
+            class="um-btn-primary"
+            [disabled]="!hayCambios || guardando"
+            (click)="guardar()"
+          >
+            @if (guardando) {
+              Guardando...
+            } @else {
+              Guardar cambios
+            }
+          </button>
+        </div>
       </div>
     }
   }

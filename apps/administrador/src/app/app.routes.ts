@@ -46,7 +46,7 @@ export const appRoutes: Route[] = [
     path: 'autorizantes-envio',
     loadComponent: () =>
       import('@tesoreria/feature-administrador').then(m => m.AutorizantesEnvioComponent),
-    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+    canActivate: [authGuard, usuarioInternoGuard, permisoGuard('compras.autorizantes.configurar')],
   },
   {
     // Referencia por ejercicio, perfiles de autoridad por monto y su asignación a usuarios.
