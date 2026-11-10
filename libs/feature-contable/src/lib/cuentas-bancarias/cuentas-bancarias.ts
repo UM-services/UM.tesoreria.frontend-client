@@ -1,0 +1,496 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { mensajeDeError } from '@tesoreria/shared-api';
+import { BuscadorCuentaContableComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
+import { Subscription, TimeoutError, timeout } from 'rxjs';
+import {
+  BancariaService,
+  CuentaBancaria,
+  CuentaBancariaCambios,
+  CuentaBancariaDatos,
+  UsoCuentaBancaria,
+} from './bancaria.service';
+
+export type TipoAviso = 'error' | 'warn' | 'success';
+type CampoTexto = 'banco' | 'numero' | 'cbu' | 'titular' | 'cuit';
+type Campo = CampoTexto | 'numeroCuenta';
+export type ErroresFormato = Partial<Record<Campo, string>>;
+
+/** Límite de espera de cada pedido de escritura o de la consulta previa a la baja. */
+const LIMITE_MS = 30_000;
+/** Largo máximo de banco, número y titular (columnas `varchar(64)`). */
+const LARGO_TEXTO = 64;
+const CAMPOS_TEXTO: CampoTexto[] = ['banco', 'numero', 'cbu', 'titular', 'cuit'];
+const CBU = /^\d{22}$/;
+/** 11 dígitos, con o sin guiones (`XX-XXXXXXXX-X`). El dígito verificador lo controla el core. */
+const CUIT = /^\d{2}-?\d{8}-?\d$/;
+
+/**
+ * Formato inmediato de los campos. En la edición solo se controla lo que cambió: un CUIT o un
+ * CBU histórico inválido que no se toca no bloquea el guardado de los otros campos.
+ */
+export function erroresDeFormato(
+  valores: Record<CampoTexto, string>,
+  numeroCuenta: number | null,
+  original: CuentaBancaria | null,
+): ErroresFormato {
+  const errores: ErroresFormato = {};
+  const cambio = (campo: CampoTexto) => !original || valores[campo] !== (original[campo] ?? '');
+  for (const campo of ['banco', 'numero', 'titular'] as const) {
+    if (cambio(campo) && valores[campo].trim().length > LARGO_TEXTO) {
+      errores[campo] = `Máximo ${LARGO_TEXTO} caracteres.`;
+    }
+  }
+  const cbu = valores.cbu.trim();
+  if (cambio('cbu') && cbu && !CBU.test(cbu)) {
+    errores.cbu = 'El CBU tiene 22 dígitos, sin espacios.';
+  }
+  const cuit = valores.cuit.trim();
+  if (cambio('cuit') && cuit && !CUIT.test(cuit)) {
+    errores.cuit = 'El CUIT tiene 11 dígitos, con o sin guiones.';
+  }
+  // Obligatoria en el alta. Una cuenta histórica sin cuenta contable se puede editar igual.
+  if (numeroCuenta === null && (!original || original.numeroCuenta != null)) {
+    errores.numeroCuenta = 'Elija la cuenta contable.';
+  }
+  return errores;
+}
+
+function codigoDeError(err: unknown): string | null {
+  if (!(err instanceof HttpErrorResponse)) return null;
+  const codigo = (err.error as { codigo?: unknown } | null)?.codigo;
+  return typeof codigo === 'string' ? codigo : null;
+}
+
+function plural(cantidad: number, singular: string, varios: string): string {
+  return `${cantidad} ${cantidad === 1 ? singular : varios}`;
+}
+
+/**
+ * Cuentas bancarias (`bancaria`): lista, alta, edición y baja. La pantalla valida solo el formato
+ * inmediato; el core aplica las reglas (CUIT y CBU con verificadores, textos latin1, cuenta
+ * contable requerida y existente, referencias antes de borrar) y la pantalla muestra su mensaje.
+ */
+@Component({
+  selector: 'app-cuentas-bancarias',
+  standalone: true,
+  imports: [ReactiveFormsModule, BuscadorCuentaContableComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './cuentas-bancarias.html',
+})
+export class CuentasBancariasComponent implements OnInit, OnDestroy {
+  private readonly service = inject(BancariaService);
+
+  readonly cuentas = signal<CuentaBancaria[]>([]);
+  readonly filtro = signal('');
+  readonly filtradas = computed(() => {
+    const texto = this.filtro().trim().toLowerCase();
+    if (!texto) return this.cuentas();
+    return this.cuentas().filter((c) =>
+      [c.banco, c.numero, c.titular, c.cbu, c.cuit, c.numeroCuenta, c.cuenta?.nombre]
+        .map((v) => String(v ?? '').toLowerCase())
+        .some((v) => v.includes(texto)),
+    );
+  });
+
+  readonly cargando = signal(false);
+  /** Apertura de la edición o baja en curso: bloquea las otras acciones de la lista. */
+  readonly procesando = signal(false);
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+
+  /** Baja esperando confirmación; nada se borra hasta confirmarla. */
+  readonly pendiente = signal<CuentaBancaria | null>(null);
+  /** Baja rechazada antes de pedirla, con las referencias que la impiden. */
+  readonly bloqueada = signal<{ cuenta: CuentaBancaria; uso: UsoCuentaBancaria } | null>(null);
+
+  readonly modalAbierto = signal(false);
+  /** Cuenta en edición, leída con `GET /bancaria/{id}`; `null` en el alta. */
+  readonly editando = signal<CuentaBancaria | null>(null);
+  readonly guardando = signal(false);
+  /** Aviso fijo dentro del modal; error y advertencia no se borran solos. */
+  readonly modalAviso = signal<{ tipo: TipoAviso; texto: string } | null>(null);
+  readonly errores = signal<ErroresFormato>({});
+  readonly cuentaElegida = signal<{ numeroCuenta: number; nombre: string } | null>(null);
+  readonly buscadorAbierto = signal(false);
+
+  readonly form = new FormGroup({
+    banco: new FormControl('', { nonNullable: true }),
+    numero: new FormControl('', { nonNullable: true }),
+    cbu: new FormControl('', { nonNullable: true }),
+    titular: new FormControl('', { nonNullable: true }),
+    cuit: new FormControl('', { nonNullable: true }),
+  });
+
+  /** Pedido de lista en curso: el nuevo cancela al anterior. */
+  private listaSub: Subscription | null = null;
+  private exitoTimer: ReturnType<typeof setTimeout> | null = null;
+
+  ngOnInit(): void {
+    this.recargar();
+  }
+
+  ngOnDestroy(): void {
+    this.listaSub?.unsubscribe();
+    if (this.exitoTimer) clearTimeout(this.exitoTimer);
+  }
+
+  recargar(): void {
+    this.cargando.set(true);
+    this.listaSub?.unsubscribe();
+    this.listaSub = this.service
+      .listar()
+      .pipe(timeout(LIMITE_MS))
+      .subscribe({
+        next: (cuentas) => {
+          this.cuentas.set(cuentas ?? []);
+          this.cargando.set(false);
+        },
+        error: (err: unknown) => {
+          this.cargando.set(false);
+          // El 403 ya lo muestra la franja del shell (errorInterceptor → AccesoDenegadoService).
+          // Un aviso anterior (p. ej. el de una baja sin respuesta) es más importante: no se pisa.
+          if (!this.esProhibido(err) && !this.errorMessage()) {
+            this.errorMessage.set(
+              err instanceof TimeoutError
+                ? 'El servidor no respondió al cargar la lista; vuelva a intentar.'
+                : mensajeDeError(err, 'No se pudo cargar la lista de cuentas.'),
+            );
+          }
+        },
+      });
+  }
+
+  descripcion(cuenta: CuentaBancaria): string {
+    return `${cuenta.banco ?? ''} ${cuenta.numero ?? ''}`.trim() || `N.º ${cuenta.bancariaId}`;
+  }
+
+  // --- Alta y edición ---
+
+  nueva(): void {
+    if (this.procesando()) return;
+    this.limpiarMensajes();
+    this.editando.set(null);
+    this.cargarFormulario(null, null);
+    this.modalAbierto.set(true);
+  }
+
+  /** La edición parte de `GET /bancaria/{id}`: datos frescos y el `updated` de la precondición. */
+  editar(fila: CuentaBancaria): void {
+    if (this.procesando()) return;
+    this.limpiarMensajes();
+    this.procesando.set(true);
+    this.service
+      .obtener(fila.bancariaId)
+      .pipe(timeout(LIMITE_MS))
+      .subscribe({
+        next: (cuenta) => {
+          this.procesando.set(false);
+          this.editando.set(cuenta);
+          this.cargarFormulario(cuenta, fila.cuenta?.nombre ?? null);
+          this.modalAbierto.set(true);
+        },
+        error: (err: unknown) => {
+          this.procesando.set(false);
+          this.errorDePagina(err, 'No se pudo abrir la cuenta.');
+        },
+      });
+  }
+
+  cerrarModal(): void {
+    // Con un guardado en curso el modal no se cierra: una respuesta tardía no debe tocar otro
+    // formulario.
+    if (this.guardando()) return;
+    this.modalAbierto.set(false);
+    this.buscadorAbierto.set(false);
+    this.editando.set(null);
+    this.modalAviso.set(null);
+    this.errores.set({});
+  }
+
+  abrirBuscador(): void {
+    this.buscadorAbierto.set(true);
+  }
+
+  cerrarBuscador(): void {
+    this.buscadorAbierto.set(false);
+  }
+
+  onCuentaSelected(cuenta: CuentaSearchResponse): void {
+    this.cuentaElegida.set({ numeroCuenta: cuenta.numeroCuenta, nombre: cuenta.nombre });
+    this.buscadorAbierto.set(false);
+    this.errores.update((errores) => ({ ...errores, numeroCuenta: undefined }));
+  }
+
+  guardar(): void {
+    if (this.guardando()) return;
+    this.modalAviso.set(null);
+    const original = this.editando();
+    const valores = this.form.getRawValue();
+    const numeroCuenta = this.cuentaElegida()?.numeroCuenta ?? null;
+    const errores = erroresDeFormato(valores, numeroCuenta, original);
+    this.errores.set(errores);
+    if (Object.keys(errores).length > 0) {
+      this.avisar('error', 'Revise los campos marcados.');
+      return;
+    }
+
+    if (!original && numeroCuenta !== null) {
+      const datos: CuentaBancariaDatos = {
+        banco: valores.banco.trim(),
+        numero: valores.numero.trim(),
+        cbu: valores.cbu.trim(),
+        titular: valores.titular.trim(),
+        cuit: valores.cuit.trim(),
+        numeroCuenta,
+      };
+      this.enviar(this.service.crear(datos), null);
+      return;
+    }
+    if (!original) return;
+
+    const cambios = this.cambios(original, valores, numeroCuenta);
+    if (Object.keys(cambios).length === 0) {
+      this.avisar('warn', 'No hay cambios para guardar.');
+      return;
+    }
+    if (original.updated) cambios.updated = original.updated;
+    this.enviar(this.service.modificar(original.bancariaId, cambios), original);
+  }
+
+  /**
+   * PUT por presencia de campos: se manda solo lo que cambió. Lo que no se manda (incluido
+   * `proveedorId`, que la pantalla no edita) el core lo conserva.
+   */
+  private cambios(
+    original: CuentaBancaria,
+    valores: Record<CampoTexto, string>,
+    numeroCuenta: number | null,
+  ): CuentaBancariaCambios {
+    const cambios: CuentaBancariaCambios = {};
+    for (const campo of CAMPOS_TEXTO) {
+      if (valores[campo] !== (original[campo] ?? '')) cambios[campo] = valores[campo].trim();
+    }
+    if (numeroCuenta !== null && numeroCuenta !== original.numeroCuenta) {
+      cambios.numeroCuenta = numeroCuenta;
+    }
+    return cambios;
+  }
+
+  private enviar(
+    peticion: ReturnType<BancariaService['crear']>,
+    original: CuentaBancaria | null,
+  ): void {
+    this.guardando.set(true);
+    peticion.pipe(timeout(LIMITE_MS)).subscribe({
+      next: (guardada) => {
+        this.guardando.set(false);
+        const id = guardada?.bancariaId ?? original?.bancariaId;
+        this.cerrarModal();
+        this.exito(original ? `Cuenta N.º ${id} modificada.` : `Cuenta N.º ${id} creada.`);
+        this.recargar();
+      },
+      error: (err: unknown) => {
+        this.guardando.set(false);
+        this.errorAlGuardar(err, original);
+      },
+    });
+  }
+
+  private errorAlGuardar(err: unknown, original: CuentaBancaria | null): void {
+    if (err instanceof TimeoutError) {
+      if (original) {
+        // El PUT pudo aplicarse igual cuando el servidor respondió tarde.
+        this.avisar(
+          'warn',
+          'No se pudo confirmar si los cambios quedaron guardados. Cierre y vuelva a abrir la cuenta para ver los datos actuales.',
+        );
+      } else {
+        // El alta no tiene id propio: reintentar sin mirar la lista podría duplicar la cuenta.
+        this.avisar(
+          'warn',
+          'No se pudo confirmar si la cuenta quedó guardada. Revise la lista antes de volver a intentar.',
+        );
+        this.recargar();
+      }
+      return;
+    }
+    if (this.esProhibido(err)) return;
+    const codigo = codigoDeError(err);
+    if (original && codigo === 'CAMBIO_CONCURRENTE') {
+      this.releer(original);
+      return;
+    }
+    if (original && (err as HttpErrorResponse).status === 404) {
+      this.cerrarModal();
+      this.errorMessage.set(mensajeDeError(err, 'La cuenta bancaria ya no existe.'));
+      this.recargar();
+      return;
+    }
+    this.avisar('error', mensajeDeError(err, 'No se pudo guardar la cuenta.'));
+  }
+
+  /** 409 `CAMBIO_CONCURRENTE`: otra persona guardó antes; se cargan los datos actuales. */
+  private releer(original: CuentaBancaria): void {
+    this.guardando.set(true);
+    this.service
+      .obtener(original.bancariaId)
+      .pipe(timeout(LIMITE_MS))
+      .subscribe({
+        next: (actual) => {
+          this.guardando.set(false);
+          const nombre =
+            actual.numeroCuenta === this.cuentaElegida()?.numeroCuenta
+              ? (this.cuentaElegida()?.nombre ?? null)
+              : null;
+          this.editando.set(actual);
+          this.cargarFormulario(actual, nombre);
+          this.avisar(
+            'warn',
+            'Otra persona modificó la cuenta mientras la editaba. Se cargaron los datos actuales; revíselos y vuelva a guardar.',
+          );
+          this.recargar();
+        },
+        error: (err: unknown) => {
+          this.guardando.set(false);
+          this.avisar(
+            'error',
+            mensajeDeError(
+              err,
+              'Otra persona modificó la cuenta y no se pudieron leer los datos actuales.',
+            ),
+          );
+        },
+      });
+  }
+
+  private cargarFormulario(cuenta: CuentaBancaria | null, nombreCuenta: string | null): void {
+    this.form.setValue({
+      banco: cuenta?.banco ?? '',
+      numero: cuenta?.numero ?? '',
+      cbu: cuenta?.cbu ?? '',
+      titular: cuenta?.titular ?? '',
+      cuit: cuenta?.cuit ?? '',
+    });
+    this.cuentaElegida.set(
+      cuenta?.numeroCuenta != null
+        ? { numeroCuenta: cuenta.numeroCuenta, nombre: nombreCuenta ?? '' }
+        : null,
+    );
+    this.errores.set({});
+  }
+
+  // --- Baja ---
+
+  /** Antes de pedir confirmación se consultan las referencias (`GET /bancaria/{id}/uso`). */
+  pedirBaja(cuenta: CuentaBancaria): void {
+    if (this.procesando()) return;
+    this.limpiarMensajes();
+    this.procesando.set(true);
+    this.service
+      .uso(cuenta.bancariaId)
+      .pipe(timeout(LIMITE_MS))
+      .subscribe({
+        next: (uso) => {
+          this.procesando.set(false);
+          if (uso.eliminable) this.pendiente.set(cuenta);
+          else this.bloqueada.set({ cuenta, uso });
+        },
+        error: (err: unknown) => {
+          this.procesando.set(false);
+          this.errorDePagina(err, 'No se pudo consultar si la cuenta se puede eliminar.');
+        },
+      });
+  }
+
+  textoBloqueo(cuenta: CuentaBancaria, uso: UsoCuentaBancaria): string {
+    const motivos = [
+      uso.valores > 0 ? plural(uso.valores, 'valor', 'valores') : null,
+      uso.libroBanco > 0
+        ? plural(uso.libroBanco, 'movimiento de libro banco', 'movimientos de libro banco')
+        : null,
+    ].filter((m): m is string => m !== null);
+    const detalle = motivos.length ? `: tiene ${motivos.join(' y ')}` : '';
+    return `No se puede eliminar la cuenta ${this.descripcion(cuenta)}${detalle}. Una cuenta con movimientos no se borra.`;
+  }
+
+  cancelarBaja(): void {
+    this.pendiente.set(null);
+    this.bloqueada.set(null);
+  }
+
+  confirmarBaja(): void {
+    const cuenta = this.pendiente();
+    if (!cuenta || this.procesando()) return;
+    this.pendiente.set(null);
+    this.procesando.set(true);
+    this.service
+      .eliminar(cuenta.bancariaId)
+      .pipe(timeout(LIMITE_MS))
+      .subscribe({
+        next: () => {
+          this.procesando.set(false);
+          this.exito(`Cuenta ${this.descripcion(cuenta)} eliminada.`);
+          this.recargar();
+        },
+        // 409 EN_USO: alguien agregó un movimiento después de la consulta; el core no borra nada.
+        error: (err: unknown) => {
+          this.procesando.set(false);
+          if (err instanceof TimeoutError) {
+            this.errorMessage.set(
+              'El servidor no respondió. Revise la lista antes de volver a intentar.',
+            );
+            this.recargar();
+            return;
+          }
+          this.errorDePagina(err, 'No se pudo eliminar la cuenta.');
+        },
+      });
+  }
+
+  // --- Avisos ---
+
+  /** Error fuera del modal. Con 404 o 409 la lista quedó vieja: se recarga. */
+  private errorDePagina(err: unknown, generico: string): void {
+    if (this.esProhibido(err)) return;
+    if (err instanceof TimeoutError) {
+      this.errorMessage.set('El servidor no respondió; vuelva a intentar.');
+      return;
+    }
+    this.errorMessage.set(mensajeDeError(err, generico));
+    const status = (err as HttpErrorResponse | null)?.status;
+    if (status === 404 || status === 409) this.recargar();
+  }
+
+  private avisar(tipo: TipoAviso, texto: string): void {
+    this.modalAviso.set({ tipo, texto });
+  }
+
+  private exito(texto: string): void {
+    this.successMessage.set(texto);
+    if (this.exitoTimer) clearTimeout(this.exitoTimer);
+    this.exitoTimer = setTimeout(() => {
+      if (this.successMessage() === texto) this.successMessage.set('');
+    }, 5000);
+  }
+
+  private limpiarMensajes(): void {
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.pendiente.set(null);
+    this.bloqueada.set(null);
+  }
+
+  private esProhibido(err: unknown): boolean {
+    return err instanceof HttpErrorResponse && err.status === 403;
+  }
+}

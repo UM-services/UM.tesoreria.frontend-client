@@ -26,6 +26,13 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
+    // Cuentas bancarias: lista, alta, edición y baja (las reglas las aplica el core).
+    path: 'cuentas-bancarias',
+    loadChildren: () =>
+      import('@tesoreria/feature-contable').then(m => m.CUENTAS_BANCARIAS_ROUTES),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
     path: '',
     component: BlankComponent,
     canActivate: [authGuard, usuarioInternoGuard],
