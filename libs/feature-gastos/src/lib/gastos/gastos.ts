@@ -24,7 +24,7 @@ import {
   ProveedorSearchResponse,
 } from '@tesoreria/ui-layout';
 import { catchError, debounceTime, distinctUntilChanged, timeout } from 'rxjs/operators';
-import { of, TimeoutError } from 'rxjs';
+import { of, Subscription, TimeoutError } from 'rxjs';
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -121,6 +121,8 @@ export class GastosComponent implements OnInit {
 
   public searchQuery = new FormControl('');
   public isSearching = false;
+  /** Pedido de lista en curso (página o búsqueda): el nuevo cancela al anterior. */
+  private listaSub: Subscription | null = null;
 
   public currentPage = 0;
   public pageSize = 10;
@@ -156,7 +158,8 @@ export class GastosComponent implements OnInit {
   loadGastos(page = 0) {
     this.isLoading = true;
     this.isSearching = false;
-    this.http
+    this.listaSub?.unsubscribe();
+    this.listaSub = this.http
       .post<PaginatedResponse<Articulo>>(`${this.articuloUrl}/tipo/gasto/page`, {
         page,
         size: this.pageSize,
@@ -164,11 +167,8 @@ export class GastosComponent implements OnInit {
       .pipe(
         catchError((err) => {
           console.error('Error al cargar la lista de gastos.', err);
-          this.showError(
-            err?.status === 403
-              ? 'No tiene permiso para ver los gastos.'
-              : 'Error de conexión con el servidor.',
-          );
+          // El 403 ya lo muestra la franja del shell (errorInterceptor → AccesoDenegadoService).
+          if (err?.status !== 403) this.showError('Error de conexión con el servidor.');
           return of(null);
         }),
       )
@@ -213,7 +213,8 @@ export class GastosComponent implements OnInit {
       .trim()
       .split(/\s+/)
       .filter((c) => c.length > 0);
-    this.http
+    this.listaSub?.unsubscribe();
+    this.listaSub = this.http
       .post<any[]>(`${this.articuloUrl}/search`, conditions)
       .pipe(
         catchError((err) => {
