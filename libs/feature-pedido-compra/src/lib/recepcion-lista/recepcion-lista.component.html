@@ -41,14 +41,23 @@
                 </td>
                 <td>{{ pendiente.proveedorId ?? '—' }}</td>
                 <td class="text-right">
-                  {{ pendiente.monto !== null && pendiente.monto !== undefined ? (pendiente.monto | number: '1.2-2') : '—' }}
+                  {{
+                    pendiente.monto !== null && pendiente.monto !== undefined
+                      ? (pendiente.monto | number: '1.2-2')
+                      : '—'
+                  }}
                   {{ pendiente.moneda || '' }}
                 </td>
-                <td>{{ pendiente.fecha ? (pendiente.fecha | date: 'short') : '—' }}</td>
+                <td>{{ pendiente.fecha | umFecha }}</td>
                 <td class="text-right">{{ itemsConSaldo(pendiente) }}</td>
                 <td class="text-right">
-                  <button type="button" class="um-link-btn" (click)="abrir(pendiente)">Recepcionar</button>
-                  <a [routerLink]="['/recepcion', pendiente.compraFormalizacionId]" class="um-link-btn">
+                  <button type="button" class="um-link-btn" (click)="abrir(pendiente)">
+                    Recepcionar
+                  </button>
+                  <a
+                    [routerLink]="['/recepcion', pendiente.compraFormalizacionId]"
+                    class="um-link-btn"
+                  >
                     Ver recepciones
                   </a>
                 </td>
@@ -63,7 +72,9 @@
   @if (activo(); as pendiente) {
     <section class="um-card mt-4">
       <h2 class="um-section">
-        Registrar entrega — {{ pendiente.numero || 'Orden de Compra' }} ({{ esTotal() ? 'Total' : 'Parcial' }})
+        Registrar entrega — {{ pendiente.numero || 'Orden de Compra' }} ({{
+          esTotal() ? 'Total' : 'Parcial'
+        }})
       </h2>
       <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
         <div>
@@ -149,11 +160,14 @@
 
       @if (excedeSaldo()) {
         <div class="um-alert-warn mt-3">
-          Alguna cantidad recibida supera el saldo pendiente del ítem. Ajustá las cantidades para continuar.
+          Alguna cantidad recibida supera el saldo pendiente del ítem. Ajustá las cantidades para
+          continuar.
         </div>
       }
       @if (sinCantidades()) {
-        <div class="um-alert-warn mt-3">La entrega requiere al menos una cantidad mayor a cero.</div>
+        <div class="um-alert-warn mt-3">
+          La entrega requiere al menos una cantidad mayor a cero.
+        </div>
       }
 
       <div class="mt-3 flex justify-end gap-3">
@@ -192,7 +206,7 @@
             @for (recepcion of registradas(); track recepcion.compraRecepcionId) {
               <tr>
                 <td class="font-semibold text-um-ink">{{ recepcion.numero || '—' }}</td>
-                <td>{{ recepcion.fecha ? (recepcion.fecha | date: 'short') : '—' }}</td>
+                <td>{{ recepcion.fecha | umFecha }}</td>
                 <td>{{ recepcion.remito || '—' }}</td>
                 <td>
                   <span class="um-badge" [ngClass]="badgeResultado(recepcion.resultado)">
@@ -202,7 +216,10 @@
                 <td>{{ etiquetaPatrimonio(recepcion.patrimonio) }}</td>
                 <td class="text-right">{{ recepcion.items?.length ?? 0 }}</td>
                 <td class="text-right">
-                  <a [routerLink]="['/recepcion', recepcion.compraFormalizacionId]" class="um-link-btn">
+                  <a
+                    [routerLink]="['/recepcion', recepcion.compraFormalizacionId]"
+                    class="um-link-btn"
+                  >
                     Ver orden de compra
                   </a>
                 </td>

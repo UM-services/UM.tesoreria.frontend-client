@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { EjerciciosService } from '@tesoreria/shared-api';
 import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
@@ -9,6 +10,7 @@ import {
   PedidoCompra,
   estadoBadgeClass,
   estadoLabel,
+  solicitanteLabel,
 } from '../models/pedido-compra.models';
 
 /**
@@ -25,8 +27,10 @@ import {
 })
 export class PedidoPresupuestoComponent implements OnInit {
   private readonly pedidoCompraService = inject(PedidoCompraService);
+  private readonly ejerciciosService = inject(EjerciciosService);
 
   readonly pedidos = signal<PedidoCompra[]>([]);
+  readonly nombresEjercicio = signal<Map<number, string>>(new Map());
   readonly limite = signal<LimiteAutorizacion | null>(null);
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
@@ -36,11 +40,17 @@ export class PedidoPresupuestoComponent implements OnInit {
 
   readonly estadoLabel = estadoLabel;
   readonly estadoBadgeClass = estadoBadgeClass;
+  readonly solicitanteLabel = solicitanteLabel;
 
   motivoRechazo = '';
 
   ngOnInit(): void {
+    this.cargarEjercicios();
     this.cargar();
+  }
+
+  private cargarEjercicios(): void {
+    this.ejerciciosService.nombres().subscribe((nombres) => this.nombresEjercicio.set(nombres));
   }
 
   cargar(): void {
@@ -68,12 +78,19 @@ export class PedidoPresupuestoComponent implements OnInit {
       return 'No tenés un perfil de autoridad asignado para el ejercicio en curso.';
     }
     if (l.ilimitado) {
-      return `Autoridad sin límite para el ejercicio ${l.ejercicioId}.`;
+      return `Autoridad sin límite para ${this.nombreEjercicio(l.ejercicioId)}.`;
     }
     if (l.limite == null) {
-      return `No hay referencia cargada para el ejercicio ${l.ejercicioId}; no se puede autorizar por monto.`;
+      return `No hay referencia cargada para ${this.nombreEjercicio(l.ejercicioId)}; no se puede autorizar por monto.`;
     }
-    return `Tu límite para el ejercicio ${l.ejercicioId} es ${this.money(l.limite)} (${l.multiplico} × ${this.money(l.referencia)}).`;
+    return `Tu límite para ${this.nombreEjercicio(l.ejercicioId)} es ${this.money(l.limite)} (${l.multiplico} × ${this.money(l.referencia)}).`;
+  }
+
+  nombreEjercicio(ejercicioId: number | null | undefined): string {
+    if (ejercicioId == null) {
+      return '—';
+    }
+    return this.nombresEjercicio().get(ejercicioId) ?? `Ejercicio ${ejercicioId}`;
   }
 
   money(valor: number | null | undefined): string {

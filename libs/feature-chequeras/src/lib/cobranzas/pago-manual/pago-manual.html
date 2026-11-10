@@ -1,0 +1,190 @@
+<section class="p-6">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Chequeras / Cobranzas / Pago manual</p>
+    <h1 class="um-page-title">Carga manual de pago</h1>
+    <p class="um-page-desc">
+      Buscá la persona, elegí la chequera y la cuota, y registrá o eliminá el pago manual.
+    </p>
+  </header>
+
+  <div class="um-card mt-6">
+    <ui-buscador-persona
+      label="Apellido y nombre"
+      inputId="pagoManualPersona"
+      [(texto)]="texto"
+      (seleccionada)="elegirPersona($event)"
+    />
+    @if (persona(); as persona) {
+      <p class="mt-3 text-sm text-um-muted">
+        {{ persona.apellido }}, {{ persona.nombre }} · {{ persona.personaId }}.{{ persona.documentoId }}
+      </p>
+    }
+  </div>
+
+  @if (series().length > 0) {
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">Chequeras</h2>
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Facultad</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Chequera</th>
+              <th scope="col">Sede</th>
+              <th scope="col">Lectivo</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of series(); track item.chequeraId) {
+              <tr [class.font-bold]="serie()?.chequeraId === item.chequeraId">
+                <td>{{ item.facultad?.nombre ?? item.facultadId }}</td>
+                <td>{{ item.tipoChequera?.nombre ?? item.tipoChequeraId }}</td>
+                <td class="font-mono">{{ item.facultadId }}/{{ item.tipoChequeraId }}/{{ item.chequeraSerieId }}</td>
+                <td>{{ item.geografica?.nombre ?? '—' }}</td>
+                <td>{{ item.lectivo?.nombre ?? item.lectivoId }}</td>
+                <td>
+                  <button type="button" class="um-link-btn" (click)="seleccionarSerie(item)">
+                    Seleccionar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (serie()) {
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">Cuotas</h2>
+      <p class="mt-1 text-sm text-um-muted">
+        La cuota marcada como pagada o de baja no admite un nuevo pago manual.
+      </p>
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Producto</th>
+              <th scope="col">Cuota</th>
+              <th scope="col">Mes/Año</th>
+              <th scope="col">Importe</th>
+              <th scope="col">Saldo</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Pagos manuales</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of cuotas(); track item.chequeraCuotaId) {
+              <tr [class.font-bold]="cuota()?.chequeraCuotaId === item.chequeraCuotaId">
+                <td>{{ item.producto?.nombre ?? item.productoId }}</td>
+                <td>{{ item.cuotaId }}</td>
+                <td>{{ item.mes }}/{{ item.anho }}</td>
+                <td class="font-mono tabular-nums">{{ importe(item.importe1) }}</td>
+                <td class="font-mono tabular-nums">{{ importe(saldo(item)) }}</td>
+                <td>
+                  @if (item.baja === 1) {
+                    <span class="um-badge">Baja</span>
+                  } @else if (item.pagado === 1) {
+                    <span class="um-badge">Pagada</span>
+                  } @else {
+                    <span class="um-badge">Pendiente</span>
+                  }
+                </td>
+                <td>
+                  @for (pago of manualesCuota(item); track pago.chequeraPagoId) {
+                    <span class="mr-2 inline-flex items-center gap-1">
+                      {{ importe(pago.importe) }}
+                      <button
+                        type="button"
+                        class="um-link-btn"
+                        (click)="eliminar(pago)"
+                      >
+                        Eliminar
+                      </button>
+                    </span>
+                  } @empty {
+                    —
+                  }
+                </td>
+                <td>
+                  <button type="button" class="um-link-btn" (click)="seleccionarCuota(item)">
+                    Seleccionar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="text-center text-um-muted">No hay cuotas.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (cuota(); as cuota) {
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">
+        Pago manual de la cuota {{ cuota.cuotaId }}
+      </h2>
+      <div class="mt-4 grid gap-4 md:grid-cols-3">
+        <label class="block">
+          <span class="um-label">Fecha</span>
+          <input
+            type="date"
+            class="um-input mt-1"
+            [value]="fechaPago()"
+            (input)="fechaPago.set($any($event.target).value)"
+          />
+        </label>
+        <label class="block">
+          <span class="um-label">Importe</span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            class="um-input mt-1"
+            [value]="importePago()"
+            (input)="importePago.set(+$any($event.target).value)"
+          />
+          <span class="mt-1 block text-xs text-um-muted">Saldo: {{ importe(saldo(cuota)) }}</span>
+        </label>
+        <label class="block">
+          <span class="um-label">Observaciones</span>
+          <input
+            type="text"
+            class="um-input mt-1"
+            [value]="observaciones()"
+            (input)="observaciones.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+
+      @if (error(); as error) {
+        <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+      }
+      @if (aviso(); as aviso) {
+        <div class="um-alert um-alert-success mt-4">{{ aviso }}</div>
+      }
+
+      <div class="mt-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          class="um-btn-primary"
+          [disabled]="cargando() || saldo(cuota) <= 0 || cuota.baja === 1"
+          (click)="registrar()"
+        >
+          Registrar pago
+        </button>
+        <a class="um-link-btn" routerLink="/cobranzas">Volver a Cobranzas</a>
+      </div>
+    </div>
+  } @else if (error(); as error) {
+    <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+  }
+</section>

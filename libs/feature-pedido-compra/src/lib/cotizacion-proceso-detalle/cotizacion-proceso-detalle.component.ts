@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FechaPipe } from '@tesoreria/ui-layout';
 import { CotizacionProcesoService } from '../data-access/cotizacion-proceso.service';
 import {
   CotizacionProceso,
@@ -21,7 +22,7 @@ interface RespuestaItemDraft {
 @Component({
   selector: 'app-cotizacion-proceso-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, FechaPipe],
   templateUrl: './cotizacion-proceso-detalle.component.html',
 })
 export class CotizacionProcesoDetalleComponent implements OnInit {
@@ -89,7 +90,7 @@ export class CotizacionProcesoDetalleComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('No se pudo cargar el proceso de cotización.');
+        this.errorMessage.set('No se pudo cargar el proceso de presupuesto.');
         this.isLoading.set(false);
       },
     });
@@ -99,16 +100,21 @@ export class CotizacionProcesoDetalleComponent implements OnInit {
     this.errorMessage.set('');
     this.cotizacionProcesoService.enviar(this.compraCotizacionId).subscribe({
       next: (proceso) => this.proceso.set(proceso),
-      error: () => this.errorMessage.set('No se pudo enviar el proceso (revisá ítems, proveedores y el mínimo).'),
+      error: () =>
+        this.errorMessage.set(
+          'No se pudo enviar el proceso (revisá ítems, proveedores y el mínimo).',
+        ),
     });
   }
 
   anular(): void {
     this.errorMessage.set('');
-    this.cotizacionProcesoService.anular(this.compraCotizacionId, this.motivoAnulacion || null).subscribe({
-      next: (proceso) => this.proceso.set(proceso),
-      error: () => this.errorMessage.set('No se pudo anular el proceso.'),
-    });
+    this.cotizacionProcesoService
+      .anular(this.compraCotizacionId, this.motivoAnulacion || null)
+      .subscribe({
+        next: (proceso) => this.proceso.set(proceso),
+        error: () => this.errorMessage.set('No se pudo anular el proceso.'),
+      });
   }
 
   abrirRespuesta(proveedor: CotizacionProcesoProveedor): void {
@@ -138,7 +144,11 @@ export class CotizacionProcesoDetalleComponent implements OnInit {
     this.respondiendoId.set(null);
   }
 
-  actualizarItem(index: number, campo: 'cotiza' | 'precioUnitario' | 'marca', valor: unknown): void {
+  actualizarItem(
+    index: number,
+    campo: 'cotiza' | 'precioUnitario' | 'marca',
+    valor: unknown,
+  ): void {
     this.itemsRespuesta.update((items) =>
       items.map((item, i) => (i === index ? { ...item, [campo]: valor } : item)),
     );
@@ -154,7 +164,10 @@ export class CotizacionProcesoDetalleComponent implements OnInit {
         (p) => p.compraCotizacionItemId === item.compraCotizacionItemId,
       )?.cantidad;
       const precio = item.precioUnitario;
-      const subtotal = item.cotiza && precio != null && cantidad != null ? Number(precio) * Number(cantidad) : null;
+      const subtotal =
+        item.cotiza && precio != null && cantidad != null
+          ? Number(precio) * Number(cantidad)
+          : null;
       return {
         compraCotizacionItemId: item.compraCotizacionItemId,
         cotiza: item.cotiza,
@@ -174,13 +187,15 @@ export class CotizacionProcesoDetalleComponent implements OnInit {
       validezOferta: this.validezOferta || null,
       items,
     };
-    this.cotizacionProcesoService.registrarRespuesta(this.compraCotizacionId, cpId, request).subscribe({
-      next: () => {
-        this.respondiendoId.set(null);
-        this.cargar();
-      },
-      error: () => this.errorMessage.set('No se pudo guardar la respuesta del proveedor.'),
-    });
+    this.cotizacionProcesoService
+      .registrarRespuesta(this.compraCotizacionId, cpId, request)
+      .subscribe({
+        next: () => {
+          this.respondiendoId.set(null);
+          this.cargar();
+        },
+        error: () => this.errorMessage.set('No se pudo guardar la respuesta del proveedor.'),
+      });
   }
 
   marcarNoCotiza(proveedor: CotizacionProcesoProveedor): void {
@@ -189,7 +204,11 @@ export class CotizacionProcesoDetalleComponent implements OnInit {
     }
     this.errorMessage.set('');
     this.cotizacionProcesoService
-      .marcarNoCotiza(this.compraCotizacionId, proveedor.compraCotizacionProveedorId, 'Sin cotización')
+      .marcarNoCotiza(
+        this.compraCotizacionId,
+        proveedor.compraCotizacionProveedorId,
+        'Sin presupuesto',
+      )
       .subscribe({
         next: () => this.cargar(),
         error: () => this.errorMessage.set('No se pudo marcar el proveedor.'),
@@ -203,10 +222,13 @@ export class CotizacionProcesoDetalleComponent implements OnInit {
       return;
     }
     this.errorMessage.set('');
-    this.cotizacionProcesoService.recomendar(this.compraCotizacionId, cpId, this.fundamento || null).subscribe({
-      next: (proceso) => this.proceso.set(proceso),
-      error: () => this.errorMessage.set('No se pudo registrar la recomendación (revisá las respuestas).'),
-    });
+    this.cotizacionProcesoService
+      .recomendar(this.compraCotizacionId, cpId, this.fundamento || null)
+      .subscribe({
+        next: (proceso) => this.proceso.set(proceso),
+        error: () =>
+          this.errorMessage.set('No se pudo registrar la recomendación (revisá las respuestas).'),
+      });
   }
 
   cerrar(): void {
@@ -219,12 +241,15 @@ export class CotizacionProcesoDetalleComponent implements OnInit {
 
   /** Precio de un ítem para un proveedor (para la matriz de comparación). */
   precio(proveedor: CotizacionProcesoProveedor, compraCotizacionItemId?: number): string {
-    const item = (proveedor.items ?? []).find((i) => i.compraCotizacionItemId === compraCotizacionItemId);
+    const item = (proveedor.items ?? []).find(
+      (i) => i.compraCotizacionItemId === compraCotizacionItemId,
+    );
     if (!item || item.cotiza === false || item.precioUnitario == null) {
       return '—';
     }
-    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-      Number(item.precioUnitario),
-    );
+    return new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(item.precioUnitario));
   }
 }

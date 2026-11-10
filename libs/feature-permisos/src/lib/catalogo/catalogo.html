@@ -4,31 +4,130 @@
       <p class="um-eyebrow">Administración / Seguridad</p>
       <h1 class="um-page-title">Catálogo de permisos</h1>
       <p class="mt-1 text-sm text-um-muted">
-        Dé de alta las claves que las funcionalidades exigen. La clave debe coincidir con la que usa
-        el código (convención <code>modulo.accion</code>).
+        El inventario se define en
+        <code class="font-mono text-xs">tesoreria-core/src/main/resources/permisos.yaml</code>
+        y se aplica al desplegar. Esta pantalla es de consulta; las altas, ediciones y retiros se
+        hacen por PR al archivo.
       </p>
     </div>
   </div>
 
   @if (errorMessage) {
-    <div class="um-alert um-alert-error">
-      <div class="flex">
-        <div class="ml-3">
-          <p class="text-sm text-red-700">{{ errorMessage }}</p>
-        </div>
-      </div>
-    </div>
+    <div class="um-alert um-alert-error" role="alert">{{ errorMessage }}</div>
   }
 
   @if (successMessage) {
-    <div class="um-alert um-alert-success">
-      <div class="flex">
-        <div class="ml-3">
-          <p class="text-sm text-green-700">{{ successMessage }}</p>
-        </div>
+    <div class="um-alert um-alert-success" role="status">{{ successMessage }}</div>
+  }
+
+  <div class="rounded-lg border border-um-border bg-white shadow-sm">
+    <div class="flex flex-wrap items-start justify-between gap-3 px-6 py-5">
+      <div>
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
+          Inventario versionado
+        </h2>
+        <p class="mt-1 max-w-2xl text-sm text-um-muted">
+          Verificá el diff contra el archivo (no escribe nada) o forzá la sincronización. El core
+          también lo aplica automáticamente al arrancar.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="um-btn-secondary"
+          [disabled]="simulando || aplicando"
+          (click)="simularSync()"
+        >
+          {{ simulando ? 'Verificando...' : 'Verificar sincronización' }}
+        </button>
+        @if (confirmandoAplicar) {
+          <button
+            type="button"
+            class="um-btn-primary"
+            [disabled]="aplicando || simulando"
+            (click)="aplicarSync()"
+          >
+            {{ aplicando ? 'Aplicando...' : 'Confirmar aplicación' }}
+          </button>
+          <button type="button" class="um-btn-secondary" (click)="cancelarAplicar()">
+            Cancelar
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="um-btn-primary"
+            [disabled]="aplicando || simulando"
+            (click)="aplicarSync()"
+          >
+            Aplicar cambios
+          </button>
+        }
       </div>
     </div>
-  }
+
+    @if (syncResultado) {
+      <div class="border-t border-um-border bg-um-surface px-6 py-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-sm font-semibold text-um-ink">
+            {{ syncResultado.dryRun ? 'Vista previa (no se aplicó nada)' : 'Sincronización aplicada' }}
+          </p>
+          <button type="button" class="um-link-btn text-xs" (click)="descartarSync()">
+            Cerrar
+          </button>
+        </div>
+        <p class="mt-2 text-sm text-um-muted">
+          Manifiesto: {{ syncResultado.totalManifiesto }} claves · agregadas
+          {{ syncResultado.agregados }} · actualizadas {{ syncResultado.actualizados }} · retiradas
+          {{ syncResultado.retirados }} · sin cambios {{ syncResultado.sinCambios }}
+        </p>
+
+        @if (!hayCambios()) {
+          <p class="mt-2 text-sm text-green-700">
+            El catálogo ya está alineado con el archivo.
+          </p>
+        } @else {
+          <div class="mt-3 grid gap-4 sm:grid-cols-3">
+            @if (syncResultado.clavesAgregadas.length) {
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+                  Agregadas
+                </p>
+                <ul class="mt-1 space-y-0.5 font-mono text-xs text-um-ink">
+                  @for (clave of syncResultado.clavesAgregadas; track clave) {
+                    <li>{{ clave }}</li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (syncResultado.clavesActualizadas.length) {
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">
+                  Actualizadas
+                </p>
+                <ul class="mt-1 space-y-0.5 font-mono text-xs text-um-ink">
+                  @for (clave of syncResultado.clavesActualizadas; track clave) {
+                    <li>{{ clave }}</li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (syncResultado.clavesRetiradas.length) {
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-red-700">
+                  Retiradas (activo = 0)
+                </p>
+                <ul class="mt-1 space-y-0.5 font-mono text-xs text-um-ink">
+                  @for (clave of syncResultado.clavesRetiradas; track clave) {
+                    <li>{{ clave }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
 
   @if (cargando) {
     <div class="bg-white border border-um-border rounded-lg shadow-sm p-12 text-center">
@@ -53,83 +152,7 @@
         <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
           Permisos ({{ total }})
         </h2>
-        <button
-          type="button"
-          (click)="nuevoPermiso()"
-          class="um-btn-primary rounded-md px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
-        >
-          Nuevo permiso
-        </button>
       </div>
-
-      @if (mostrarForm) {
-        <div class="border-b border-um-border bg-um-surface px-6 py-5">
-          <p class="text-sm font-semibold text-um-ink">
-            {{ permisoEditando ? 'Editar permiso' : 'Nuevo permiso' }}
-          </p>
-          <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label for="permiso-clave" class="block text-sm font-medium text-um-ink">Clave</label>
-              <input
-                id="permiso-clave"
-                type="text"
-                [(ngModel)]="form.clave"
-                placeholder="Ej.: pagos.reembolsos"
-                class="mt-1 block w-full rounded-md border-um-border text-sm text-um-ink shadow-sm focus:border-um-primary focus:ring-um-primary"
-              />
-            </div>
-            <div>
-              <label for="permiso-modulo" class="block text-sm font-medium text-um-ink">Módulo</label>
-              <input
-                id="permiso-modulo"
-                type="text"
-                [(ngModel)]="form.modulo"
-                placeholder="Ej.: pagos"
-                class="mt-1 block w-full rounded-md border-um-border text-sm text-um-ink shadow-sm focus:border-um-primary focus:ring-um-primary"
-              />
-            </div>
-            <div class="sm:col-span-2">
-              <label for="permiso-descripcion" class="block text-sm font-medium text-um-ink"
-                >Descripción</label
-              >
-              <input
-                id="permiso-descripcion"
-                type="text"
-                [(ngModel)]="form.descripcion"
-                placeholder="Ej.: Registrar reembolsos de pagos"
-                class="mt-1 block w-full rounded-md border-um-border text-sm text-um-ink shadow-sm focus:border-um-primary focus:ring-um-primary"
-              />
-            </div>
-            <div>
-              <label for="permiso-estado" class="block text-sm font-medium text-um-ink">Estado</label>
-              <select
-                id="permiso-estado"
-                [(ngModel)]="form.activo"
-                class="mt-1 block w-full rounded-md border-um-border text-sm text-um-ink shadow-sm focus:border-um-primary focus:ring-um-primary"
-              >
-                <option [ngValue]="1">Activo</option>
-                <option [ngValue]="0">Inactivo</option>
-              </select>
-            </div>
-          </div>
-          <div class="mt-4 flex gap-2">
-            <button
-              type="button"
-              (click)="guardarPermiso()"
-              class="um-btn-primary rounded-md px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
-            >
-              Guardar
-            </button>
-            <button
-              type="button"
-              (click)="cancelarForm()"
-              class="rounded-md border border-um-border px-4 py-2 text-sm font-semibold text-um-ink hover:bg-um-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      }
 
       @for (grupo of grupos; track grupo.modulo) {
         <div class="border-t border-um-border first:border-t-0">
@@ -143,7 +166,6 @@
                   <th class="px-6 py-2 text-left text-xs font-semibold uppercase tracking-wider text-um-muted">Clave</th>
                   <th class="px-6 py-2 text-left text-xs font-semibold uppercase tracking-wider text-um-muted">Descripción</th>
                   <th class="px-6 py-2 text-left text-xs font-semibold uppercase tracking-wider text-um-muted">Estado</th>
-                  <th class="px-6 py-2 text-right text-xs font-semibold uppercase tracking-wider text-um-muted">Acciones</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-um-border bg-white">
@@ -158,41 +180,6 @@
                         <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">Inactivo</span>
                       }
                     </td>
-                    <td class="px-6 py-2 text-right">
-                      @if (confirmandoEliminar === permiso.permisoId) {
-                        <span class="mr-2 text-xs text-um-muted">¿Eliminar?</span>
-                        <button
-                          type="button"
-                          (click)="eliminarPermiso(permiso)"
-                          [disabled]="pendientes.has(permiso.permisoId)"
-                          class="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none"
-                        >
-                          Sí
-                        </button>
-                        <button
-                          type="button"
-                          (click)="cancelarConfirmacion()"
-                          class="ml-1 rounded-md border border-um-border px-3 py-1 text-xs font-semibold text-um-ink hover:bg-um-surface focus:outline-none"
-                        >
-                          No
-                        </button>
-                      } @else {
-                        <button
-                          type="button"
-                          (click)="editarPermiso(permiso)"
-                          class="rounded-md border border-um-border px-3 py-1 text-xs font-semibold text-um-ink hover:bg-um-surface focus:outline-none"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          (click)="pedirConfirmacion(permiso.permisoId)"
-                          class="ml-1 rounded-md border border-um-border px-3 py-1 text-xs font-semibold text-red-700 hover:bg-um-surface focus:outline-none"
-                        >
-                          Eliminar
-                        </button>
-                      }
-                    </td>
                   </tr>
                 }
               </tbody>
@@ -201,7 +188,7 @@
         </div>
       } @empty {
         <div class="px-6 py-8 text-center text-sm text-um-muted">
-          El catálogo está vacío. Cree el primer permiso con "Nuevo permiso".
+          El catálogo está vacío. Aplicá el manifiesto para cargar las claves.
         </div>
       }
     </div>

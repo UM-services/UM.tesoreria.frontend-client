@@ -1,14 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
+import { FechaPipe, TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
   ESTADOS_PEDIDO,
   PedidoCompra,
   estadoBadgeClass,
   estadoLabel,
+  solicitanteLabel,
 } from '../models/pedido-compra.models';
 
 /**
@@ -18,7 +26,7 @@ import {
 @Component({
   selector: 'app-pedido-bandeja',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TextoEnriquecidoComponent, FechaPipe],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-bandeja.component.html',
 })
@@ -26,6 +34,24 @@ export class PedidoBandejaComponent implements OnInit {
   private readonly pedidoCompraService = inject(PedidoCompraService);
 
   readonly pedidos = signal<PedidoCompra[]>([]);
+  /**
+   * Urgentes primero y, dentro de cada grupo, del más antiguo al más nuevo por `fecha`
+   * (con el ID como desempate). El `sort` de JavaScript es estable.
+   */
+  readonly pedidosOrdenados = computed(() =>
+    [...this.pedidos()].sort((a, b) => {
+      const urgencia = (b.urgente ? 1 : 0) - (a.urgente ? 1 : 0);
+      if (urgencia !== 0) {
+        return urgencia;
+      }
+      const fechaA = a.fecha ? Date.parse(a.fecha) || 0 : 0;
+      const fechaB = b.fecha ? Date.parse(b.fecha) || 0 : 0;
+      if (fechaA !== fechaB) {
+        return fechaA - fechaB;
+      }
+      return (a.compraPedidoId ?? 0) - (b.compraPedidoId ?? 0);
+    }),
+  );
   readonly isLoading = signal(false);
   readonly sinDependencias = signal(false);
   readonly errorMessage = signal('');
@@ -36,6 +62,7 @@ export class PedidoBandejaComponent implements OnInit {
   readonly estados = ESTADOS_PEDIDO;
   readonly estadoLabel = estadoLabel;
   readonly estadoBadgeClass = estadoBadgeClass;
+  readonly solicitanteLabel = solicitanteLabel;
 
   estadoFiltro = 'PENDIENTE_ENVIO';
   motivoRechazo = '';
@@ -48,7 +75,7 @@ export class PedidoBandejaComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.pedidoCompraService.bandeja(this.estadoFiltro || null).subscribe({
-      next: bandeja => {
+      next: (bandeja) => {
         this.pedidos.set(bandeja?.pedidos ?? []);
         this.sinDependencias.set(bandeja?.sinDependencias ?? false);
         this.isLoading.set(false);
@@ -67,7 +94,7 @@ export class PedidoBandejaComponent implements OnInit {
     }
     this.marcarPendiente(id, true);
     this.pedidoCompraService.aprobar(id).subscribe({
-      next: actualizado => {
+      next: (actualizado) => {
         this.marcarPendiente(id, false);
         this.reemplazar(actualizado);
         this.showSuccess(`Pedido ${actualizado.numero ?? id} enviado a compras.`);
@@ -100,7 +127,7 @@ export class PedidoBandejaComponent implements OnInit {
     }
     this.marcarPendiente(id, true);
     this.pedidoCompraService.rechazar(id, this.motivoRechazo.trim()).subscribe({
-      next: actualizado => {
+      next: (actualizado) => {
         this.marcarPendiente(id, false);
         this.rechazandoId.set(null);
         this.motivoRechazo = '';
@@ -116,7 +143,7 @@ export class PedidoBandejaComponent implements OnInit {
 
   private reemplazar(actualizado: PedidoCompra): void {
     this.pedidos.set(
-      this.pedidos().map(p =>
+      this.pedidos().map((p) =>
         p.compraPedidoId === actualizado.compraPedidoId ? actualizado : p,
       ),
     );

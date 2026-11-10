@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, UrlTree } from '@angular/router';
 import { of } from 'rxjs';
+import { AccesoDenegadoService } from './acceso-denegado.service';
 import { AuthService } from './auth.service';
 import { PermisosService } from './permisos.service';
 import { permisoGuard } from './permiso.guard';
@@ -25,13 +26,14 @@ describe('permisoGuard', () => {
     expect(ejecutar(true, { userId: 1 })).toBe(true);
   });
 
-  it('deniega a sin-acceso cuando no tiene el permiso', () => {
+  it('deniega a sin-acceso cuando no tiene el permiso y deja el detalle para la pantalla', () => {
     let value: unknown;
     (ejecutar(false, { userId: 1 }) as { subscribe: (fn: (v: unknown) => void) => void }).subscribe(
       v => (value = v),
     );
 
     expect((value as UrlTree).toString()).toContain(SIN_ACCESO_RUTA);
+    expect(TestBed.inject(AccesoDenegadoService).detalle()?.clave).toBe('pagos.reembolsos');
   });
 
   it('manda a login cuando no hay sesión', () => {

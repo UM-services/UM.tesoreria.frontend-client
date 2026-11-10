@@ -1,9 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { EjercicioResumen, EjerciciosService } from '@tesoreria/shared-api';
+import { AutoridadPresupuestoService } from '../autoridades-presupuesto/autoridad-presupuesto.service';
 import { CotizacionTramo, CotizacionTramoService } from './cotizacion-tramo.service';
 
 interface FilaVistaPrevia {
+  nombre: string;
+  tope: number | null;
   rango: string;
   cantidad: number;
 }
@@ -12,9 +16,9 @@ const CANTIDAD_MINIMA_FLOOR = 1;
 const CANTIDAD_MINIMA_CEILING = 10;
 
 /**
- * Administración de los tramos de cotizaciones mínimas por monto: cada tramo fija un tope
+ * Administración de los tramos de presupuestos mínimos por monto: cada tramo fija un tope
  * (en múltiplos de la referencia del ejercicio; sin tope = último tramo) y la cantidad
- * mínima de cotizaciones a solicitar.
+ * de presupuestos mínima a solicitar.
  */
 @Component({
   selector: 'app-cotizaciones-minimas',
@@ -25,6 +29,8 @@ const CANTIDAD_MINIMA_CEILING = 10;
 })
 export class CotizacionesMinimasComponent implements OnInit {
   private readonly service = inject(CotizacionTramoService);
+  private readonly ejerciciosService = inject(EjerciciosService);
+  private readonly autoridadService = inject(AutoridadPresupuestoService);
 
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
@@ -46,11 +52,85 @@ export class CotizacionesMinimasComponent implements OnInit {
   edicionCantidadMinima: number | null = null;
   edicionActivo = true;
 
-  // Vista previa del mínimo resuelto para una referencia dada
-  referencia: number | null = null;
+  // Vista previa: ejercicio, referencia real y tramos resultantes
+  readonly ejercicios = signal<EjercicioResumen[]>([]);
+  ejercicioId: number | null = null;
+  readonly referencia = signal<number | null>(null);
+  readonly referenciaCargando = signal(false);
+  readonly referenciaError = signal('');
+  private referenciaRequestId = 0;
 
   ngOnInit(): void {
+    this.cargarEjercicios();
     this.cargar();
+  }
+
+  private cargarEjercicios(): void {
+    this.ejerciciosService.listado().subscribe(ejercicios => this.ejercicios.set(ejercicios ?? []));
+  }
+
+  onEjercicioChange(ejercicioId: number | null): void {
+    this.ejercicioId = ejercicioId;
+    if (ejercicioId == null) {
+      this.referenciaRequestId++;
+      this.referenciaCargando.set(false);
+      this.referenciaError.set('');
+      this.referencia.set(null);
+      return;
+    }
+    this.cargarReferencia();
+  }
+
+  cargarReferencia(): void {
+    if (this.ejercicioId == null) {
+      this.referenciaRequestId++;
+      this.referenciaCargando.set(false);
+      this.referenciaError.set('');
+      this.referencia.set(null);
+      return;
+    }
+    const requestId = ++this.referenciaRequestId;
+    this.referenciaCargando.set(true);
+    this.referenciaError.set('');
+    this.referencia.set(null);
+    this.autoridadService.getReferencia(this.ejercicioId).subscribe({
+      next: referencia => {
+        if (requestId !== this.referenciaRequestId) {
+          return;
+        }
+        this.referencia.set(referencia.importe);
+        this.referenciaCargando.set(false);
+      },
+      error: (err: unknown) => {
+        if (requestId !== this.referenciaRequestId) {
+          return;
+        }
+        this.referenciaCargando.set(false);
+        if (this.esNoEncontrada(err)) {
+          this.referencia.set(0);
+          return;
+        }
+        this.referencia.set(null);
+        this.referenciaError.set('No se pudo cargar la referencia del ejercicio.');
+      },
+    });
+  }
+
+  private esNoEncontrada(err: unknown): boolean {
+    return (err as { status?: number } | null)?.status === 404;
+  }
+
+  nombreEjercicio(ejercicioId: number | null | undefined): string {
+    if (ejercicioId == null) {
+      return '—';
+    }
+    const ejercicio = this.ejercicios().find(item => item.ejercicioId === ejercicioId);
+    return ejercicio?.nombre?.trim() || `Ejercicio ${ejercicioId}`;
+  }
+
+  sinTramoAbierto(): boolean {
+    const activos = this.tramos().filter(tramo => tramo.activo === 1);
+    return activos.length > 0 && activos.every(tramo => tramo.topeMultiplico != null);
   }
 
   cargar(): void {
@@ -61,7 +141,7 @@ export class CotizacionesMinimasComponent implements OnInit {
         this.cargando.set(false);
       },
       error: () => {
-        this.errorMessage.set('No se pudieron cargar los tramos de cotizaciones.');
+        this.errorMessage.set('No se pudieron cargar los tramos de presupuestos.');
         this.cargando.set(false);
       },
     });
@@ -150,24 +230,39 @@ export class CotizacionesMinimasComponent implements OnInit {
   // ---- Vista previa ----
 
   vistaPrevia(): FilaVistaPrevia[] {
-    const r = this.referencia;
-    if (r == null || r <= 0) {
-      return [];
-    }
-    const activos = this.tramos().filter(t => t.activo === 1);
+    const referencia = this.referencia();
+    const valor = referencia != null && referencia > 0 ? referencia : null;
+    const activos = this.tramos().filter(tramo => tramo.activo === 1);
     const conTope = activos
-      .filter(t => t.topeMultiplico != null)
+      .filter(tramo => tramo.topeMultiplico != null)
       .sort((a, b) => (a.topeMultiplico as number) - (b.topeMultiplico as number));
-    const abierto = activos.find(t => t.topeMultiplico == null);
+    const abierto = activos.find(tramo => tramo.topeMultiplico == null);
 
-    const filas: FilaVistaPrevia[] = conTope.map(t => ({
-      rango: `Hasta ${this.money((t.topeMultiplico as number) * r)}`,
-      cantidad: t.cantidadMinima,
-    }));
-    if (abierto) {
-      const ultimo = conTope.length > 0 ? (conTope[conTope.length - 1].topeMultiplico as number) : null;
+    const filas: FilaVistaPrevia[] = [];
+    let anterior: number | null = null;
+    for (const tramo of conTope) {
+      const tope = tramo.topeMultiplico as number;
       filas.push({
-        rango: ultimo == null ? 'Cualquier monto' : `Más de ${this.money(ultimo * r)}`,
+        nombre: tramo.nombre ?? '—',
+        tope,
+        rango: valor == null
+          ? '—'
+          : anterior == null
+            ? `Hasta ${this.money(tope * valor)}`
+            : `Más de ${this.money(anterior * valor)} hasta ${this.money(tope * valor)}`,
+        cantidad: tramo.cantidadMinima,
+      });
+      anterior = tope;
+    }
+    if (abierto) {
+      filas.push({
+        nombre: abierto.nombre ?? '—',
+        tope: null,
+        rango: valor == null
+          ? '—'
+          : anterior == null
+            ? 'Cualquier monto'
+            : `Más de ${this.money(anterior * valor)}`,
         cantidad: abierto.cantidadMinima,
       });
     }
@@ -185,7 +280,7 @@ export class CotizacionesMinimasComponent implements OnInit {
 
   private validarCantidad(cantidad: number | null): boolean {
     if (cantidad == null || cantidad < CANTIDAD_MINIMA_FLOOR || cantidad > CANTIDAD_MINIMA_CEILING) {
-      this.showError(`La cantidad mínima debe estar entre ${CANTIDAD_MINIMA_FLOOR} y ${CANTIDAD_MINIMA_CEILING}.`);
+      this.showError(`La Cantidad Presupuestos Mínima debe estar entre ${CANTIDAD_MINIMA_FLOOR} y ${CANTIDAD_MINIMA_CEILING}.`);
       return false;
     }
     return true;

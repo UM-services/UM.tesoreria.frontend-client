@@ -19,7 +19,12 @@
           viewBox="0 0 24 24"
           stroke="currentColor"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
         </svg>
         Iniciar pedido
       </a>
@@ -73,7 +78,7 @@
                     {{ estadoLabel(pedido.estado) }}
                   </span>
                 </td>
-                <td>{{ pedido.fecha | date: 'short' }}</td>
+                <td>{{ pedido.fecha | umFecha }}</td>
                 <td class="align-top">
                   <div class="max-w-md">
                     <ui-texto-enriquecido [texto]="pedido.necesidad" />
@@ -83,7 +88,9 @@
                   <div class="flex justify-end gap-3">
                     <a [routerLink]="[pedido.compraPedidoId]" class="um-link-btn">Ver</a>
                     @if (pedido.estado === 'BORRADOR' || pedido.estado === 'RECHAZADO') {
-                      <a [routerLink]="[pedido.compraPedidoId, 'editar']" class="um-link-btn">Editar</a>
+                      <a [routerLink]="[pedido.compraPedidoId, 'editar']" class="um-link-btn"
+                        >Editar</a
+                      >
                     }
                   </div>
                 </td>

@@ -1,9 +1,7 @@
 <div class="mx-auto max-w-6xl p-4">
   <header class="um-page-header">
     <p class="um-eyebrow">Compras</p>
-    <h1 class="um-page-title">
-      Recepción de la orden de compra {{ pendiente()?.numero || '' }}
-    </h1>
+    <h1 class="um-page-title">Recepción de la orden de compra {{ pendiente()?.numero || '' }}</h1>
     <p class="um-page-desc">
       Saldo por ítem contratado, entregas registradas y cierre manual de la recepción.
     </p>
@@ -25,9 +23,18 @@
     <section class="um-card">
       <h2 class="um-section">Orden de compra</h2>
       <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <div><span class="um-label">Número</span><div>{{ oc.numero || '—' }}</div></div>
-        <div><span class="um-label">Externo</span><div>{{ oc.numeroExterno || '—' }}</div></div>
-        <div><span class="um-label">Proveedor</span><div>{{ oc.proveedorId ?? '—' }}</div></div>
+        <div>
+          <span class="um-label">Número</span>
+          <div>{{ oc.numero || '—' }}</div>
+        </div>
+        <div>
+          <span class="um-label">Externo</span>
+          <div>{{ oc.numeroExterno || '—' }}</div>
+        </div>
+        <div>
+          <span class="um-label">Proveedor</span>
+          <div>{{ oc.proveedorId ?? '—' }}</div>
+        </div>
         <div>
           <span class="um-label">Monto</span>
           <div>
@@ -60,13 +67,25 @@
                 <td>{{ item.descripcion || '—' }}</td>
                 <td>{{ item.unidad || '—' }}</td>
                 <td class="text-right">
-                  {{ item.cantidad !== null && item.cantidad !== undefined ? (item.cantidad | number: '1.0-2') : '—' }}
+                  {{
+                    item.cantidad !== null && item.cantidad !== undefined
+                      ? (item.cantidad | number: '1.0-2')
+                      : '—'
+                  }}
                 </td>
                 <td class="text-right">
-                  {{ item.recibido !== null && item.recibido !== undefined ? (item.recibido | number: '1.0-2') : '—' }}
+                  {{
+                    item.recibido !== null && item.recibido !== undefined
+                      ? (item.recibido | number: '1.0-2')
+                      : '—'
+                  }}
                 </td>
                 <td class="text-right">
-                  {{ item.saldo !== null && item.saldo !== undefined ? (item.saldo | number: '1.0-2') : '—' }}
+                  {{
+                    item.saldo !== null && item.saldo !== undefined
+                      ? (item.saldo | number: '1.0-2')
+                      : '—'
+                  }}
                 </td>
                 <td>
                   <span class="um-badge" [ngClass]="badgeSaldo(item.completo)">
@@ -102,7 +121,7 @@
               @for (recepcion of oc.recepciones ?? []; track recepcion.compraRecepcionId) {
                 <tr>
                   <td class="font-semibold text-um-ink">{{ recepcion.numero || '—' }}</td>
-                  <td>{{ recepcion.fecha ? (recepcion.fecha | date: 'short') : '—' }}</td>
+                  <td>{{ recepcion.fecha | umFecha }}</td>
                   <td>{{ recepcion.remito || '—' }}</td>
                   <td>
                     <span class="um-badge" [ngClass]="badgeResultado(recepcion.resultado)">

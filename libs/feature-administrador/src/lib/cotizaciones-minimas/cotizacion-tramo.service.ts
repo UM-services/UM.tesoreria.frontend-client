@@ -20,7 +20,7 @@ export interface CotizacionTramoRequest {
 }
 
 /**
- * Acceso a la configuración de tramos de cotizaciones mínimas por monto.
+ * Acceso a la configuración de tramos de presupuestos mínimos por monto.
  *
  * <p>Consume la fachada gateada de `compras-service`
  * (`/api/tesoreria/compras/cotizacion/tramos`, permiso `compras.cotizaciones.configurar`),

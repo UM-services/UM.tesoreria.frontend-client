@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { map } from 'rxjs/operators';
+import { AccesoDenegadoService } from './acceso-denegado.service';
 import { AuthService } from './auth.service';
 import { PermisosService } from './permisos.service';
 import { SIN_ACCESO_RUTA } from './module-access.guard';
@@ -13,12 +14,13 @@ import { SIN_ACCESO_RUTA } from './module-access.guard';
  *
  * Útil en vistas compartidas por roles distintos (p. ej. el detalle de un pedido, que
  * ven tanto el solicitante como el autorizante). Misma semántica que `permisoGuard`:
- * espera `ensureLoaded` y deniega hacia `sin-acceso`.
+ * espera `ensureLoaded` y deniega hacia `sin-acceso` sin cerrar la sesión.
  */
 export const permisoAlgunoGuard = (claves: string[]): CanActivateFn => (_route, state) => {
   const permisos = inject(PermisosService);
   const auth = inject(AuthService);
   const router = inject(Router);
+  const accesoDenegado = inject(AccesoDenegadoService);
 
   const tieneAlguno = () => claves.some(clave => permisos.hasPermiso(clave));
 
@@ -32,5 +34,16 @@ export const permisoAlgunoGuard = (claves: string[]): CanActivateFn => (_route, 
   }
 
   const sinAcceso = router.parseUrl(`/${SIN_ACCESO_RUTA}`);
-  return permisos.ensureLoaded(user.userId).pipe(map(() => (tieneAlguno() ? true : sinAcceso)));
+  const denegar = () => {
+    accesoDenegado.reportar({
+      tipo: 'permiso',
+      mensaje: 'No tenés permiso para acceder a esta pantalla.',
+      clave: claves.join(' | '),
+    });
+    return sinAcceso;
+  };
+
+  return permisos
+    .ensureLoaded(user.userId)
+    .pipe(map(() => (tieneAlguno() ? true : denegar())));
 };

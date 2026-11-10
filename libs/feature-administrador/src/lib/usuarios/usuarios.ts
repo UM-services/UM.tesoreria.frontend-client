@@ -76,8 +76,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   get filtrados(): UsuarioAdmin[] {
-    const lista = this.usuarios();
-    return this.incluirInactivos ? lista : lista.filter(u => u.activo === 1);
+    const lista = this.incluirInactivos ? this.usuarios() : this.usuarios().filter(u => u.activo === 1);
+    return this.ordenar(lista);
   }
 
   ngOnInit(): void {
@@ -359,6 +359,15 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   // ---- Helpers ----
+
+  /** Orden alfabético por login (y nombre como desempate), sin mutar la señal. */
+  private ordenar(lista: UsuarioAdmin[]): UsuarioAdmin[] {
+    return [...lista].sort(
+      (a, b) =>
+        a.login.localeCompare(b.login, 'es', { sensitivity: 'base' }) ||
+        a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }),
+    );
+  }
 
   nombreSede(geograficaId: number | null): string {
     return this.sedes().find(s => s.geograficaId === geograficaId)?.nombre ?? '—';

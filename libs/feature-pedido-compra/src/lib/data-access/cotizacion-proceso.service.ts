@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { API_URL } from '@tesoreria/shared-api';
 import { Observable } from 'rxjs';
@@ -24,20 +24,21 @@ export class CotizacionProcesoService {
   private readonly baseUrl = `${this.apiUrl.replace(/\/core\/auth\/?$/, '')}/compras/cotizacion`;
 
   pendientes(ejercicioId?: number | null): Observable<CotizacionPendiente[]> {
-    let params = new HttpParams();
-    if (ejercicioId != null) {
-      params = params.set('ejercicioId', ejercicioId);
-    }
-    return this.http.get<CotizacionPendiente[]>(`${this.baseUrl}/pendientes`, { params });
+    return this.http.post<CotizacionPendiente[]>(`${this.baseUrl}/pendientes`, {
+      ejercicioId: ejercicioId ?? null,
+      dependenciaIds: null,
+    });
   }
 
   /** Bandeja transversal "Cotizaciones pedidas": documentos de proveedor en ENVIADA. */
-  respuestasPendientes(ejercicioId?: number | null): Observable<CotizacionProcesoProveedorPendiente[]> {
-    let params = new HttpParams();
-    if (ejercicioId != null) {
-      params = params.set('ejercicioId', ejercicioId);
-    }
-    return this.http.get<CotizacionProcesoProveedorPendiente[]>(`${this.baseUrl}/proveedores-pendientes`, { params });
+  respuestasPendientes(
+    ejercicioId?: number | null,
+  ): Observable<CotizacionProcesoProveedorPendiente[]> {
+    const url =
+      ejercicioId != null
+        ? `${this.baseUrl}/proveedores-pendientes/${ejercicioId}`
+        : `${this.baseUrl}/proveedores-pendientes`;
+    return this.http.get<CotizacionProcesoProveedorPendiente[]>(url);
   }
 
   listar(): Observable<CotizacionProceso[]> {
@@ -52,7 +53,10 @@ export class CotizacionProcesoService {
     return this.http.post<CotizacionProceso>(this.baseUrl, request);
   }
 
-  actualizar(compraCotizacionId: number, request: CotizacionProcesoRequest): Observable<CotizacionProceso> {
+  actualizar(
+    compraCotizacionId: number,
+    request: CotizacionProcesoRequest,
+  ): Observable<CotizacionProceso> {
     return this.http.put<CotizacionProceso>(`${this.baseUrl}/${compraCotizacionId}`, request);
   }
 
@@ -61,7 +65,9 @@ export class CotizacionProcesoService {
   }
 
   anular(compraCotizacionId: number, motivo: string | null): Observable<CotizacionProceso> {
-    return this.http.post<CotizacionProceso>(`${this.baseUrl}/${compraCotizacionId}/anular`, { motivo });
+    return this.http.post<CotizacionProceso>(`${this.baseUrl}/${compraCotizacionId}/anular`, {
+      motivo,
+    });
   }
 
   registrarRespuesta(
@@ -112,9 +118,10 @@ export class CotizacionProcesoService {
   }
 
   adjudicacionLimite(ejercicioId?: number | null): Observable<LimiteAutorizacion> {
-    const url = ejercicioId != null
-      ? `${this.baseUrl}/adjudicacion/limite/${ejercicioId}`
-      : `${this.baseUrl}/adjudicacion/limite`;
+    const url =
+      ejercicioId != null
+        ? `${this.baseUrl}/adjudicacion/limite/${ejercicioId}`
+        : `${this.baseUrl}/adjudicacion/limite`;
     return this.http.get<LimiteAutorizacion>(url);
   }
 
@@ -129,14 +136,20 @@ export class CotizacionProcesoService {
     );
   }
 
-  devolver(compraCotizacionId: number, fundamento: string | null): Observable<CotizacionAdjudicacion> {
+  devolver(
+    compraCotizacionId: number,
+    fundamento: string | null,
+  ): Observable<CotizacionAdjudicacion> {
     return this.http.post<CotizacionAdjudicacion>(
       `${this.baseUrl}/adjudicacion/${compraCotizacionId}/devolver`,
       { fundamento },
     );
   }
 
-  noAdjudicar(compraCotizacionId: number, fundamento: string | null): Observable<CotizacionAdjudicacion> {
+  noAdjudicar(
+    compraCotizacionId: number,
+    fundamento: string | null,
+  ): Observable<CotizacionAdjudicacion> {
     return this.http.post<CotizacionAdjudicacion>(
       `${this.baseUrl}/adjudicacion/${compraCotizacionId}/no-adjudicar`,
       { fundamento },

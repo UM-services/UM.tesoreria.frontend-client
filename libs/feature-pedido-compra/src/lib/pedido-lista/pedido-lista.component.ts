@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PermisoDirective, TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
+import { PermisoDirective, FechaPipe, TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import { PedidoCompra, estadoBadgeClass, estadoLabel } from '../models/pedido-compra.models';
 
 @Component({
   selector: 'app-pedido-lista',
   standalone: true,
-  imports: [CommonModule, RouterLink, PermisoDirective, TextoEnriquecidoComponent],
+  imports: [CommonModule, RouterLink, PermisoDirective, TextoEnriquecidoComponent, FechaPipe],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-lista.component.html',
 })

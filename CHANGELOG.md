@@ -1,5 +1,95 @@
 # Changelog
 
+## [0.46.0] - 2026-11-09
+
+### Added
+
+- feat(administrador): la pantalla **Autorizantes de envío** consume el contexto independiente
+  `compras/autorizanteEnvio` del core: `GET`/`PUT /usuario/{usuarioId}` para leer y reemplazar el
+  conjunto, y `POST`/`DELETE` por dependencia disponibles en el servicio. Los cambios se acumulan
+  en un borrador local y se persisten juntos con **Guardar cambios**; **Descartar** vuelve al
+  conjunto original. `AutorizanteDependencias` pasa de `autorizanteId` a `usuarioId`.
+- test(administrador): spec de `AutorizantesEnvioComponent` con carga del conjunto, guardado
+  múltiple en un solo `PUT`, no-op sin cambios y descarte.
+
+### Changed
+
+- feat(administrador): el acceso a la pantalla y el ítem del menú pasan de `administradorGuard`
+  a `permisoGuard('compras.autorizantes.configurar')`, para que un administrador de compras pueda
+  gestionarla sin ser administrador del sistema.
+- docs: `docs/architecture.md` documenta la pantalla con su permiso y el contexto
+  `compras/autorizanteEnvio` del core (`usuarioId` + conjunto de dependencias).
+
+## [0.45.0] - 2026-11-09
+
+### Added
+
+- feat(chequeras): nueva sección **Consultas** en `@tesoreria/feature-chequeras` (`consultaRoutes`, `/consultas/**`), montada con `loadChildren` y protegida por `authGuard` + `usuarioInternoGuard`. La pantalla `/consultas/detalle-cuotas` permite elegir un lectivo, ver las combinaciones facultad/sede con su cantidad de chequeras, seleccionarlas (checkbox maestro e «Invertir») y descargar un único ZIP con una planilla por fila.
+- feat(chequeras): `DetalleCuotasService` consume `GET /lectivo/reverse`, `GET /chequeraSerie/resumen/lectivo/{lectivoId}` y `POST /api/tesoreria/report/chequeras/planilla/detalle/zip`; el formato viaja en mayúsculas (`HORIZONTAL`/`VERTICAL`) y las planillas las genera `tesoreria-report`.
+- feat(chequeras): menú **Consultas**, home de la sección y tarjeta del dashboard, todas bajo el permiso `chequeras.consultas.detalleCuotas`.
+- test(chequeras): specs de `DetalleCuotasService` y `DetalleCuotasFacultadSedeComponent`, más el smoke E2E `apps/chequeras-e2e/src/consultas.spec.ts` (sin sesión las rutas redirigen a `/login` con `returnUrl`).
+- docs: `libs/feature-chequeras/README.md` y `docs/architecture.md` documentan la sección Consultas, sus rutas y contratos; `README.md` actualiza la versión **0.45.0**, la descripción de `feature-chequeras` y las insignias de tecnologías.
+- feat(ui-layout): pipe **`umFecha`** (y el helper `formatearFechaUm`) para mostrar fechas siempre como `dd/MM/yyyy`; conserva `HH:mm` cuando el dato trae hora real (≠ `00:00`) y permite forzarla con `'siempre'` o quitarla con `'nunca'`. No depende del `LOCALE_ID` y no corre el día de un ISO sin zona (`...T00:00:00`).
+
+### Changed
+
+- fix(compras,administrador): las fechas de las pantallas de compras (lista de pedidos, bandeja de envío, revisión, presupuestos, formalización, recepción, consulta y detalle de pedido) y de la bandeja de **Solicitudes de acceso** usan el pipe `umFecha` en lugar de `date: 'short'`: se ven como `dd/MM/yyyy` y conservan la hora cuando el dato la trae.
+- feat(compras): la **Bandeja de envío**, la **Revisión de compras**, la **Autorización de presupuesto**, la **Consulta de pedidos** y el **detalle del pedido** muestran al **Solicitante** como `nombre (login)`, con fallback al `solicitanteId`; el detalle agrega además **Dependencia** en la cabecera. Al aprobar o rechazar, la bandeja reemplaza la fila con el pedido que devuelve la acción, de modo que conserva la dependencia y el solicitante.
+- feat(compras): la columna **Objeto / Bien / Servicio** reemplaza a «Bien / servicio» en la carga y el detalle del pedido, para dejar explícito que el ítem puede describir cualquiera de los tres.
+- fix(administrador): la opción **Asignaciones de Chequeras** (menú, encabezado y enlace desde Usuarios) reemplaza a «Asignaciones», para distinguirla de la asignación de perfiles de autoridad.
+- fix(administrador): el padrón de **Usuarios** se muestra en orden alfabético por login (nombre como desempate), tanto al listar como al buscar y después de un alta o una configuración.
+- fix(compras): el filtro de estado de las bandejas sigue el orden del circuito (Borrador → Pendiente de envío → En revisión de compras → Pendiente de autorización de presupuesto → Autorizado) y deja los estados alternativos y terminales al final, en lugar de mezclarlos con el flujo principal.
+- fix(compras): se elimina `PENDIENTE_ESTIMACION` del filtro y del circuito de la UI; el formulario y el detalle aclaran que el monto estimado es opcional y que lo cargará Compras durante la revisión. La etiqueta queda sólo para leer el historial previo.
+- fix(compras): la **Bandeja de envío** muestra primero los pedidos urgentes y después el resto; dentro de cada grupo ordena del más antiguo al más nuevo por fecha.
+- feat(compras,administrador): las pantallas muestran el **nombre del ejercicio** en lugar del `eje_id`. `EjerciciosService` (`@tesoreria/shared-api`) lee `GET /ejercicio/` una sola vez y cachea `id → nombre` (fallback `Ejercicio {id}`). En **Autoridades de presupuesto** los dos campos de ejercicio pasan a un select por nombre; los mensajes de límite (Autorización de presupuesto y detalle de pedido) y el campo **Ejercicio** del detalle de Orden de Compra usan el nombre.
+- fix(administrador): al elegir un ejercicio en **Autoridades de presupuesto** se carga automáticamente su referencia; si no existe se muestra `0` con el aviso «Sin referencia cargada» y se elimina el botón **Cargar**.
+- feat(administrador): la tabla de **Perfiles de autoridad** muestra en una columna **Usuarios** los usuarios asignados a cada perfil (nombre, con login en el tooltip y «Sin usuarios» cuando no hay). Consume `GET /compraAutoridadUsuario/asignaciones` y se refresca al asignar/quitar un perfil.
+- feat(administrador): la **vista previa del límite** se calcula automáticamente al elegir el ejercicio (se elimina el botón «Calcular límite») y aclara que es una simulación. Se explicita que la asignación de perfiles es global y que el ejercicio sólo define la referencia.
+- fix(administrador): la vista previa del límite llamaba a `/compraAutoridadUsuario/limite/{usuarioId}?ejercicioId=...` (405) en lugar de la ruta con el ejercicio en el path; ahora usa `/limite/{usuarioId}/{ejercicioId}` y muestra un error explícito si la consulta falla.
+- refactor(compras): los servicios de `feature-pedido-compra` (`formalizacion`, `cotizacion-proceso`, `recepcion`) y la búsqueda de usuarios de `feature-administrador` dejan de usar query params: usan path variables o `POST /search` con body. Sin cambios funcionales.
+- feat(administrador): la **vista previa de Presupuestos mínimos** ahora elige un ejercicio, carga su referencia real (la misma de Autoridades de presupuesto) y muestra una tabla con los tramos activos, la cantidad mínima a la izquierda y el tope a la derecha, con el rango de importes resultante. Avisa si falta la referencia o si no hay tramo sin tope. La misma prioridad (mínimo antes que tope) se aplica al formulario y a la tabla de tramos.
+- feat(compras,administrador): la UI usa **Presupuestos** en lugar de **Cotizaciones** (menús, títulos, tablas y mensajes) y **Cantidad Presupuestos Mínima** en la configuración de tramos. Se mantienen rutas, permisos, endpoints y códigos técnicos.
+- test(shared-api): spec de `EjerciciosService` (una sola petición, mapa `id → nombre` y fallback ante error).
+- test(administrador): spec de `AutoridadesPresupuestoComponent` (carga automática, 404 → 0, limpieza de selección y descarte de respuestas viejas).
+- test(administrador): spec de `CotizacionesMinimasComponent` (referencia por ejercicio, rangos resultantes, sin referencia y falta de tramo abierto).
+
+## [0.44.0] - 2026-11-08
+
+### Added
+
+- feat(chequeras): nuevo módulo **Cobranzas** en `@tesoreria/feature-chequeras` (`cobranzaRoutes`, `/cobranzas/**`), montado por la app `chequeras` con `loadChildren` y protegido por `authGuard` + `usuarioInternoGuard`. La home agrupa las tarjetas por permiso y hay cinco pantallas: **Importar archivos** (PagoMisCuentas, PAGAR, Rapipago, Débito Directo, Débito VISA, PayPerTIC y Click de Pagos, con previsualización por línea, filtro «sólo problemas», selección de líneas, `permitirDuplicados` y período para PayPerTIC), **Importaciones** (historial por canal, no registrados, rechazos, reacreditación y eliminación con resumen), **Generar archivos** (previsualización, descarga del archivo y anulación/reprogramación de débitos), **Carga manual de pago** (alta y baja de pago con `ui-buscador-persona`) y **Baja de chequera** (alta y anulación de baja).
+- feat(chequeras): servicios `CobranzaService`, `GeneracionService`, `PagoManualService` y `ChequeraConsultaService` sobre `/cobranza/**`, `/chequeraSerie`, `/chequeraCuota`, `/chequeraPago`, `/baja` y `/processBaja`, más los modelos de líneas, previsualizaciones, resultados, canales y cuotas/pagos. La lectura de archivos, el matching y la imputación quedan en el backend: el frontend sólo sube, muestra y confirma.
+- feat(chequeras): dashboard propio (`DashboardComponent`) que reemplaza `NxWelcomeComponent`. El menú estrena el submenú colapsable **Cobranzas** con las claves `chequeras.cobranzas.importar`, `chequeras.cobranzas.generar`, `chequeras.cobranzas.pagoManual` y `chequeras.cobranzas.baja`, y deja de mostrar las entradas inexistentes `Emisión` y `Consultas`.
+- feat(administrador): bandeja **`/solicitudes`** (`SolicitudesAccesoComponent`) para aprobar o rechazar pedidos de acceso, con observación por fila, doble envío bloqueado y el aviso de que aprobar no otorga la clave. `SolicitudAccesoService` (`@tesoreria/shared-api`) consume `POST /solicitudAcceso/`, `GET /solicitudAcceso/pendiente`, `GET /solicitudAcceso/usuario/{userId}` y `PUT /solicitudAcceso/{id}/resolver`.
+- feat(ui-layout): modal **`ui-solicitar-acceso`** reutilizado por la pantalla `sin-acceso` y por el banner del shell; registra `userId`, clave, módulo y comentario sin modificar permisos.
+- feat(ui-layout): aviso de inactividad **`ui-inactividad`** montado por `<ui-shell>` (25 minutos sin actividad y 2 minutos de gracia, configurables por `INACTIVIDAD_CONFIG`). Es no destructivo: ofrece «Seguir conectado» o «Cerrar sesión» y nunca expulsa al usuario por su cuenta.
+- feat(ui-layout): directiva **`*uiPermisoAlguno`** para acciones que requieren al menos una de varias claves.
+- feat(ui-layout): `ShellMenuItem.children` habilita submenús colapsables en escritorio y mobile, con `aria-expanded`/`aria-controls`, expansión automática del grupo activo y memoria en `localStorage` (`ui-shell:expanded-groups`). Los hijos también se filtran por `permiso` y un grupo sin hijos visibles desaparece completo.
+- feat(shared-api): `AccesoDenegadoService` publica el último rechazo (`tipo`, `mensaje`, `clave`, `modulo`, `origen`) y deduplica reportes iguales dentro de 5 segundos.
+
+### Changed
+
+- feat(shared-api): `errorInterceptor` deja de tratar 401 y 403 igual. **401** cierra la sesión y navega a `/login?motivo=sesion-expirada&returnUrl=...`; **403** no toca la sesión ni navega: publica el aviso en `AccesoDenegadoService` con `detail`/`message`/`error` del body y extrae la clave de `Permiso requerido: <clave>`. Se excluyen `/auth/login` y `/permisoEfectivo/`.
+- feat(shared-api): `permisoGuard`, `permisoAlgunoGuard`, `administradorGuard` y `usuarioInternoGuard` reportan el motivo de la denegación y siguen redirigiendo a la ruta pública `sin-acceso`; ninguno cierra la sesión.
+- feat(ui-layout): `NoAccesoComponent` muestra el motivo y la clave faltante y ofrece **Volver**, **Ir al inicio**, **Solicitar acceso** y, como acción secundaria, **Cerrar sesión**. El shell muestra un `um-alert-warn` descartable ante un 403, con acceso directo a la solicitud.
+- feat(ui-auth): el login compartido muestra «Tu sesión expiró. Volvé a ingresar para continuar.» cuando llega `motivo=sesion-expirada`.
+- feat(permisos): el **Catálogo pasa a sólo lectura**: se eliminan el alta, la edición y la baja de claves y se agregan `POST /permiso/sync` en modo dry-run y aplicación, con `SyncPermisosResultado` (agregados, actualizados, retirados, sin cambios y claves afectadas). La fuente de verdad sigue siendo `permisos.yaml` del core.
+- feat(externo-consulta): registra la ruta pública `sin-acceso` antes del wildcard, igual que el resto de las apps.
+- test(chequeras): specs de `cobranza.service`, `generacion.service`, `pago-manual.service`, `chequera-consulta.service` y de los modelos, más el smoke E2E `apps/chequeras-e2e/src/cobranzas.spec.ts` (sin sesión cada ruta redirige a `/login` con `returnUrl`; una ruta desconocida cae en la home de Cobranzas).
+- test(shared-api, ui-layout): casos nuevos en `error.interceptor.spec.ts`, `permiso.guard.spec.ts`, `inactividad.spec.ts`, `permiso-alguno.directive.spec.ts`, `no-acceso.spec.ts` y `ui-shell.spec.ts`.
+- docs: `README.md` documenta `feature-chequeras`, las nuevas capacidades de `shared-api` y `ui-layout`, la versión **0.44.0** y las insignias de tecnologías; `docs/architecture.md` suma la estructura del módulo Chequeras y actualiza guards, denegación 403 y la bandeja de solicitudes; `libs/feature-chequeras/README.md` describe las pantallas y los canales actuales.
+
+## [0.43.0] - 2026-11-04
+ 
+### Added
+ 
+- feat(contable): nueva pantalla **Ejercicios** (`/ejercicios`, `EjerciciosComponent` en `apps/contable/src/app/ejercicios`, entrada de menú «Ejercicios»), con `authGuard` y `usuarioInternoGuard`. Lista los ejercicios en el orden que entrega el core, con inicio y cierre en `dd/MM/aaaa` (sin corrimiento por zona horaria; el cierre de un año bisiesto se ve como `29/02`), estado Abierto/Bloqueado y órdenes contables.
+- feat(contable): **alta** del ejercicio siguiente (`POST /ejercicio/` con cuerpo vacío: fechas, nombre y número los deriva el core), **baja** (`DELETE /ejercicio/{id}`) y **bloqueo/desbloqueo** (`PUT /ejercicio/{id}` con solo `bloqueado`, sin fechas, nombre ni órdenes contables). Cada acción pide confirmación, evita el doble envío y vuelve a leer el listado al terminar.
+- feat(contable): cuando el core rechaza una operación (`409` con `{status, error, codigo, message}`: salto, duplicado, límite de alta, no es el último, no es futuro, en uso) la pantalla muestra su `message` y deja el listado como estaba. El botón de baja se ofrece en todas las filas a propósito: la regla la decide el core.
+- feat(contable): `EjerciciosService` (`GET /ejercicio/`, `POST /ejercicio/`, `DELETE /ejercicio/{id}`, `PUT /ejercicio/{id}`).
+- test(contable): `ejercicios.spec.ts` con 13 casos con ficha (listado y fechas, bisiesto, vacío, alta con confirmación, alta/baja rechazadas, baja, bloqueo y desbloqueo con cuerpo exacto, cancelar, doble envío, fallo de carga, error sin cuerpo).
+> La pantalla no calcula fechas ni decide qué se puede crear o borrar, y no afirma qué operaciones frena el bloqueo: eso lo define y prueba el core.
+
 ## [0.15.0] - 2026-11-03
  
 ### Added

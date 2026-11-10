@@ -45,7 +45,11 @@ export class CotizacionProcesoFormComponent implements OnInit {
   readonly grupos = computed<Grupo[]>(() => {
     const map = new Map<number, Grupo>();
     for (const p of this.pendientes()) {
-      const grupo = map.get(p.compraPedidoId) ?? { compraPedidoId: p.compraPedidoId, numero: p.pedidoNumero ?? '', items: [] };
+      const grupo = map.get(p.compraPedidoId) ?? {
+        compraPedidoId: p.compraPedidoId,
+        numero: p.pedidoNumero ?? '',
+        items: [],
+      };
       grupo.items.push(p);
       map.set(p.compraPedidoId, grupo);
     }
@@ -92,7 +96,9 @@ export class CotizacionProcesoFormComponent implements OnInit {
   togglePedido(grupo: Grupo): void {
     const set = new Set(this.seleccionados());
     const completo = this.pedidoCompleto(grupo);
-    grupo.items.forEach((i) => (completo ? set.delete(i.compraPedidoItemId) : set.add(i.compraPedidoItemId)));
+    grupo.items.forEach((i) =>
+      completo ? set.delete(i.compraPedidoItemId) : set.add(i.compraPedidoItemId),
+    );
     this.seleccionados.set(set);
   }
 
@@ -113,13 +119,21 @@ export class CotizacionProcesoFormComponent implements OnInit {
   private construirRequest(): CotizacionProcesoRequest {
     const items = this.pendientes()
       .filter((p) => this.seleccionados().has(p.compraPedidoItemId))
-      .map((p) => ({ compraPedidoItemId: p.compraPedidoItemId, orden: p.orden, cantidad: p.cantidad }));
+      .map((p) => ({
+        compraPedidoItemId: p.compraPedidoItemId,
+        orden: p.orden,
+        cantidad: p.cantidad,
+      }));
     return {
       observacion: this.observacion || null,
       fechaLimiteRespuesta: null,
       excepcionMotivo: this.excepcionMotivo || null,
       items,
-      proveedores: this.proveedores().map((p) => ({ proveedorId: p.proveedorId, email: p.email, observacion: null })),
+      proveedores: this.proveedores().map((p) => ({
+        proveedorId: p.proveedorId,
+        email: p.email,
+        observacion: null,
+      })),
     };
   }
 
@@ -144,7 +158,8 @@ export class CotizacionProcesoFormComponent implements OnInit {
         if (enviar) {
           this.cotizacionProcesoService.enviar(id).subscribe({
             next: () => this.router.navigate(['/cotizacion', id]),
-            error: () => this.fallar('No se pudo enviar el proceso (revisá el mínimo de cotizaciones).'),
+            error: () =>
+              this.fallar('No se pudo enviar el proceso (revisá el mínimo de presupuestos).'),
           });
         } else {
           this.router.navigate(['/cotizacion', id]);
@@ -158,7 +173,7 @@ export class CotizacionProcesoFormComponent implements OnInit {
     this.router.navigate(['/cotizacion']);
   }
 
-  private fallar(mensaje = 'No se pudo guardar el proceso de cotización.'): void {
+  private fallar(mensaje = 'No se pudo guardar el proceso de presupuesto.'): void {
     this.guardando.set(false);
     this.errorMessage.set(mensaje);
   }

@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from '@tesoreria/shared-api';
 
@@ -31,6 +31,14 @@ export interface CompraAutoridadUsuario {
   autoridadPerfilIds: number[];
 }
 
+export interface CompraAutoridadUsuarioAsignacion {
+  usuarioId: number;
+  autoridadPerfilId: number;
+  login: string | null;
+  nombre: string | null;
+  activo: number | null;
+}
+
 export interface LimiteAutorizacion {
   usuarioId: number | null;
   ejercicioId: number | null;
@@ -52,8 +60,9 @@ export class AutoridadPresupuestoService {
   private readonly coreUrl = inject(API_URL).replace(/\/auth\/?$/, '');
 
   buscarUsuarios(texto: string): Observable<UsuarioResumen[]> {
-    const params = new HttpParams().set('q', texto);
-    return this.http.get<UsuarioResumen[]>(`${this.coreUrl}/usuario/search`, { params });
+    return this.http.get<UsuarioResumen[]>(
+      `${this.coreUrl}/usuario/search/${encodeURIComponent(texto)}`,
+    );
   }
 
   getReferencia(ejercicioId: number): Observable<CompraReferencia> {
@@ -96,6 +105,13 @@ export class AutoridadPresupuestoService {
     return this.http.get<CompraAutoridadUsuario>(`${this.coreUrl}/compraAutoridadUsuario/${usuarioId}`);
   }
 
+  /** Asignaciones de todos los perfiles, con nombre/login del usuario. */
+  asignaciones(): Observable<CompraAutoridadUsuarioAsignacion[]> {
+    return this.http.get<CompraAutoridadUsuarioAsignacion[]>(
+      `${this.coreUrl}/compraAutoridadUsuario/asignaciones`,
+    );
+  }
+
   asignarPerfil(usuarioId: number, autoridadPerfilId: number): Observable<CompraAutoridadUsuario> {
     return this.http.post<CompraAutoridadUsuario>(`${this.coreUrl}/compraAutoridadUsuario`, {
       usuarioId,
@@ -110,9 +126,8 @@ export class AutoridadPresupuestoService {
   }
 
   limite(usuarioId: number, ejercicioId: number): Observable<LimiteAutorizacion> {
-    const params = new HttpParams().set('ejercicioId', ejercicioId);
-    return this.http.get<LimiteAutorizacion>(`${this.coreUrl}/compraAutoridadUsuario/limite/${usuarioId}`, {
-      params,
-    });
+    return this.http.get<LimiteAutorizacion>(
+      `${this.coreUrl}/compraAutoridadUsuario/limite/${usuarioId}/${ejercicioId}`,
+    );
   }
 }

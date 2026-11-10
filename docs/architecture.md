@@ -17,17 +17,18 @@
         end
 
         subgraph "Libraries"
-            SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>Models, tokens API_URL y EXTERNO_*"]
+            SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>AccesoDenegadoService<br/>SolicitudAccesoService<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent<br/>Buscadores compartidos<br/>TextoEnriquecidoComponent<br/>PermisoDirective (*uiPermiso)"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent y submenús<br/>Buscadores compartidos<br/>TextoEnriquecidoComponent<br/>InactividadComponent<br/>SolicitarAccesoModalComponent<br/>PermisoDirective y PermisoAlgunoDirective"]
             UIRichText["@tesoreria/ui-rich-text<br/>EditorEnriquecidoComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
             FeaturePedidoCompra["@tesoreria/feature-pedido-compra<br/>PedidoListaComponent<br/>PedidoFormComponent<br/>PedidoBandejaComponent<br/>PedidoRevisionComponent<br/>PedidoPresupuestoComponent<br/>PedidoConsultaComponent<br/>PedidoDetalleComponent<br/>CotizacionProcesoListaComponent<br/>CotizacionProcesoFormComponent<br/>CotizacionProcesoDetalleComponent<br/>CotizacionProcesoPedidasComponent<br/>CotizacionAdjudicacionComponent<br/>FormalizacionListaComponent<br/>FormalizacionDetalleComponent<br/>RecepcionListaComponent<br/>RecepcionDetalleComponent"]
             FeatureAdministrador["@tesoreria/feature-administrador<br/>DependenciasComponent<br/>UsuariosComponent<br/>AsignacionUsuariosComponent<br/>AutorizantesEnvioComponent<br/>AutoridadesPresupuestoComponent<br/>CotizacionesMinimasComponent"]
-            FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent, SimuladorComponent"]
+            FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent (sólo lectura + sync)<br/>SolicitudesAccesoComponent<br/>SimuladorComponent"]
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
+            FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes, consultaRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera<br/>ConsultasHome, DetalleCuotas"]
         end
     end
 
@@ -47,6 +48,9 @@
     Chequeras --> SharedAPI
     Chequeras --> UIAuth
     Chequeras --> UILayout
+    Chequeras -->|"loadChildren"| FeatureChequeras
+    FeatureChequeras --> SharedAPI
+    FeatureChequeras --> UILayout
 
     Admin --> SharedAPI
     Admin --> UIAuth
@@ -146,7 +150,9 @@ Ambas redirigen a la ruta pública `sin-acceso` (`NoAccesoComponent` de `@tesore
 que cada app registra antes del wildcard para evitar bucles con `/login`. Como el `localStorage`
 es editable por el usuario, la sesión se revalida contra `GET /auth/me/{userId}` al arrancar la
 app y tras el login: el backend es la fuente de verdad y debe denegar 401/403 en las APIs que
-correspondan (`errorInterceptor` expulsa la sesión en ese caso).
+correspondan. El `errorInterceptor` distingue ambos casos: **401** cierra la sesión y vuelve al
+login con `motivo=sesion-expirada`; **403** es un resultado de autorización y **no** cierra la
+sesión, sólo publica el detalle en `AccesoDenegadoService` para que el shell muestre un aviso.
 
 ### Gating de permisos
 
@@ -159,14 +165,21 @@ decidir y, al denegar, redirige a `sin-acceso` (nunca a `/login`, para no genera
 usuario tiene al menos una de las claves, para vistas compartidas por roles distintos (p. ej. el
 detalle de un pedido, que ven solicitante y autorizante). Cada app declara sus rutas gated junto a
 los guards de acceso: `[authGuard, usuarioInternoGuard, administradorGuard, permisoGuard('<clave>')]`
-o `permisoAlgunoGuard(['<clave>', ...])`.
+o `permisoAlgunoGuard(['<clave>', ...])`. Toda denegación de guard reporta su motivo en
+`AccesoDenegadoService` y redirige a `sin-acceso`; ninguna cierra la sesión.
 
-En la UI, `@tesoreria/ui-layout` aporta `PermisoDirective` (`*uiPermiso="'modulo.accion'"`) y el
-campo `ShellMenuItem.permiso`; `UiShellComponent.visibleMenuItems` oculta los ítems sin permiso y
-mantiene visibles los que no declaran `permiso`. El header `X-User-Id` que agrega `authInterceptor`
-es identidad transitoria para el PEP de las fachadas, hasta que el gateway valide el JWT. Las
-pantallas de administración del catálogo, roles, asignaciones y simulador viven en
-`@tesoreria/feature-permisos` (app administrador, detrás de `administradorGuard`).
+En la UI, `@tesoreria/ui-layout` aporta `PermisoDirective` (`*uiPermiso="'modulo.accion'"`),
+`PermisoAlgunoDirective` (`*uiPermisoAlguno="['<clave>', ...]"`) y el campo
+`ShellMenuItem.permiso`; `UiShellComponent.visibleMenuItems` oculta los ítems sin permiso,
+aplica el mismo filtro a los hijos de un submenú (`ShellMenuItem.children`) y mantiene visibles
+los que no declaran `permiso`. El header `X-User-Id` que agrega `authInterceptor` es identidad
+transitoria para el PEP de las fachadas, hasta que el gateway valide el JWT. Las pantallas de
+administración del catálogo, roles, asignaciones y simulador viven en `@tesoreria/feature-permisos`
+(app administrador, detrás de `administradorGuard`). El **Catálogo es de sólo lectura**: la
+fuente de verdad es `permisos.yaml` del core y la pantalla sólo consulta el inventario o dispara
+`POST /permiso/sync` (dry-run o aplicación). Los pedidos de acceso enviados desde `sin-acceso`
+o el banner del shell se resuelven en `/solicitudes`; aprobar registra la decisión, pero la
+asignación efectiva se hace en la pantalla de Usuarios.
 
 ## Estructura de Módulos - Compras
 
@@ -227,7 +240,7 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
     AppRoutes --> Dependencias["Dependencias Component<br/>@tesoreria/feature-administrador"]
     AppRoutes --> Asignaciones["AsignacionUsuarios Component<br/>@tesoreria/feature-administrador"]
-    AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compraPedidoAutorizante del core"]
+    AppRoutes --> Autorizantes["AutorizantesEnvio Component<br/>@tesoreria/feature-administrador<br/>compras.autorizantes.configurar"]
     AppRoutes --> Usuarios["Usuarios Component<br/>@tesoreria/feature-administrador<br/>alta con login sugerido, configuración y reset de clave"]
     AppRoutes --> Autoridades["AutoridadesPresupuesto Component<br/>@tesoreria/feature-administrador<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario del core"]
     AppRoutes --> CotizacionesMinimas["CotizacionesMinimas Component<br/>@tesoreria/feature-administrador<br/>compras.cotizaciones.configurar"]
@@ -235,13 +248,14 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
     AppRoutes --> Permisos["Permisos Component<br/>@tesoreria/feature-permisos"]
     AppRoutes --> Roles["Roles Component<br/>@tesoreria/feature-permisos"]
-    AppRoutes --> Catalogo["Catalogo Component<br/>@tesoreria/feature-permisos"]
+    AppRoutes --> Catalogo["Catalogo Component<br/>@tesoreria/feature-permisos<br/>inventario de sólo lectura + POST /permiso/sync"]
     AppRoutes --> Simulador["Simulador Component<br/>@tesoreria/feature-permisos"]
+    AppRoutes --> Solicitudes["SolicitudesAcceso Component<br/>@tesoreria/feature-permisos<br/>pedidos de acceso pendientes"]
     AppRoutes --> Redirect["Redirección a /dependencias"]
 
     Dependencias --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     Asignaciones --> PermisosAPI["API de seguridad del core<br/>usuario, rol, permiso y overrides"]
-    Autorizantes --> AutorizantesAPI["Slice compraPedidoAutorizante del core<br/>dependencias habilitadas por usuario"]
+    Autorizantes --> AutorizantesAPI["Contexto compras/autorizanteEnvio del core<br/>usuarioId + conjunto de dependencias<br/>GET/PUT /usuario/{usuarioId}"]
     Usuarios --> UsuariosAPI["Slice usuario del core<br/>searchTodos, alta con login generado,<br/>login-sugerido, configuración, activo y password"]
     Autoridades --> AutoridadesAPI["Slices de presupuesto del core<br/>compraReferencia, compraAutoridadPerfil<br/>y compraAutoridadUsuario"]
     CotizacionesMinimas --> TramosAPI["Fachada tesoreria-compras<br/>/compras/cotizacion/tramos"]
@@ -249,8 +263,41 @@ pantallas de administración del catálogo, roles, asignaciones y simulador vive
     Roles --> PermisosAPI
     Catalogo --> PermisosAPI
     Simulador --> PermisosAPI
+    Solicitudes --> PermisosAPI
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable
+```
+
+## Estructura de Módulos - Chequeras
+
+```mermaid
+    flowchart TD
+    ChequerasApp["Chequeras App"] --> AppRoutes["Rutas de la App"]
+    AppRoutes --> Login["Login Component<br/>@tesoreria/ui-auth"]
+    AppRoutes --> Dashboard["Dashboard Component<br/>accesos filtrados por permiso"]
+    AppRoutes --> Personas["Personas Component<br/>@tesoreria/feature-personas"]
+    AppRoutes --> Cobranzas["cobranzaRoutes<br/>@tesoreria/feature-chequeras<br/>permisoAlgunoGuard"]
+    AppRoutes --> Consultas["consultaRoutes<br/>@tesoreria/feature-chequeras<br/>permisoAlgunoGuard"]
+
+    Cobranzas --> CobranzasHome["CobranzasHome Component<br/>chequeras.cobranzas.*"]
+    Cobranzas --> Importar["ImportarLista e ImportarProceso<br/>chequeras.cobranzas.importar"]
+    Cobranzas --> Importaciones["ImportacionesHistorial Component<br/>chequeras.cobranzas.importar"]
+    Cobranzas --> Generar["GenerarLista y GenerarProceso<br/>chequeras.cobranzas.generar"]
+    Cobranzas --> PagoManual["PagoManual Component<br/>chequeras.cobranzas.pagoManual"]
+    Cobranzas --> Baja["BajaChequera Component<br/>chequeras.cobranzas.baja"]
+
+    Consultas --> ConsultasHome["ConsultasHome Component<br/>chequeras.consultas.detalleCuotas"]
+    Consultas --> DetalleCuotas["DetalleCuotasFacultadSede Component<br/>chequeras.consultas.detalleCuotas"]
+
+    Importar --> CobranzaAPI["Fachada de cobranzas del core<br/>/cobranza/importacion"]
+    Importaciones --> CobranzaAPI
+    Generar --> GeneracionAPI["/cobranza/generacion"]
+    PagoManual --> PagoAPI["/cobranza/pago-manual"]
+    Baja --> ChequeraAPI["/chequeraSerie, /chequeraCuota,<br/>/chequeraPago, /baja y /processBaja"]
+    DetalleCuotas --> ResumenAPI["core: /chequeraSerie/resumen/lectivo/{lectivoId}"]
+    DetalleCuotas --> ReportZip["report: /chequeras/planilla/detalle/zip"]
+    PagoManual --> BuscadorPersona["BuscadorPersona Component<br/>@tesoreria/ui-layout"]
+    Baja --> BuscadorPersona
 ```
 
 ## Estructura de Módulos - Pagos

@@ -1,0 +1,243 @@
+<section class="p-6">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Chequeras / Cobranzas / Generar</p>
+    <h1 class="um-page-title">{{ canal()?.nombre ?? 'Generar archivo' }}</h1>
+    <p class="um-page-desc">{{ canal()?.descripcion }}</p>
+  </header>
+
+  @if (!canal()) {
+    <div class="um-alert um-alert-error mt-4">El canal solicitado no existe.</div>
+    <a class="um-link-btn mt-4 inline-block" routerLink="/cobranzas/generar">Volver</a>
+  } @else {
+    <div class="um-card mt-6">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <label class="block">
+          <span class="um-label">Desde</span>
+          <input
+            type="date"
+            class="um-input mt-1"
+            [value]="desde()"
+            (input)="desde.set($any($event.target).value)"
+          />
+        </label>
+        <label class="block">
+          <span class="um-label">Hasta</span>
+          <input
+            type="date"
+            class="um-input mt-1"
+            [value]="hasta()"
+            (input)="hasta.set($any($event.target).value)"
+          />
+        </label>
+
+        @if (esPmc()) {
+          <label class="block">
+            <span class="um-label">Grupo de facultades (opcional)</span>
+            <input
+              type="number"
+              class="um-input mt-1"
+              [value]="grupo() ?? ''"
+              (input)="grupo.set($any($event.target).value === '' ? null : +$any($event.target).value)"
+            />
+            <span class="mt-1 block text-xs text-um-muted">Vacío = todas las facultades.</span>
+          </label>
+        }
+
+        @if (esVisa()) {
+          <label class="block">
+            <span class="um-label">Descuento (%)</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              class="um-input mt-1"
+              [value]="descuento()"
+              (input)="descuento.set(+$any($event.target).value)"
+            />
+          </label>
+        }
+
+        @if (esDirecto()) {
+          <div class="flex flex-col justify-end gap-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                [checked]="soloSantander()"
+                (change)="soloSantander.set($any($event.target).checked)"
+              />
+              Sólo Santander
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                [checked]="soloOtrosBancos()"
+                (change)="soloOtrosBancos.set($any($event.target).checked)"
+              />
+              Sólo otros bancos
+            </label>
+          </div>
+        }
+      </div>
+
+      @if (error(); as error) {
+        <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+      }
+      @if (aviso(); as aviso) {
+        <div class="um-alert um-alert-success mt-4">{{ aviso }}</div>
+      }
+      @if (operacion(); as operacion) {
+        <div class="um-alert um-alert-success mt-4">
+          {{ operacion.operacion }}: {{ operacion.registros }} procesados, {{ operacion.omitidos }}
+          omitidos.
+        </div>
+      }
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="previsualizar()">
+          Previsualizar
+        </button>
+        <button
+          type="button"
+          class="um-btn-secondary"
+          [disabled]="cargando() || !preview() || preview()!.registros === 0"
+          (click)="generar()"
+        >
+          Generar y descargar
+        </button>
+      </div>
+
+      @if (esDebito()) {
+        <div class="mt-6 border-t border-um-border pt-4">
+          <h2 class="text-sm font-semibold text-um-ink">Operaciones sobre débitos</h2>
+          <div class="mt-3 grid gap-3 md:grid-cols-3">
+            <label class="block">
+              <span class="um-label">Fecha de envío a anular</span>
+              <input
+                type="date"
+                class="um-input mt-1"
+                [value]="fechaEnvio()"
+                (input)="fechaEnvio.set($any($event.target).value)"
+              />
+              <button type="button" class="um-link-btn mt-2" [disabled]="cargando()" (click)="anular()">
+                Anular envío
+              </button>
+            </label>
+
+            @if (esDirecto()) {
+              <label class="block">
+                <span class="um-label">Nuevo vencimiento</span>
+                <input
+                  type="date"
+                  class="um-input mt-1"
+                  [value]="fechaVencimiento()"
+                  (input)="fechaVencimiento.set($any($event.target).value)"
+                />
+                <button
+                  type="button"
+                  class="um-link-btn mt-2"
+                  [disabled]="cargando()"
+                  (click)="reprogramar()"
+                >
+                  Reprogramar vencimiento
+                </button>
+              </label>
+            }
+          </div>
+          <p class="mt-3 text-sm text-um-muted">
+            La anulación desmarca sólo los débitos sin pago. Al generar se marca la fecha de envío
+            de los débitos incluidos.
+          </p>
+        </div>
+      }
+
+      @if (cargando()) {
+        <p class="mt-3 text-sm text-um-muted">Procesando…</p>
+      }
+    </div>
+
+    @if (preview(); as preview) {
+      <div class="mt-6">
+        <dl class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div class="um-section">
+            <dt class="um-label">Registros</dt>
+            <dd class="text-xl font-semibold">{{ preview.registros }}</dd>
+          </div>
+          <div class="um-section">
+            <dt class="um-label">Total</dt>
+            <dd class="text-xl font-semibold font-mono tabular-nums">{{ importe(preview.total) }}</dd>
+          </div>
+          <div class="um-section">
+            <dt class="um-label">Excluidos</dt>
+            <dd class="text-xl font-semibold">{{ preview.excluidos }}</dd>
+          </div>
+        </dl>
+
+        @if (preview.inconsistencias.length > 0) {
+          <div class="um-alert um-alert-warn mt-4">
+            <p class="font-semibold">Inconsistencias detectadas</p>
+            <ul class="mt-1 list-disc pl-5">
+              @for (inconsistencia of preview.inconsistencias; track $index) {
+                <li>
+                  {{ inconsistencia.descripcion }}
+                  @if (inconsistencia.chequeraCuotaId) {
+                    (cuota {{ inconsistencia.chequeraCuotaId }})
+                  }
+                  @if (inconsistencia.debitoId) {
+                    (débito {{ inconsistencia.debitoId }})
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table">
+            <thead>
+              <tr>
+                <th scope="col">Facultad</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Chequera</th>
+                <th scope="col">Persona</th>
+                <th scope="col">Producto</th>
+                <th scope="col">Cuota</th>
+                <th scope="col">Importe</th>
+                <th scope="col">Vencimiento</th>
+                @if (esDebito()) {
+                  <th scope="col">CBU / Tarjeta</th>
+                  <th scope="col">Fecha débito</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (linea of preview.lineas; track $index) {
+                <tr>
+                  <td>{{ linea.facultadNombre ?? numero(linea.facultadId) }}</td>
+                  <td>{{ linea.tipoChequeraNombre ?? numero(linea.tipoChequeraId) }}</td>
+                  <td class="font-mono">{{ numero(linea.chequeraSerieId) }}</td>
+                  <td>{{ linea.personaNombre ?? '—' }}</td>
+                  <td>{{ linea.productoNombre ?? numero(linea.productoId) }}</td>
+                  <td>{{ numero(linea.cuotaId) }}</td>
+                  <td class="font-mono tabular-nums">{{ importe(linea.importe) }}</td>
+                  <td>{{ fecha(linea.vencimiento1) }}</td>
+                  @if (esDebito()) {
+                    <td class="font-mono">{{ linea.cbu ?? linea.numeroTarjeta ?? '—' }}</td>
+                    <td>{{ fecha(linea.fechaVencimiento) }}</td>
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="esDebito() ? 10 : 8" class="text-center text-um-muted">
+                    No hay registros para generar.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <a class="um-link-btn mt-6 inline-block" routerLink="/cobranzas/generar">Volver a Generar</a>
+  }
+</section>
