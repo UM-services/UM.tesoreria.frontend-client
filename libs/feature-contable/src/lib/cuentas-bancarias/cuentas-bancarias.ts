@@ -3,11 +3,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { mensajeDeError } from '@tesoreria/shared-api';
 import { BuscadorCuentaContableComponent, CuentaSearchResponse } from '@tesoreria/ui-layout';
@@ -20,7 +22,7 @@ import {
   UsoCuentaBancaria,
 } from './bancaria.service';
 
-export type TipoAviso = 'error' | 'warn' | 'success';
+export type TipoAviso = 'error' | 'warn';
 type CampoTexto = 'banco' | 'numero' | 'cbu' | 'titular' | 'cuit';
 type Campo = CampoTexto | 'numeroCuenta';
 export type ErroresFormato = Partial<Record<Campo, string>>;
@@ -29,6 +31,10 @@ export type ErroresFormato = Partial<Record<Campo, string>>;
 const LIMITE_MS = 30_000;
 /** Largo máximo de banco, número y titular (columnas `varchar(64)`). */
 const LARGO_TEXTO = 64;
+/** Respuestas del gateway que no dicen si el core llegó a grabar (0 = sin respuesta). */
+const STATUS_INCIERTOS = [0, 502, 503, 504];
+const SIN_CONFIRMAR_ALTA =
+  'No se pudo confirmar si la cuenta quedó guardada. Revise la lista antes de volver a intentar.';
 const CAMPOS_TEXTO: CampoTexto[] = ['banco', 'numero', 'cbu', 'titular', 'cuit'];
 const CBU = /^\d{22}$/;
 /** 11 dígitos, con o sin guiones (`XX-XXXXXXXX-X`). El dígito verificador lo controla el core. */
@@ -89,6 +95,8 @@ function plural(cantidad: number, singular: string, varios: string): string {
 })
 export class CuentasBancariasComponent implements OnInit, OnDestroy {
   private readonly service = inject(BancariaService);
+  /** Una respuesta que llega después de salir de la pantalla no toca su estado. */
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly cuentas = signal<CuentaBancaria[]>([]);
   readonly filtro = signal('');
@@ -107,6 +115,8 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
   readonly procesando = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
+  /** El aviso de error es de la carga de la lista: ofrece «Reintentar». */
+  readonly errorDeLista = signal(false);
 
   /** Baja esperando confirmación; nada se borra hasta confirmarla. */
   readonly pendiente = signal<CuentaBancaria | null>(null);
@@ -149,7 +159,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
     this.listaSub?.unsubscribe();
     this.listaSub = this.service
       .listar()
-      .pipe(timeout(LIMITE_MS))
+      .pipe(timeout(LIMITE_MS), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (cuentas) => {
           this.cuentas.set(cuentas ?? []);
@@ -160,6 +170,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
           // El 403 ya lo muestra la franja del shell (errorInterceptor → AccesoDenegadoService).
           // Un aviso anterior (p. ej. el de una baja sin respuesta) es más importante: no se pisa.
           if (!this.esProhibido(err) && !this.errorMessage()) {
+            this.errorDeLista.set(true);
             this.errorMessage.set(
               err instanceof TimeoutError
                 ? 'El servidor no respondió al cargar la lista; vuelva a intentar.'
@@ -168,6 +179,11 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
           }
         },
       });
+  }
+
+  reintentar(): void {
+    this.limpiarMensajes();
+    this.recargar();
   }
 
   descripcion(cuenta: CuentaBancaria): string {
@@ -191,12 +207,15 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
     this.procesando.set(true);
     this.service
       .obtener(fila.bancariaId)
-      .pipe(timeout(LIMITE_MS))
+      .pipe(timeout(LIMITE_MS), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (cuenta) => {
           this.procesando.set(false);
           this.editando.set(cuenta);
-          this.cargarFormulario(cuenta, fila.cuenta?.nombre ?? null);
+          // El nombre viene de la lista: solo vale si la cuenta contable no cambió desde entonces.
+          const nombre =
+            fila.numeroCuenta === cuenta.numeroCuenta ? (fila.cuenta?.nombre ?? null) : null;
+          this.cargarFormulario(cuenta, nombre);
           this.modalAbierto.set(true);
         },
         error: (err: unknown) => {
@@ -290,38 +309,38 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
     peticion: ReturnType<BancariaService['crear']>,
     original: CuentaBancaria | null,
   ): void {
-    this.guardando.set(true);
-    peticion.pipe(timeout(LIMITE_MS)).subscribe({
+    this.marcarGuardando(true);
+    peticion.pipe(timeout(LIMITE_MS), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (guardada) => {
-        this.guardando.set(false);
+        this.marcarGuardando(false);
         const id = guardada?.bancariaId ?? original?.bancariaId;
         this.cerrarModal();
         this.exito(original ? `Cuenta N.º ${id} modificada.` : `Cuenta N.º ${id} creada.`);
         this.recargar();
       },
       error: (err: unknown) => {
-        this.guardando.set(false);
+        this.marcarGuardando(false);
         this.errorAlGuardar(err, original);
       },
     });
   }
 
   private errorAlGuardar(err: unknown, original: CuentaBancaria | null): void {
+    // Alta sin respuesta clara: el core pudo grabar igual. Se cierra el modal para que no se repita
+    // el POST y se recarga la lista para que el usuario vea si la cuenta quedó.
+    const status = err instanceof HttpErrorResponse ? err.status : null;
+    if (!original && (err instanceof TimeoutError || STATUS_INCIERTOS.includes(status ?? -1))) {
+      this.cerrarModal();
+      this.errorMessage.set(SIN_CONFIRMAR_ALTA);
+      this.recargar();
+      return;
+    }
     if (err instanceof TimeoutError) {
-      if (original) {
-        // El PUT pudo aplicarse igual cuando el servidor respondió tarde.
-        this.avisar(
-          'warn',
-          'No se pudo confirmar si los cambios quedaron guardados. Cierre y vuelva a abrir la cuenta para ver los datos actuales.',
-        );
-      } else {
-        // El alta no tiene id propio: reintentar sin mirar la lista podría duplicar la cuenta.
-        this.avisar(
-          'warn',
-          'No se pudo confirmar si la cuenta quedó guardada. Revise la lista antes de volver a intentar.',
-        );
-        this.recargar();
-      }
+      // El PUT pudo aplicarse igual cuando el servidor respondió tarde.
+      this.avisar(
+        'warn',
+        'No se pudo confirmar si los cambios quedaron guardados. Cierre y vuelva a abrir la cuenta para ver los datos actuales.',
+      );
       return;
     }
     if (this.esProhibido(err)) return;
@@ -341,13 +360,13 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
 
   /** 409 `CAMBIO_CONCURRENTE`: otra persona guardó antes; se cargan los datos actuales. */
   private releer(original: CuentaBancaria): void {
-    this.guardando.set(true);
+    this.marcarGuardando(true);
     this.service
       .obtener(original.bancariaId)
-      .pipe(timeout(LIMITE_MS))
+      .pipe(timeout(LIMITE_MS), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (actual) => {
-          this.guardando.set(false);
+          this.marcarGuardando(false);
           const nombre =
             actual.numeroCuenta === this.cuentaElegida()?.numeroCuenta
               ? (this.cuentaElegida()?.nombre ?? null)
@@ -361,7 +380,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
           this.recargar();
         },
         error: (err: unknown) => {
-          this.guardando.set(false);
+          this.marcarGuardando(false);
           this.avisar(
             'error',
             mensajeDeError(
@@ -371,6 +390,13 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
           );
         },
       });
+  }
+
+  /** Mientras guarda, el formulario no acepta cambios: se perderían al cerrar el modal. */
+  private marcarGuardando(valor: boolean): void {
+    this.guardando.set(valor);
+    if (valor) this.form.disable();
+    else this.form.enable();
   }
 
   private cargarFormulario(cuenta: CuentaBancaria | null, nombreCuenta: string | null): void {
@@ -398,7 +424,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
     this.procesando.set(true);
     this.service
       .uso(cuenta.bancariaId)
-      .pipe(timeout(LIMITE_MS))
+      .pipe(timeout(LIMITE_MS), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (uso) => {
           this.procesando.set(false);
@@ -435,7 +461,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
     this.procesando.set(true);
     this.service
       .eliminar(cuenta.bancariaId)
-      .pipe(timeout(LIMITE_MS))
+      .pipe(timeout(LIMITE_MS), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.procesando.set(false);
@@ -485,6 +511,7 @@ export class CuentasBancariasComponent implements OnInit, OnDestroy {
 
   private limpiarMensajes(): void {
     this.errorMessage.set('');
+    this.errorDeLista.set(false);
     this.successMessage.set('');
     this.pendiente.set(null);
     this.bloqueada.set(null);

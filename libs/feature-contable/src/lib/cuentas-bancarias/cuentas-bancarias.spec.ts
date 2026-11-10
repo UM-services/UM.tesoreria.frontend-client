@@ -363,4 +363,101 @@ describe('CuentasBancariasComponent', () => {
       'El servidor no respondió al cargar la lista; vuelva a intentar.',
     );
   });
+  function prepararAlta() {
+    componente.nueva();
+    componente.form.patchValue({ banco: 'QA' });
+    componente.onCuentaSelected({ numeroCuenta: 11101, nombre: 'x', cuentaContableId: 1 });
+  }
+
+  // protects=un alta sin respuesta cierra el modal y recarga la lista para que no se repita el POST; fails_when=el modal queda abierto con Guardar activo y un segundo clic duplica la cuenta; no_claim=-
+  it('cierra el modal y recarga si el alta no responde', () => {
+    prepararAlta();
+    vi.useFakeTimers();
+    componente.guardar();
+    const post = http.expectOne(`${URL}/`);
+    vi.advanceTimersByTime(30_000);
+    expect(post.cancelled).toBe(true);
+    expect(componente.modalAbierto()).toBe(false);
+    expect(componente.errorMessage()).toBe(
+      'No se pudo confirmar si la cuenta quedó guardada. Revise la lista antes de volver a intentar.',
+    );
+    http.expectOne(`${URL}/`).flush([FILA_NACION]);
+  });
+
+  // protects=un 502/503/504 o status 0 del gateway en el alta se trata como resultado incierto; fails_when=se muestra como error común y el modal invita a reintentar; no_claim=-
+  it.each([0, 502, 503, 504])('trata el alta con status %i como resultado incierto', (status) => {
+    prepararAlta();
+    componente.guardar();
+    http.expectOne(`${URL}/`).flush({}, { status, statusText: 'Error' });
+    expect(componente.modalAbierto()).toBe(false);
+    expect(componente.errorMessage()).toContain(
+      'No se pudo confirmar si la cuenta quedó guardada.',
+    );
+    http.expectOne(`${URL}/`).flush([]);
+  });
+
+  // protects=mientras guarda, el formulario no acepta cambios que se perderían; fails_when=el usuario escribe durante el guardado y el modal se cierra sin guardarlo; no_claim=-
+  it('bloquea el formulario mientras guarda', () => {
+    abrirEdicion(FILA_NACION, NACION);
+    componente.form.patchValue({ titular: 'Otro' });
+    componente.guardar();
+    fixture.detectChanges();
+    expect(componente.form.disabled).toBe(true);
+    const cambiar = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => (b.textContent ?? '').includes('Cambiar cuenta'));
+    expect(cambiar?.disabled).toBe(true);
+    http.expectOne(`${URL}/7`).flush({}, { status: 400, statusText: 'Bad Request' });
+    expect(componente.form.enabled).toBe(true);
+  });
+
+  // protects=si la lista no carga, el aviso ofrece reintentar; fails_when=la pantalla queda vacía sin forma de recuperarse; no_claim=-
+  it('ofrece reintentar cuando la lista no carga', () => {
+    componente.recargar();
+    http.expectOne(`${URL}/`).flush({}, { status: 502, statusText: 'Bad Gateway' });
+    fixture.detectChanges();
+    const boton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => (b.textContent ?? '').trim() === 'Reintentar');
+    expect(boton).toBeDefined();
+    boton?.click();
+    http.expectOne(`${URL}/`).flush([FILA_NACION]);
+    expect(componente.errorMessage()).toBe('');
+    expect(componente.cuentas()).toHaveLength(1);
+  });
+
+  // protects=un 403 al guardar no agrega aviso propio y libera el botón; fails_when=dos avisos o Guardar queda bloqueado; no_claim=no prueba la franja del shell
+  it('no agrega aviso propio con 403 al guardar', () => {
+    abrirEdicion(FILA_NACION, NACION);
+    componente.form.patchValue({ banco: 'Otro' });
+    componente.guardar();
+    http.expectOne(`${URL}/7`).flush({}, { status: 403, statusText: 'Forbidden' });
+    expect(componente.modalAviso()).toBeNull();
+    expect(componente.guardando()).toBe(false);
+  });
+
+  // protects=una cuenta histórica sin cuenta contable se puede editar sin elegir una; fails_when=se exige la cuenta y la cuenta histórica queda bloqueada; no_claim=-
+  it('permite editar una cuenta histórica sin cuenta contable', () => {
+    const sinCuenta = { ...HISTORICA, numeroCuenta: null };
+    abrirEdicion(sinCuenta);
+    componente.form.patchValue({ banco: 'Banco Viejo SA' });
+    componente.guardar();
+    const req = http.expectOne(`${URL}/9`);
+    expect(req.request.body).toEqual({ banco: 'Banco Viejo SA', updated: '2026-09-01T08:00:00' });
+    req.flush({ ...sinCuenta, banco: 'Banco Viejo SA' });
+    http.expectOne(`${URL}/`).flush([]);
+  });
+
+  // protects=si después de CAMBIO_CONCURRENTE falla la relectura, el modal avisa y libera el botón; fails_when=Guardar queda bloqueado sin aviso; no_claim=-
+  it('avisa si falla la relectura después de CAMBIO_CONCURRENTE', () => {
+    abrirEdicion(FILA_NACION, NACION);
+    componente.form.patchValue({ banco: 'Otro' });
+    componente.guardar();
+    const conflicto = errorCore(409, 'CAMBIO_CONCURRENTE', 'La cuenta cambió.');
+    http.expectOne(`${URL}/7`).flush(conflicto.body, conflicto.opts);
+    http.expectOne(`${URL}/7`).flush({}, { status: 500, statusText: 'Error' });
+    expect(componente.guardando()).toBe(false);
+    expect(componente.modalAviso()?.tipo).toBe('error');
+    expect(componente.modalAbierto()).toBe(true);
+  });
 });

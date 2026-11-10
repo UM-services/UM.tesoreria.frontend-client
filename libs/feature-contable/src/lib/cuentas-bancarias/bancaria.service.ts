@@ -64,7 +64,7 @@ export class BancariaService {
     return this.http.post<CuentaBancaria>(`${this.url}/`, datos);
   }
 
-  /** PUT por presencia de campos: un campo ausente se conserva y `null` lo vacía. */
+  /** PUT por presencia de campos: el core conserva cada campo ausente. La pantalla nunca manda `null`. */
   modificar(bancariaId: number, cambios: CuentaBancariaCambios): Observable<CuentaBancaria> {
     return this.http.put<CuentaBancaria>(`${this.url}/${bancariaId}`, cambios);
   }
