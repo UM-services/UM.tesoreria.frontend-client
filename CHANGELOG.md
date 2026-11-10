@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.48.0] - 2026-11-10
+
+### Added
+
+- feat(contable): pantalla **Cuentas bancarias** (#98) en la app `contable`, ruta `/cuentas-bancarias` e ítem «Cuentas bancarias» en el menú. Usa `/bancaria` del core por el gateway: necesita el alias `/api/tesoreria/core/bancaria` (UM.tesoreria.core-service#515). No confundir con la tabla `cuentasBancarias`.
+  - Lista con búsqueda local por banco, número, titular, CBU, CUIT (con o sin guiones) o cuenta contable.
+  - Alta con banco, número, CBU, titular, CUIT y cuenta contable. La cuenta contable es obligatoria y se elige con `<ui-buscador-cuenta-contable>`.
+  - Edición con `GET /bancaria/{id}` y un `PUT` que manda solo los campos que cambiaron, más `updated` como precondición. Nunca manda `proveedorId`: el core conserva `cub_prv_id`.
+  - Validación inmediata de formato: textos de hasta 64 caracteres, CBU de 22 dígitos y CUIT de 11 dígitos con o sin guiones. En la edición, CUIT y CBU se validan solo si cambian: un valor histórico inválido no bloquea la edición de otros campos. Los dígitos verificadores y latin1 los controla el core.
+  - Errores del core en el modal (`mensajeDeError`). Con `409 CAMBIO_CONCURRENTE`, la pantalla relee la cuenta y avisa. Con `404`, cierra el modal, avisa y recarga la lista. Con `403`, la pantalla no agrega aviso propio (lo muestra la franja del shell).
+  - Baja: antes de confirmar, la pantalla consulta `GET /bancaria/{id}/uso`. Una cuenta libre pide confirmación. Una cuenta con valores o movimientos de libro banco no se puede borrar y la pantalla explica los conteos. Un `409 EN_USO` en el `DELETE` muestra el mensaje del core.
+  - Límite de 30 s en cada pedido. Si el alta no responde, o el gateway responde `502`, `503`, `504` o nada, la pantalla cierra el modal, avisa que no se pudo confirmar si la cuenta quedó guardada y recarga la lista: así un segundo clic no duplica la cuenta. Si la edición no responde, avisa que no se pudo confirmar si los cambios quedaron guardados (el core puede aplicarlos tarde). Si la edición o la baja terminan con `502`, `503`, `504` o sin respuesta, la pantalla también avisa que no se pudo confirmar el resultado; la baja recarga la lista. Si la recarga también falla, el aviso lo dice y ofrece «Reintentar»; una recarga posterior que funciona quita esa parte del aviso. Después de una edición incierta, la lista se recarga y un `409` siguiente avisa que la cuenta cambió «quizás por su guardado anterior», sin culpar a otra persona.
+  - Mientras guarda, el formulario y el botón de la cuenta contable quedan bloqueados. Escape cierra el modal también con el foco en un campo. Con el modal abierto, los botones de la lista no hacen nada. Un clic en el fondo cierra el modal solo si empieza y termina en el fondo: seleccionar texto con el mouse no lo cierra.
+  - Si la lista no carga, el aviso ofrece «Reintentar» y la tabla dice «La lista no está disponible.» en lugar de «No hay cuentas bancarias cargadas.».
+  - Sin permiso nuevo: la ruta usa `authGuard` y `usuarioInternoGuard`, como Ejercicios.
+- feat: nueva lib `@tesoreria/feature-contable` (`type:feature`, `scope:contable`) con `CUENTAS_BANCARIAS_ROUTES`, montada con `loadChildren`. La pantalla queda en un chunk lazy propio.
+- test: `libs/feature-contable/src/lib/cuentas-bancarias/cuentas-bancarias.spec.ts` (48 casos): alta (también con `502`/`503`/`504`/sin respuesta), `PUT` parcial sin `proveedorId`, CUIT y CBU históricos, cuenta histórica sin cuenta contable, formulario bloqueado al guardar, «Reintentar», `CUENTA_REQUERIDA`, `CUIT_INVALIDO`, `CBU_INVALIDO`, `CAMBIO_CONCURRENTE`, `404`, baja libre y bloqueada, `EN_USO`, `403` y límites de 30 s.
+- docs: `README.md`, `docs/architecture.md` y `AGENTS.md` registran `feature-contable`. `package.json` y `README.md` pasan a **0.48.0**.
+
+### Requisitos
+
+- Core con el alias `/api/tesoreria/core/bancaria` en `BancariaController` (UM.tesoreria.core-service#515). Sin el alias, el gateway responde `404` y la pantalla no carga.
+- Tabla `gestion_escritura_historial` (UM.tesoreria.core-service#404) aplicada en el ambiente. Sin la tabla, la lista carga pero el alta, la edición y la baja fallan (el core revierte la escritura). Hoy solo existe en dev.
+
 ## [0.47.0] - 2026-11-09
 
 ### Changed

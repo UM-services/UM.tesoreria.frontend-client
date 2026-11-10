@@ -15,5 +15,6 @@ export class AppComponent {
     { label: 'Inicio', path: '/' },
     { label: 'Plan de cuentas', path: '/plan-cuentas' },
     { label: 'Ejercicios', path: '/ejercicios' },
+    { label: 'Cuentas bancarias', path: '/cuentas-bancarias' },
   ];
 }
