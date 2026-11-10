@@ -62,10 +62,37 @@ describe('GastosComponent', () => {
 
   const conflicto = { detail: 'La operación sobre el artículo choca con otro dato.' };
 
-  it('un 403 al cargar la lista muestra que no tiene permiso', () => {
+  it('un 403 al cargar la lista no muestra aviso propio (lo muestra la franja del shell)', () => {
     component.loadGastos(0);
     http.expectOne(`${base}/tipo/gasto/page`).flush({}, { status: 403, statusText: 'Forbidden' });
-    expect(component.errorMessage).toBe('No tiene permiso para ver los gastos.');
+    expect(component.errorMessage).toBe('');
+    expect(component.gastos).toEqual([]);
+  });
+
+  it('otro error al cargar la lista avisa error de conexión', () => {
+    component.loadGastos(0);
+    http.expectOne(`${base}/tipo/gasto/page`).flush({}, { status: 500, statusText: 'Error' });
+    expect(component.errorMessage).toBe('Error de conexión con el servidor.');
+  });
+
+  it('una búsqueda cancela la página que todavía no llegó', () => {
+    component.loadGastos(0);
+    const pagina = http.expectOne(`${base}/tipo/gasto/page`);
+    component.buscarGastos('Telefono');
+    expect(pagina.cancelled).toBe(true);
+    http
+      .expectOne(`${base}/search`)
+      .flush([{ ...gastoGuardado, articuloId: 22, nombre: 'Telefono' }]);
+    expect(component.gastos.map((g) => g.articuloId)).toEqual([22]);
+  });
+
+  it('cargar la página cancela la búsqueda que todavía no llegó', () => {
+    component.buscarGastos('Telefono');
+    const busqueda = http.expectOne(`${base}/search`);
+    component.loadGastos(0);
+    expect(busqueda.cancelled).toBe(true);
+    http.expectOne(`${base}/tipo/gasto/page`).flush({ ...paginaVacia, data: [gastoGuardado] });
+    expect(component.gastos.map((g) => g.articuloId)).toEqual([48]);
   });
 
   it('alta sin cuenta: manda null, tipo gasto y habilitado 1', () => {
