@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { BuscadorPersonaComponent } from '@tesoreria/ui-layout';
+import { BuscadorPersonaComponent, InputFechaComponent } from '@tesoreria/ui-layout';
 import { forkJoin } from 'rxjs';
 import { ChequeraConsultaService } from '../data-access/chequera-consulta.service';
 import {
@@ -13,7 +13,7 @@ import {
 @Component({
   selector: 'app-baja-chequera',
   standalone: true,
-  imports: [RouterModule, BuscadorPersonaComponent],
+  imports: [RouterModule, BuscadorPersonaComponent, InputFechaComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './baja-chequera.html',
 })

@@ -122,7 +122,9 @@ describe('UiShellComponent', () => {
     const sidebar = fixture.nativeElement.querySelector('aside') as HTMLElement;
 
     const enlaces = () =>
-      Array.from(sidebar.querySelectorAll<HTMLAnchorElement>('nav a')).map((a) => a.textContent?.trim());
+      Array.from(sidebar.querySelectorAll<HTMLAnchorElement>('nav a')).map((a) =>
+        a.textContent?.trim(),
+      );
     expect(enlaces()).not.toContain('Consultas');
     const boton = Array.from(sidebar.querySelectorAll<HTMLButtonElement>('nav button')).find((b) =>
       /Consultas/.test(b.textContent ?? ''),

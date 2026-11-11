@@ -164,42 +164,42 @@ function persistExpandedGroups(groups: ReadonlySet<string>): void {
                       </svg>
                     </button>
                   } @else {
-                  <div class="flex items-center">
-                    <a
-                      [routerLink]="item.path"
-                      routerLinkActive="bg-um-sidebar-active text-white"
-                      [routerLinkActiveOptions]="{ exact: item.path === '/' }"
-                      class="min-w-0 flex-1 rounded px-3 py-3 text-sm font-semibold text-um-sidebar-text hover:bg-um-sidebar-active focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                      >{{ item.label }}</a
-                    >
-                    <button
-                      type="button"
-                      (click)="toggleGroup(item.path)"
-                      [attr.aria-expanded]="isGroupExpanded(item.path)"
-                      [attr.aria-controls]="groupPanelId('desktop', item.path)"
-                      [attr.aria-label]="
-                        (isGroupExpanded(item.path) ? 'Contraer ' : 'Expandir ') + item.label
-                      "
-                      class="rounded p-2 text-um-sidebar-muted hover:bg-um-sidebar-active hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 transition-transform"
-                        [class.rotate-180]="isGroupExpanded(item.path)"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
+                    <div class="flex items-center">
+                      <a
+                        [routerLink]="item.path"
+                        routerLinkActive="bg-um-sidebar-active text-white"
+                        [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+                        class="min-w-0 flex-1 rounded px-3 py-3 text-sm font-semibold text-um-sidebar-text hover:bg-um-sidebar-active focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        >{{ item.label }}</a
                       >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-                  </div>
+                      <button
+                        type="button"
+                        (click)="toggleGroup(item.path)"
+                        [attr.aria-expanded]="isGroupExpanded(item.path)"
+                        [attr.aria-controls]="groupPanelId('desktop', item.path)"
+                        [attr.aria-label]="
+                          (isGroupExpanded(item.path) ? 'Contraer ' : 'Expandir ') + item.label
+                        "
+                        class="rounded p-2 text-um-sidebar-muted hover:bg-um-sidebar-active hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4 transition-transform"
+                          [class.rotate-180]="isGroupExpanded(item.path)"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   }
                   @if (isGroupExpanded(item.path)) {
                     <div
@@ -309,15 +309,15 @@ function persistExpandedGroups(groups: ReadonlySet<string>): void {
                       <span aria-hidden="true">{{ isGroupExpanded(item.path) ? '▴' : '▾' }}</span>
                     </button>
                   } @else {
-                  <a
-                    [routerLink]="item.path"
-                    routerLinkActive="bg-um-selected text-um-primary"
-                    [routerLinkActiveOptions]="{ exact: item.path === '/' }"
-                    class="rounded px-3 py-2 text-sm font-semibold"
-                    >{{ item.label }}</a
-                  >
+                    <a
+                      [routerLink]="item.path"
+                      routerLinkActive="bg-um-selected text-um-primary"
+                      [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+                      class="rounded px-3 py-2 text-sm font-semibold"
+                      >{{ item.label }}</a
+                    >
                   }
-                  @if (item.children?.length && !(item.soloGrupo && item.children?.length)) {
+                  @if (item.children?.length && !item.soloGrupo) {
                     <button
                       type="button"
                       (click)="toggleGroup(item.path)"

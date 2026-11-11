@@ -1,15 +1,40 @@
 # Changelog
 
-## [0.44.0] - 2026-11-10
- 
+## [0.50.0] - 2026-11-11
+
 ### Added
- 
+
 - feat(contable): nuevo grupo desplegable **Consultas** en el menú (solo encabezado, sin pantalla propia) con la consulta **Mayor** como hijo (`/consultas/mayor`, `MayorComponent` en `apps/contable/src/app/consultas/mayor`), con `authGuard` y `usuarioInternoGuard`. Sin clave de permiso nueva.
 - feat(contable): el Mayor se consulta por **una cuenta**, un **rango de cuentas** o **cuentas elegidas**, entre dos fechas que pueden cruzar ejercicios (`POST /balance/mayor/consulta`). Muestra, por cuenta, saldo inicial, movimientos (con ejercicio por línea), totales y saldo final tal como los devuelve el core, sin recalcular. Cuando el core rechaza el pedido (`409`/`404`/`400`) muestra su `message`.
 - feat(contable): **Exportar a Excel** con el mismo pedido contra report (`POST /report/contable/mayor/excel`, archivo `mayor.xlsx`); si report responde con error, se muestra su `message`.
 - feat(contable): `MayorService` (consulta y Excel).
 - test(contable): `mayor.spec.ts` con casos con ficha.
+
 > Depende de los cambios de core (`/balance/mayor/consulta`) y report (`/contable/mayor/excel`) y de `soloGrupo` en `ShellMenuItem` (`@tesoreria/ui-layout`).
+
+## [0.49.0] - 2026-11-11
+
+### Added
+
+- feat(pagos): nueva lib `@tesoreria/feature-pagos` (`type:feature`, `scope:pagos`) con `PAGOS_ROUTES` y la pantalla **Comprobantes de proveedor** en `/comprobantes` de la app `pagos`, montada con `loadChildren` y protegida por `authGuard`, `usuarioInternoGuard` y `permisoGuard('pagos.comprobantes.consultar')`. El ítem «Comprobantes» del menú declara el mismo permiso.
+  - Filtro por proveedor con `<ui-buscador-proveedor>` y rango de fechas (inicial: hoy − 180 días a hoy), con un botón «›» que copia «Desde» en «Hasta». Sin filtro de sede (`geograficaId = 0`), igual que el formulario legacy que forzaba ese valor y mostraba todas las sedes.
+  - Listado con Total, A Cta, Saldo y estado por fila (**Anulado**, **Con costos** o **Anulable**), más un detalle del comprobante: pagos aplicados cuando es factura y valores (concepto, número, emisión, importe, titular y cuenta) cuando es orden de pago.
+  - Anulación con modal de confirmación y aviso explícito de que elimina el comprobante y sus asientos contables. El botón exige `pagos.comprobantes.anular` (`*uiPermiso`) y `puedeAnular`, que respeta `anulacion.habilitada` del backend y, cuando el comprobante es orden de pago (`requierePrivilegioOp`), exige además `pagos.comprobantes.anular_op`.
+  - Los motivos que devuelve el backend se traducen con `textoMotivo` (`YA_ANULADA`, `COSTOS_ASIGNADOS`, `REQUIERE_PRIVILEGIO_OP`); un código sin texto se muestra crudo para no ocultar el motivo. Un `409` mantiene el modal abierto con la lista de motivos; cualquier otro error cierra el modal y muestra `mensajeDeError`.
+  - `ComprobantesService` consume `GET /proveedorMovimiento/proveedor/{proveedorId}/{desde}/{hasta}/{geograficaId}`, `GET /proveedorMovimiento/{id}/detalle` y `DELETE /compra/comprobante/{id}`. Las fechas se normalizan al día completo en UTC (`T00:00:00Z` / `T23:59:59Z`).
+- test: `libs/feature-pagos/src/lib/data-access/comprobantes.service.spec.ts` (URLs, métodos `GET`/`DELETE` y normalización de fechas a día completo en UTC).
+- feat(ui-layout): nuevo `ui-input-fecha` (`InputFechaComponent`) que muestra **siempre** `dd/mm/aaaa` sin depender del locale del navegador ni del sistema. Es `ControlValueAccessor` y `Validator`, así que el formulario sigue recibiendo ISO `yyyy-MM-dd` (o `''`) y una fecha inexistente produce el error `fechaInvalida`. Formatea mientras se escribe (`31122026` → `31/12/2026`) conservando la posición del cursor, mantiene el calendario nativo oculto (`showPicker` con fallback a click) y admite binding directo con `[valor]`/`(valorChange)` y `[disabled]`.
+- test: specs de `fecha-input.util` y de `InputFechaComponent` (formato al escribir, dígitos sin barras, fecha inexistente, vacío sin error, selección en calendario, binding directo, disabled y render del texto formateado).
+
+### Changed
+
+- refactor(ui): las fechas de **Facturas Pendientes** (app `pagos`), de **Cobranzas** (baja de chequera, generar, importar y pago manual) y de **Pedidos de compra** (consulta, alta y recepción) usan `ui-input-fecha` en lugar de `<input type="date">`. El valor de los formularios no cambia: sigue siendo ISO.
+- docs: `README.md`, `docs/architecture.md`, `AGENTS.md` y `libs/feature-pagos/README.md` registran `feature-pagos` y `ui-input-fecha`. `package.json` y `README.md` pasan a **0.49.0**.
+
+### Requisitos
+
+- Core con los endpoints `GET /proveedorMovimiento/proveedor/{proveedorId}/{desde}/{hasta}/{geograficaId}`, `GET /proveedorMovimiento/{id}/detalle` y `DELETE /compra/comprobante/{id}`.
+- Claves `pagos.comprobantes.consultar`, `pagos.comprobantes.anular` y `pagos.comprobantes.anular_op` registradas en `tesoreria-core/src/main/resources/permisos.yaml`. Sin `pagos.comprobantes.consultar`, el ítem del menú y la ruta quedan ocultos; sin `pagos.comprobantes.anular`, el botón de anulación no se muestra (fail-closed).
 
 ## [0.48.0] - 2026-11-10
 
