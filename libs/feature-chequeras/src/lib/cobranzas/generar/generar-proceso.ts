@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { InputFechaComponent } from '@tesoreria/ui-layout';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { GeneracionService } from '../data-access/generacion.service';
@@ -14,7 +15,7 @@ import { descargarBlob } from '../shared/descarga-archivo';
 @Component({
   selector: 'app-generar-proceso',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, InputFechaComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './generar-proceso.html',
 })

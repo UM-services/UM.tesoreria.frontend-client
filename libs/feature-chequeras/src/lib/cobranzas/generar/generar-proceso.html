@@ -13,21 +13,19 @@
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <label class="block">
           <span class="um-label">Desde</span>
-          <input
-            type="date"
-            class="um-input mt-1"
-            [value]="desde()"
-            (input)="desde.set($any($event.target).value)"
-          />
+          <ui-input-fecha
+            class="mt-1 block"
+            [valor]="desde()"
+            (valorChange)="desde.set($event)"
+          ></ui-input-fecha>
         </label>
         <label class="block">
           <span class="um-label">Hasta</span>
-          <input
-            type="date"
-            class="um-input mt-1"
-            [value]="hasta()"
-            (input)="hasta.set($any($event.target).value)"
-          />
+          <ui-input-fecha
+            class="mt-1 block"
+            [valor]="hasta()"
+            (valorChange)="hasta.set($event)"
+          ></ui-input-fecha>
         </label>
 
         @if (esPmc()) {
@@ -112,12 +110,11 @@
           <div class="mt-3 grid gap-3 md:grid-cols-3">
             <label class="block">
               <span class="um-label">Fecha de envío a anular</span>
-              <input
-                type="date"
-                class="um-input mt-1"
-                [value]="fechaEnvio()"
-                (input)="fechaEnvio.set($any($event.target).value)"
-              />
+              <ui-input-fecha
+                class="mt-1 block"
+                [valor]="fechaEnvio()"
+                (valorChange)="fechaEnvio.set($event)"
+              ></ui-input-fecha>
               <button type="button" class="um-link-btn mt-2" [disabled]="cargando()" (click)="anular()">
                 Anular envío
               </button>
@@ -126,12 +123,11 @@
             @if (esDirecto()) {
               <label class="block">
                 <span class="um-label">Nuevo vencimiento</span>
-                <input
-                  type="date"
-                  class="um-input mt-1"
-                  [value]="fechaVencimiento()"
-                  (input)="fechaVencimiento.set($any($event.target).value)"
-                />
+                <ui-input-fecha
+                  class="mt-1 block"
+                  [valor]="fechaVencimiento()"
+                  (valorChange)="fechaVencimiento.set($event)"
+                ></ui-input-fecha>
                 <button
                   type="button"
                   class="um-link-btn mt-2"

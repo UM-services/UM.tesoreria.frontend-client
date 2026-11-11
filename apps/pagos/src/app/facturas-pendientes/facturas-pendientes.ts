@@ -5,11 +5,12 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { InputFechaComponent } from '@tesoreria/ui-layout';
 
 @Component({
   selector: 'app-facturas-pendientes',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, InputFechaComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './facturas-pendientes.html',
 })

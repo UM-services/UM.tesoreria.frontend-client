@@ -19,7 +19,7 @@
         subgraph "Libraries"
             SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>AccesoDenegadoService<br/>SolicitudAccesoService<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent y submenús<br/>Buscadores compartidos<br/>TextoEnriquecidoComponent<br/>InactividadComponent<br/>SolicitarAccesoModalComponent<br/>PermisoDirective y PermisoAlgunoDirective"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent y submenús<br/>Buscadores compartidos<br/>InputFechaComponent<br/>TextoEnriquecidoComponent<br/>InactividadComponent<br/>SolicitarAccesoModalComponent<br/>PermisoDirective y PermisoAlgunoDirective"]
             UIRichText["@tesoreria/ui-rich-text<br/>EditorEnriquecidoComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
@@ -30,6 +30,7 @@
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
             FeatureContable["@tesoreria/feature-contable<br/>CUENTAS_BANCARIAS_ROUTES<br/>CuentasBancariasComponent<br/>BancariaService"]
             FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes, consultaRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera<br/>ConsultasHome, DetalleCuotas"]
+            FeaturePagos["@tesoreria/feature-pagos<br/>PAGOS_ROUTES<br/>ComprobantesComponent<br/>ComprobantesService"]
         end
     end
 
@@ -45,6 +46,9 @@
     Pagos --> UILayout
     Pagos --> FeatureProveedores
     Pagos --> FeatureGastos
+    Pagos -->|"loadChildren"| FeaturePagos
+    FeaturePagos --> SharedAPI
+    FeaturePagos --> UILayout
 
     Chequeras --> SharedAPI
     Chequeras --> UIAuth
@@ -314,10 +318,15 @@ asignación efectiva se hace en la pantalla de Usuarios.
     AppRoutes --> Facturas["Facturas Pendientes Component"]
     AppRoutes --> Proveedores["Proveedores Component<br/>@tesoreria/feature-proveedores"]
     AppRoutes --> Gastos["Gastos Component<br/>@tesoreria/feature-gastos"]
+    AppRoutes --> Comprobantes["PAGOS_ROUTES<br/>@tesoreria/feature-pagos<br/>permisoGuard"]
 
     Facturas --> BuscadorCuentaContable["BuscadorCuentaContable Component<br/>@tesoreria/ui-layout"]
     Proveedores --> BuscadorProveedor["BuscadorProveedor Component<br/>@tesoreria/ui-layout"]
     Gastos --> BuscadorCuentaContable
+    Comprobantes --> ComprobantesComp["Comprobantes Component<br/>pagos.comprobantes.consultar"]
+    ComprobantesComp --> BuscadorProveedor
+    ComprobantesComp --> InputFecha["InputFecha Component<br/>@tesoreria/ui-layout"]
+    ComprobantesComp --> MovimientoAPI["core: /proveedorMovimiento<br/>DELETE /compra/comprobante/{id}"]
 ```
 
 ## Estructura de Módulos - Guaraní

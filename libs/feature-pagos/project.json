@@ -1,0 +1,20 @@
+{
+  "name": "feature-pagos",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/feature-pagos/src",
+  "prefix": "app",
+  "projectType": "library",
+  "tags": ["type:feature", "scope:pagos"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/feature-pagos"
+      }
+    }
+  }
+}
