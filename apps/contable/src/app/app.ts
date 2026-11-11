@@ -15,5 +15,12 @@ export class AppComponent {
     { label: 'Inicio', path: '/' },
     { label: 'Plan de cuentas', path: '/plan-cuentas' },
     { label: 'Ejercicios', path: '/ejercicios' },
+    { label: 'Cuentas bancarias', path: '/cuentas-bancarias' },
+    {
+      label: 'Consultas',
+      path: '/consultas',
+      soloGrupo: true,
+      children: [{ label: 'Mayor', path: '/consultas/mayor' }],
+    },
   ];
 }

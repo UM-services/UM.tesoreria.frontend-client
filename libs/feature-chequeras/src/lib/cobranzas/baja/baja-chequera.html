@@ -82,13 +82,12 @@
       <div class="mt-4 grid gap-4 md:grid-cols-2">
         <label class="block">
           <span class="um-label">Fecha</span>
-          <input
-            type="date"
-            class="um-input mt-1"
-            [value]="fechaBaja()"
+          <ui-input-fecha
+            class="mt-1 block"
+            [valor]="fechaBaja()"
             [disabled]="item.baja !== null"
-            (input)="fechaBaja.set($any($event.target).value)"
-          />
+            (valorChange)="fechaBaja.set($event)"
+          ></ui-input-fecha>
         </label>
         <label class="block">
           <span class="um-label">Observaciones</span>

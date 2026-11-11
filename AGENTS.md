@@ -2,10 +2,10 @@
 
 ## Workspace
 
-- This is an Nx 22.7.1 monorepo using Angular 21, TypeScript 5.9, Vitest 4, and npm 11.6.2; use Node.js 20+.
+- This is an Nx 23.3.0 monorepo using Angular 22.1.8, TypeScript 6.0.3, Vitest 4.0.8, and npm 11.6.2; use Node.js 20+.
 - Install from the lockfile with `npm ci`; do not use another package manager.
 - Applications live under `apps/`: `compras`, `pagos`, `chequeras`, `administrador`, `contable`, `contratados`, `guarani`, and `externo-consulta`. Apps are thin shells: root component with `<ui-shell>`, `app.config.ts`, and `app.routes.ts` only. Feature views never live inside `apps/<app>/src/app/`.
-- Shared libraries live under `libs/`: `shared-api`, `ui-auth`, `ui-layout`, `feature-proveedores`, `feature-gastos`, `feature-pedido-compra`, `feature-guarani`, `feature-externo-consulta`, and `feature-chequeras` (módulo Chequeras; hoy Cobranzas → `cobranzaRoutes`, `/cobranzas/**`). Each app's views belong in its feature libraries, which export their routes (`lib.routes.ts`, e.g. `GUARANI_ROUTES`) and are mounted with `loadChildren`/`loadComponent`.
+- Shared libraries live under `libs/`: `shared-api`, `ui-auth`, `ui-layout`, `feature-proveedores`, `feature-gastos`, `feature-pedido-compra`, `feature-guarani`, `feature-externo-consulta`, `feature-chequeras` (módulo Chequeras; hoy Cobranzas → `cobranzaRoutes`, `/cobranzas/**`), `feature-contable` (módulo Contable; hoy Cuentas bancarias → `CUENTAS_BANCARIAS_ROUTES`, `/cuentas-bancarias`), and `feature-pagos` (módulo Pagos; hoy Comprobantes de proveedor → `PAGOS_ROUTES`, `/comprobantes`). Each app's views belong in its feature libraries, which export their routes (`lib.routes.ts`, e.g. `GUARANI_ROUTES`) and are mounted with `loadChildren`/`loadComponent`.
 - Libraries must not import `apps/**/environments/*`; anything configuration-driven (API bases, debug flags) comes through injection tokens (`API_URL`, `EXTERNO_API_BASE`, `EXTERNO_ENABLE_DEBUG` in `@tesoreria/shared-api`) provided by the host app's `app.config.ts`. Because feature libs are lazy-loaded, `@nx/enforce-module-boundaries` forbids statically importing them anywhere else than route loaders.
 - Use the configured `@tesoreria/*` path aliases for shared libraries and import public symbols through each library's `src/index.ts`. Nx ESLint enforces module boundaries using project tags (`type:*` and `scope:*`) and dependency direction rules.
 - `apps/compras-e2e` and `apps/chequeras-e2e` are Playwright projects; their generated `e2e` targets start the corresponding app server.
@@ -53,6 +53,13 @@
 - **Storage format is HTML** in the existing text column; it is sanitized with DOMPurify (the render component already does it). Legacy plain text keeps working (line breaks preserved).
 - `<ui-editor-enriquecido>` exposes `[(html)]`. It lazily loads `quill`/`ngx-quill` (~205 kB): import it **only from lazy feature libraries**, never from an eagerly-loaded app shell, so it stays out of the initial bundle. Its theme CSS (`node_modules/quill/dist/quill.snow.css`) must be added to the consuming app's global `styles`.
 - **Do not** store HTML in short, structured, or backend-constrained fields (e.g., rejection/discard reasons stored as `varchar(500)` and rendered in notifications): those stay as plain inputs.
+
+## Date Inputs (Fechas)
+
+- **Convention:** every editable date field MUST use **`<ui-input-fecha>`** from `@tesoreria/ui-layout` instead of a native `<input type="date">`. The native control renders with the machine/browser locale (an English machine shows `MM/dd/yyyy`) and that cannot be forced with CSS or attributes; `ui-input-fecha` always shows `dd/mm/aaaa`.
+- It is a `ControlValueAccessor` and `Validator`: the form value stays ISO `yyyy-MM-dd` (or `''`), and an impossible date such as `31/02/2026` reports the `fechaInvalida` error while an empty value stays valid for `Validators.required` to decide.
+- Use it with `formControlName`/`[(ngModel)]`, or with `[valor]`/`(valorChange)` for signal bindings; pass `inputId` so `<label for="...">` keeps pointing at the internal input.
+- For **read-only** display of stored dates keep using the `umFecha` pipe.
 
 ## Nomenclature & Legacy VB6 Strict Ban (Limpieza de UI)
 

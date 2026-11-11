@@ -1,5 +1,85 @@
 # Changelog
 
+## [0.50.0] - 2026-11-11
+
+### Added
+
+- feat(contable): nuevo grupo desplegable **Consultas** en el menú (solo encabezado, sin pantalla propia) con la consulta **Mayor** como hijo (`/consultas/mayor`, `MayorComponent` en `apps/contable/src/app/consultas/mayor`), con `authGuard` y `usuarioInternoGuard`. Sin clave de permiso nueva.
+- feat(contable): el Mayor se consulta por **una cuenta**, un **rango de cuentas** o **cuentas elegidas**, entre dos fechas que pueden cruzar ejercicios (`POST /balance/mayor/consulta`). Muestra, por cuenta, saldo inicial, movimientos (con ejercicio por línea), totales y saldo final tal como los devuelve el core, sin recalcular. Cuando el core rechaza el pedido (`409`/`404`/`400`) muestra su `message`.
+- feat(contable): **Exportar a Excel** con el mismo pedido contra report (`POST /report/contable/mayor/excel`, archivo `mayor.xlsx`); si report responde con error, se muestra su `message`.
+- feat(contable): `MayorService` (consulta y Excel).
+- test(contable): `mayor.spec.ts` con casos con ficha.
+
+> Depende de los cambios de core (`/balance/mayor/consulta`) y report (`/contable/mayor/excel`) y de `soloGrupo` en `ShellMenuItem` (`@tesoreria/ui-layout`).
+
+## [0.49.0] - 2026-11-11
+
+### Added
+
+- feat(pagos): nueva lib `@tesoreria/feature-pagos` (`type:feature`, `scope:pagos`) con `PAGOS_ROUTES` y la pantalla **Comprobantes de proveedor** en `/comprobantes` de la app `pagos`, montada con `loadChildren` y protegida por `authGuard`, `usuarioInternoGuard` y `permisoGuard('pagos.comprobantes.consultar')`. El ítem «Comprobantes» del menú declara el mismo permiso.
+  - Filtro por proveedor con `<ui-buscador-proveedor>` y rango de fechas (inicial: hoy − 180 días a hoy), con un botón «›» que copia «Desde» en «Hasta». Sin filtro de sede (`geograficaId = 0`), igual que el formulario legacy que forzaba ese valor y mostraba todas las sedes.
+  - Listado con Total, A Cta, Saldo y estado por fila (**Anulado**, **Con costos** o **Anulable**), más un detalle del comprobante: pagos aplicados cuando es factura y valores (concepto, número, emisión, importe, titular y cuenta) cuando es orden de pago.
+  - Anulación con modal de confirmación y aviso explícito de que elimina el comprobante y sus asientos contables. El botón exige `pagos.comprobantes.anular` (`*uiPermiso`) y `puedeAnular`, que respeta `anulacion.habilitada` del backend y, cuando el comprobante es orden de pago (`requierePrivilegioOp`), exige además `pagos.comprobantes.anular_op`.
+  - Los motivos que devuelve el backend se traducen con `textoMotivo` (`YA_ANULADA`, `COSTOS_ASIGNADOS`, `REQUIERE_PRIVILEGIO_OP`); un código sin texto se muestra crudo para no ocultar el motivo. Un `409` mantiene el modal abierto con la lista de motivos; cualquier otro error cierra el modal y muestra `mensajeDeError`.
+  - `ComprobantesService` consume `GET /proveedorMovimiento/proveedor/{proveedorId}/{desde}/{hasta}/{geograficaId}`, `GET /proveedorMovimiento/{id}/detalle` y `DELETE /compra/comprobante/{id}`. Las fechas se normalizan al día completo en UTC (`T00:00:00Z` / `T23:59:59Z`).
+- test: `libs/feature-pagos/src/lib/data-access/comprobantes.service.spec.ts` (URLs, métodos `GET`/`DELETE` y normalización de fechas a día completo en UTC).
+- feat(ui-layout): nuevo `ui-input-fecha` (`InputFechaComponent`) que muestra **siempre** `dd/mm/aaaa` sin depender del locale del navegador ni del sistema. Es `ControlValueAccessor` y `Validator`, así que el formulario sigue recibiendo ISO `yyyy-MM-dd` (o `''`) y una fecha inexistente produce el error `fechaInvalida`. Formatea mientras se escribe (`31122026` → `31/12/2026`) conservando la posición del cursor, mantiene el calendario nativo oculto (`showPicker` con fallback a click) y admite binding directo con `[valor]`/`(valorChange)` y `[disabled]`.
+- test: specs de `fecha-input.util` y de `InputFechaComponent` (formato al escribir, dígitos sin barras, fecha inexistente, vacío sin error, selección en calendario, binding directo, disabled y render del texto formateado).
+
+### Changed
+
+- refactor(ui): las fechas de **Facturas Pendientes** (app `pagos`), de **Cobranzas** (baja de chequera, generar, importar y pago manual) y de **Pedidos de compra** (consulta, alta y recepción) usan `ui-input-fecha` en lugar de `<input type="date">`. El valor de los formularios no cambia: sigue siendo ISO.
+- docs: `README.md`, `docs/architecture.md`, `AGENTS.md` y `libs/feature-pagos/README.md` registran `feature-pagos` y `ui-input-fecha`. `package.json` y `README.md` pasan a **0.49.0**.
+
+### Requisitos
+
+- Core con los endpoints `GET /proveedorMovimiento/proveedor/{proveedorId}/{desde}/{hasta}/{geograficaId}`, `GET /proveedorMovimiento/{id}/detalle` y `DELETE /compra/comprobante/{id}`.
+- Claves `pagos.comprobantes.consultar`, `pagos.comprobantes.anular` y `pagos.comprobantes.anular_op` registradas en `tesoreria-core/src/main/resources/permisos.yaml`. Sin `pagos.comprobantes.consultar`, el ítem del menú y la ruta quedan ocultos; sin `pagos.comprobantes.anular`, el botón de anulación no se muestra (fail-closed).
+
+## [0.48.0] - 2026-11-10
+
+### Added
+
+- feat(contable): pantalla **Cuentas bancarias** (#98) en la app `contable`, ruta `/cuentas-bancarias` e ítem «Cuentas bancarias» en el menú. Usa `/bancaria` del core por el gateway: necesita el alias `/api/tesoreria/core/bancaria` (UM.tesoreria.core-service#515). No confundir con la tabla `cuentasBancarias`.
+  - Lista con búsqueda local por banco, número, titular, CBU, CUIT (con o sin guiones) o cuenta contable.
+  - Alta con banco, número, CBU, titular, CUIT y cuenta contable. La cuenta contable es obligatoria y se elige con `<ui-buscador-cuenta-contable>`.
+  - Edición con `GET /bancaria/{id}` y un `PUT` que manda solo los campos que cambiaron, más `updated` como precondición. Nunca manda `proveedorId`: el core conserva `cub_prv_id`.
+  - Validación inmediata de formato: textos de hasta 64 caracteres, CBU de 22 dígitos y CUIT de 11 dígitos con o sin guiones. En la edición, CUIT y CBU se validan solo si cambian: un valor histórico inválido no bloquea la edición de otros campos. Los dígitos verificadores y latin1 los controla el core.
+  - Errores del core en el modal (`mensajeDeError`). Con `409 CAMBIO_CONCURRENTE`, la pantalla relee la cuenta y avisa. Con `404`, cierra el modal, avisa y recarga la lista. Con `403`, la pantalla no agrega aviso propio (lo muestra la franja del shell).
+  - Baja: antes de confirmar, la pantalla consulta `GET /bancaria/{id}/uso`. Una cuenta libre pide confirmación. Una cuenta con valores o movimientos de libro banco no se puede borrar y la pantalla explica los conteos. Un `409 EN_USO` en el `DELETE` muestra el mensaje del core.
+  - Límite de 30 s en cada pedido. Si el alta no responde, o el gateway responde `502`, `503`, `504` o nada, la pantalla cierra el modal, avisa que no se pudo confirmar si la cuenta quedó guardada y recarga la lista: así un segundo clic no duplica la cuenta. Si la edición no responde, avisa que no se pudo confirmar si los cambios quedaron guardados (el core puede aplicarlos tarde). Si la edición o la baja terminan con `502`, `503`, `504` o sin respuesta, la pantalla también avisa que no se pudo confirmar el resultado; la baja recarga la lista. Si la recarga también falla, el aviso lo dice y ofrece «Reintentar»; una recarga posterior que funciona quita esa parte del aviso. Después de una edición incierta, la lista se recarga y un `409` siguiente avisa que la cuenta cambió «quizás por su guardado anterior», sin culpar a otra persona.
+  - Mientras guarda, el formulario y el botón de la cuenta contable quedan bloqueados. Escape cierra el modal también con el foco en un campo. Con el modal abierto, los botones de la lista no hacen nada. Un clic en el fondo cierra el modal solo si empieza y termina en el fondo: seleccionar texto con el mouse no lo cierra.
+  - Si la lista no carga, el aviso ofrece «Reintentar» y la tabla dice «La lista no está disponible.» en lugar de «No hay cuentas bancarias cargadas.».
+  - Sin permiso nuevo: la ruta usa `authGuard` y `usuarioInternoGuard`, como Ejercicios.
+- feat: nueva lib `@tesoreria/feature-contable` (`type:feature`, `scope:contable`) con `CUENTAS_BANCARIAS_ROUTES`, montada con `loadChildren`. La pantalla queda en un chunk lazy propio.
+- test: `libs/feature-contable/src/lib/cuentas-bancarias/cuentas-bancarias.spec.ts` (48 casos): alta (también con `502`/`503`/`504`/sin respuesta), `PUT` parcial sin `proveedorId`, CUIT y CBU históricos, cuenta histórica sin cuenta contable, formulario bloqueado al guardar, «Reintentar», `CUENTA_REQUERIDA`, `CUIT_INVALIDO`, `CBU_INVALIDO`, `CAMBIO_CONCURRENTE`, `404`, baja libre y bloqueada, `EN_USO`, `403` y límites de 30 s.
+- docs: `README.md`, `docs/architecture.md` y `AGENTS.md` registran `feature-contable`. `package.json` y `README.md` pasan a **0.48.0**.
+
+### Requisitos
+
+- Core con el alias `/api/tesoreria/core/bancaria` en `BancariaController` (UM.tesoreria.core-service#515). Sin el alias, el gateway responde `404` y la pantalla no carga.
+- Tabla `gestion_escritura_historial` (UM.tesoreria.core-service#404) aplicada en el ambiente. Sin la tabla, la lista carga pero el alta, la edición y la baja fallan (el core revierte la escritura). Hoy solo existe en dev.
+
+## [0.47.0] - 2026-11-09
+
+### Changed
+
+- feat(gastos): la pantalla de **Gastos** (`libs/feature-gastos`, compartida por `compras`, `pagos` y `administrador`) se alinea con `frmGasto` de VB6 y con las reglas de core 8.0.0+ (#405), en el marco de #93. La **cuenta Directa/Puente pasa a ser opcional** (sin cuenta se manda `null`, como en VB6). El **nombre sigue siendo obligatorio** y ahora se rechaza también si sólo tiene espacios («Falta el nombre del gasto.»). El alta crea el gasto con `habilitado: 1` (VB6 lo creaba con `0`; ninguna lectura filtra por ese campo).
+- feat(gastos): si el alta responde `409`, la pantalla lee `GET /articulo/{id}`. Si ese número ya tiene el mismo gasto (nombre, tipo, cuenta y directo), el alta anterior quedó guardada: cierra el modal y avisa «El gasto N.º {id} ya estaba guardado.». Si es otro gasto, pide un número nuevo con `GET /articulo/new`, conserva los datos y avisa para volver a guardar. Si la lectura falla, conserva el número y avisa «No se pudo confirmar si el gasto quedó guardado; vuelva a intentar.», para no duplicar el gasto.
+- feat(gastos): al editar, vaciar la cuenta de un gasto que tenía cuenta no llama a la API y avisa «La cuenta no se puede quitar; elija otra o deje la actual.» (el `PUT` toma `null` como «sin cambios»).
+- feat(gastos): mientras se guarda, el modal no se cierra (fondo, Esc, cruz y Cancelar). El botón dice «Guardando…» o «Comprobando…». Cada pedido del guardado tiene un límite de 30 s: en el alta se conserva el número y se avisa que no se pudo confirmar; en la edición se avisa «El servidor no respondió; vuelva a intentar.».
+- feat(gastos): con el modal abierto, los avisos se muestran dentro del modal, fijos entre el encabezado y el formulario (`role="alert"`): error (`um-alert-error`) y advertencia (`um-alert-warn`) quedan hasta volver a guardar o cerrar; éxito (`um-alert-success`) se borra a los 5 s. Asignar una ubicación a un gasto sin guardar avisa «Guarde el gasto antes de asignarle ubicaciones.».
+- feat(shared-api): nuevo `mensajeDeError(err, generico)` en `@tesoreria/shared-api`. Lee el `detail` de un `ProblemDetail` y, si no viene, el `message`. Gastos lo usa al guardar, asignar y eliminar (un `409` de baja muestra el motivo y no da la baja por exitosa). `feature-proveedores` lo reexporta en lugar de su versión, que sólo leía `message` y por eso mostraba el texto genérico con la fachada `compras`.
+- test: `apps/compras/src/app/gastos/gastos.spec.ts` (alta sin cuenta, nombre vacío, `PUT` parcial, cuenta vaciada, las tres ramas del `409` en alta, aviso dentro del modal, modal bloqueado al guardar, límite de 30 s, baja con `409`, asignación sin guardar y con error), `libs/shared-api/src/lib/http-error.spec.ts`, dos casos de Proveedores con `{ detail }`, el `403` y el error de conexión en la lista de Gastos, y la cancelación entre página y búsqueda.
+- feat(gastos): con un `403` al cargar la lista, la pantalla ya no muestra «Error de conexión con el servidor.». El aviso lo da sólo la franja del shell (`AccesoDenegadoService`), sin duplicarlo.
+- fix(gastos): los avisos de la página se dibujan en el momento (la app es zoneless); antes el aviso de éxito podía borrarse antes de verse.
+- fix(gastos): cargar la lista o buscar cancela el pedido de lista anterior. Antes, si la página 0 (unos 5 s) llegaba después de una búsqueda (unos 3 s), reemplazaba los resultados de la búsqueda.
+- docs: `TODOS.md` registra pasar los otros lectores de `detail` a `mensajeDeError`. `package.json` y `README.md` pasan a **0.47.0**.
+
+### Fixed
+
+- fix(gastos): **editar un gasto ya no borra sus otros datos**. El `PUT /articulo/{id}` mandaba el artículo completo con `descripcion: ''`, `unidad: ''`, `precio: 0`, `habilitado: 0`, etc.; desde core 8.0.0 el `PUT` aplica cualquier valor explícito, así que esos valores pisaban lo guardado. Ahora manda sólo `nombre`, `numeroCuenta`, `directo` y `tipo`.
+
 ## [0.46.0] - 2026-11-09
 
 ### Added

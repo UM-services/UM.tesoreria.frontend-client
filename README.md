@@ -21,7 +21,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 ### Aplicaciones
 
 - **compras** - Gestión de compras y proveedores (puerto 4201)
-- **pagos** - Gestión de facturas pendientes (puerto 4202)
+- **pagos** - Gestión de facturas pendientes y comprobantes de proveedor (puerto 4202)
 - **chequeras** - Gestión de chequeras, cobranzas y consultas (puerto 4203)
 - **administrador** - Gestión administrativa (puerto 4204)
 - **contable** - Módulo contable (puerto 4205)
@@ -33,7 +33,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard`, `permisoAlgunoGuard`, `AccesoDenegadoService`, `SolicitudAccesoService` y `INACTIVIDAD_CONFIG`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso`, el pipe `umFecha` (fechas `dd/MM/yyyy` con hora opcional) y las directivas `*uiPermiso` y `*uiPermisoAlguno`
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el input de fecha `ui-input-fecha` (siempre `dd/mm/aaaa`, con calendario y valor ISO en el formulario), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso`, el pipe `umFecha` (fechas `dd/MM/yyyy` con hora opcional) y las directivas `*uiPermiso` y `*uiPermisoAlguno`
 - `@tesoreria/ui-rich-text` - Editor de texto enriquecido (WYSIWYG) compartido (`ui-editor-enriquecido`, Quill 2 vía `ngx-quill@31`); vive en su propia lib para mantener Quill en chunks lazy
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
@@ -42,6 +42,8 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` (inventario de sólo lectura y sincronización con `permisos.yaml`), `/simulador` y `/solicitudes` (app administrador)
 - `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
 - `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
+- `@tesoreria/feature-contable` - Módulo contable: **Cuentas bancarias** (`CUENTAS_BANCARIAS_ROUTES`, montada por la app contable en `/cuentas-bancarias` con `loadChildren`)
+- `@tesoreria/feature-pagos` - Módulo Pagos: **Comprobantes de proveedor** (`PAGOS_ROUTES`, montada por la app pagos en `/comprobantes` con `loadChildren`): consulta de movimientos por proveedor y anulación con los permisos `pagos.comprobantes.consultar`, `pagos.comprobantes.anular` y `pagos.comprobantes.anular_op`
 - `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas de **Cobranzas** (`cobranzaRoutes`, montadas por la app chequeras en `/cobranzas`: importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera) y de **Consultas** (`consultaRoutes`, `/consultas`: planillas de cuotas por facultad y sede para un lectivo)
 
 La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
@@ -151,6 +153,8 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
         FGUAR["feature-guarani<br/>GUARANI_ROUTES y vistas"]
         FEXT["feature-externo-consulta<br/>Vista chequeras del portal externo"]
         FCHQ["feature-chequeras<br/>cobranzaRoutes y consultaRoutes<br/>Cobranzas y Consultas"]
+        FCONT["feature-contable<br/>CUENTAS_BANCARIAS_ROUTES<br/>Cuentas bancarias"]
+        FPAY["feature-pagos<br/>PAGOS_ROUTES<br/>Comprobantes de proveedor"]
     end
 
     C --> API
@@ -167,6 +171,7 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     P --> FPROV
     P --> FGAST
     P --> FP
+    P --> FPAY
 
     Q --> API
     Q --> AUTH
@@ -188,6 +193,7 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     CT --> API
     CT --> AUTH
     CT --> LAYOUT
+    CT --> FCONT
 
     CR --> API
     CR --> AUTH
@@ -208,6 +214,10 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
     FEXT --> LAYOUT
     FCHQ --> API
     FCHQ --> LAYOUT
+    FCONT --> API
+    FCONT --> LAYOUT
+    FPAY --> API
+    FPAY --> LAYOUT
 
     LAYOUT --> AUTH
     API --> AUTH
@@ -268,7 +278,7 @@ El `.dockerignore` es obligatorio para que esto sea rápido: sin él Docker envi
 Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 - `compras` - Gestión de compras
-- `pagos` - Gestión de facturas pendientes
+- `pagos` - Gestión de facturas pendientes y comprobantes de proveedor
 - `chequeras` - Gestión de chequeras
 - `administrador` - Gestión administrativa
 - `contable` - Módulo contable
@@ -280,7 +290,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.46.0**
+Versión actual: **0.49.0**
 
 ## Licencia
 
