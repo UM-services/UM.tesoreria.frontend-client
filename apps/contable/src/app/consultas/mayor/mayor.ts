@@ -7,6 +7,7 @@ import { MayorRequest, MayorResponse, MayorService } from './mayor.service';
 export type ModoMayor = 'una' | 'rango' | 'varias';
 const FORMATO_CUENTA = /^\d{11}$/;
 const NOMBRE_EXCEL = 'mayor.xlsx';
+const NOMBRE_PDF = 'mayor.pdf';
 const NUMERO = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function descargarBlob(blob: Blob, nombre: string): void {
@@ -61,6 +62,7 @@ export class MayorComponent implements OnInit {
   readonly resultado = signal<MayorResponse | null>(null);
   readonly consultando = signal(false);
   readonly exportando = signal(false);
+  readonly exportandoPdf = signal(false);
   readonly errorMessage = signal('');
 
   /** Cuentas que se pueden elegir (las integradoras no tienen movimientos propios). */
@@ -179,6 +181,23 @@ export class MayorComponent implements OnInit {
       error: async (e: HttpErrorResponse) => {
         this.errorMessage.set(await mensajeDeBlob(e, 'No se pudo generar el Excel.'));
         this.exportando.set(false);
+      },
+    });
+  }
+
+  exportarPdf(): void {
+    const pedido = this.pedido();
+    if (!pedido || this.exportandoPdf()) return;
+    this.errorMessage.set('');
+    this.exportandoPdf.set(true);
+    this.servicio.exportarPdf(pedido).subscribe({
+      next: (blob) => {
+        descargarBlob(blob, NOMBRE_PDF);
+        this.exportandoPdf.set(false);
+      },
+      error: async (e: HttpErrorResponse) => {
+        this.errorMessage.set(await mensajeDeBlob(e, 'No se pudo generar el PDF.'));
+        this.exportandoPdf.set(false);
       },
     });
   }

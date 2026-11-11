@@ -9,6 +9,7 @@ import { MayorResponse, MayorService } from './mayor.service';
 const CONSULTA = 'http://localhost/api/balance/mayor/consulta';
 const EXCEL = 'http://localhost/api/report/contable/mayor/excel';
 const CUENTAS = 'http://localhost/api/cuenta/';
+const PDF = 'http://localhost/api/report/contable/mayor/pdf';
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const RESPUESTA: MayorResponse = {
@@ -210,6 +211,54 @@ describe('MayorComponent', () => {
       s.exportarExcel({ desde: 'a', hasta: 'b', cuentas: [1] }).subscribe();
       ctl.expectOne('/api/tesoreria/report/contable/mayor/excel').flush(new Blob([]));
       ctl.verify();
+    });
+  });
+
+  describe('PDF', () => {
+    let clicks: HTMLAnchorElement[];
+    beforeEach(() => {
+      clicks = [];
+      URL.createObjectURL = vi.fn(() => 'blob:mayor-pdf');
+      URL.revokeObjectURL = vi.fn();
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+        clicks.push(this);
+      });
+      c.cuentaUna.set('11010000000');
+    });
+
+    // protects=el PDF se pide a report con el mismo cuerpo y se descarga mayor.pdf; fails_when=otra URL, otro cuerpo o sin descarga; no_claim=no prueba el contenido del archivo
+    it('descarga mayor.pdf', () => {
+      c.exportarPdf();
+      const req = http.expectOne(PDF);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        desde: '2026-03-01T00:00:00Z', hasta: '2026-04-30T00:00:00Z', cuentas: [11010000000],
+      });
+      req.flush(new Blob(['x'], { type: 'application/pdf' }));
+      expect(clicks[0].download).toBe('mayor.pdf');
+      expect(c.exportandoPdf()).toBe(false);
+    });
+
+    // protects=el error de report al generar el PDF se muestra con su message; fails_when=sale "[object Blob]" o un texto genérico; no_claim=no prueba el relevo de core
+    it('muestra el message del error', async () => {
+      c.exportarPdf();
+      http.expectOne(PDF).flush(
+        new Blob([JSON.stringify({ codigo: 'SELECCION_INVALIDA', message: 'Selección inválida' })]),
+        { status: 409, statusText: 'Conflict' },
+      );
+      await vi.waitFor(() => expect(c.errorMessage()).toBe('Selección inválida'));
+    });
+
+    // protects=el botón existe, está deshabilitado sin pedido válido y abrir la pantalla no pide el PDF; fails_when=falta el botón, se habilita sin datos o se descarga solo; no_claim=no prueba el estilo
+    it('el botón se habilita solo con un pedido válido', () => {
+      const boton = () =>
+        Array.from(el().querySelectorAll('button')).find((b) => /Exportar a PDF/.test(b.textContent ?? ''))!;
+      c.cuentaUna.set('');
+      fixture.detectChanges();
+      expect(boton().disabled).toBe(true);
+      c.cuentaUna.set('11010000000');
+      fixture.detectChanges();
+      expect(boton().disabled).toBe(false);
     });
   });
 });
