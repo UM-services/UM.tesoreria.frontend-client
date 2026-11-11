@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.50.0] - 2026-11-11
+
+### Added
+
+- feat(contable): nuevo grupo desplegable **Consultas** en el menú (solo encabezado, sin pantalla propia) con la consulta **Mayor** como hijo (`/consultas/mayor`, `MayorComponent` en `apps/contable/src/app/consultas/mayor`), con `authGuard` y `usuarioInternoGuard`. Sin clave de permiso nueva.
+- feat(contable): el Mayor se consulta por **una cuenta**, un **rango de cuentas** o **cuentas elegidas**, entre dos fechas que pueden cruzar ejercicios (`POST /balance/mayor/consulta`). Muestra, por cuenta, saldo inicial, movimientos (con ejercicio por línea), totales y saldo final tal como los devuelve el core, sin recalcular. Cuando el core rechaza el pedido (`409`/`404`/`400`) muestra su `message`.
+- feat(contable): **Exportar a Excel** con el mismo pedido contra report (`POST /report/contable/mayor/excel`, archivo `mayor.xlsx`); si report responde con error, se muestra su `message`.
+- feat(contable): `MayorService` (consulta y Excel).
+- test(contable): `mayor.spec.ts` con casos con ficha.
+
+> Depende de los cambios de core (`/balance/mayor/consulta`) y report (`/contable/mayor/excel`) y de `soloGrupo` en `ShellMenuItem` (`@tesoreria/ui-layout`).
+
 ## [0.49.0] - 2026-11-11
 
 ### Added

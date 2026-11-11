@@ -107,6 +107,39 @@ describe('UiShellComponent', () => {
     expect(localStorage.getItem('ui-shell:expanded-groups')).toContain('/cobranzas');
   });
 
+  // protects=un grupo con soloGrupo no navega: su texto es un botón que despliega los hijos; fails_when=aparece como enlace al path del grupo o no despliega; no_claim=no prueba el menú móvil ni la persistencia (la cubre el caso de grupos comunes)
+  it('un grupo soloGrupo se despliega sin navegar', async () => {
+    const menuItems = [
+      { label: 'Dashboard', path: '/' },
+      {
+        label: 'Consultas',
+        path: '/consultas',
+        soloGrupo: true,
+        children: [{ label: 'Mayor', path: '/consultas/mayor' }],
+      },
+    ];
+    const fixture = await createShell(undefined, { menuItems });
+    const sidebar = fixture.nativeElement.querySelector('aside') as HTMLElement;
+
+    const enlaces = () =>
+      Array.from(sidebar.querySelectorAll<HTMLAnchorElement>('nav a')).map((a) =>
+        a.textContent?.trim(),
+      );
+    expect(enlaces()).not.toContain('Consultas');
+    const boton = Array.from(sidebar.querySelectorAll<HTMLButtonElement>('nav button')).find((b) =>
+      /Consultas/.test(b.textContent ?? ''),
+    );
+    expect(boton).toBeTruthy();
+    expect(boton?.getAttribute('aria-expanded')).toBe('false');
+
+    boton?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(boton?.getAttribute('aria-expanded')).toBe('true');
+    expect(enlaces()).toContain('Mayor');
+  });
+
   it('oculta el grupo cuando ningún hijo queda visible por permisos', async () => {
     const fixture = await createShell(
       undefined,
