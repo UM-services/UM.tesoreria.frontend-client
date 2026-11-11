@@ -20,7 +20,8 @@
       "@tesoreria/ui-rich-text": ["./libs/ui-rich-text/src/index.ts"],
        "@tesoreria/feature-personas": ["./libs/feature-personas/src/index.ts"],
       "@tesoreria/feature-chequeras": ["./libs/feature-chequeras/src/index.ts"],
-      "@tesoreria/feature-contable": ["./libs/feature-contable/src/index.ts"]
+      "@tesoreria/feature-contable": ["./libs/feature-contable/src/index.ts"],
+      "@tesoreria/feature-pagos": ["./libs/feature-pagos/src/index.ts"]
     },
     "strict": false,
     "noUncheckedSideEffectImports": false,

@@ -14,6 +14,7 @@ export class AppComponent {
   readonly menuItems: ShellMenuItem[] = [
     { label: 'Gastos', path: '/gastos' },
     { label: 'Proveedores', path: '/proveedores' },
+    { label: 'Comprobantes', path: '/comprobantes', permiso: 'pagos.comprobantes.consultar' },
     { label: 'Facturas Pendientes', path: '/pendientes' },
   ];
 }

@@ -1,0 +1,354 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Pagos / Comprobantes</p>
+      <h1 class="um-page-title">Comprobantes de proveedor</h1>
+      <p class="um-page-desc">
+        Consultá los movimientos de un proveedor y anulá comprobantes. La anulación elimina el
+        comprobante y sus asientos contables: no se puede deshacer.
+      </p>
+    </div>
+    <span class="um-badge bg-um-surface text-um-text ring-1 ring-um-border">
+      Todas las sedes
+    </span>
+  </div>
+
+  @if (errorMessage) {
+    <div class="um-alert um-alert-error" role="alert">{{ errorMessage }}</div>
+  }
+
+  @if (successMessage) {
+    <div class="um-alert um-alert-success" role="status">{{ successMessage }}</div>
+  }
+
+  <form [formGroup]="filtroForm" (ngSubmit)="buscar()" class="um-card space-y-4">
+    <div class="grid grid-cols-1 items-end gap-4 md:grid-cols-12">
+      <div class="md:col-span-5">
+        <span class="um-label">Proveedor</span>
+        @if (proveedor) {
+          <div
+            class="flex items-center justify-between gap-3 rounded border border-um-border-strong bg-white px-3 py-2"
+          >
+            <div class="min-w-0">
+              <p class="truncate text-base font-bold text-um-ink">{{ proveedor.razonSocial }}</p>
+              <p class="text-xs text-um-muted">CUIT {{ proveedor.cuit }}</p>
+            </div>
+            <button type="button" class="um-link-btn shrink-0 text-xs" (click)="cambiarProveedor()">
+              Cambiar
+            </button>
+          </div>
+        } @else {
+          <ui-buscador-proveedor
+            (proveedorSelected)="onProveedorSelected($event)"
+          ></ui-buscador-proveedor>
+        }
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="um-label" for="desde">Desde</label>
+        <ui-input-fecha inputId="desde" formControlName="desde"></ui-input-fecha>
+        @if (filtroForm.get('desde')?.hasError('fechaInvalida')) {
+          <p class="mt-1 text-xs text-red-700">Fecha inválida (dd/mm/aaaa)</p>
+        }
+      </div>
+
+      <div class="flex justify-center md:col-span-1">
+        <button
+          type="button"
+          class="um-btn-secondary"
+          title="Copiar la fecha Desde al campo Hasta"
+          (click)="duplicarFecha()"
+        >
+          ›
+        </button>
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="um-label" for="hasta">Hasta</label>
+        <ui-input-fecha inputId="hasta" formControlName="hasta"></ui-input-fecha>
+        @if (filtroForm.get('hasta')?.hasError('fechaInvalida')) {
+          <p class="mt-1 text-xs text-red-700">Fecha inválida (dd/mm/aaaa)</p>
+        }
+      </div>
+
+      <div class="md:col-span-2">
+        <button
+          type="submit"
+          class="um-btn-primary w-full"
+          [disabled]="isLoading || filtroForm.invalid"
+        >
+          {{ isLoading ? 'Buscando...' : 'Buscar' }}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div class="overflow-hidden rounded-lg border border-um-border bg-white shadow-sm">
+    <div class="border-b border-um-border bg-um-surface px-6 py-4">
+      <h2 class="text-base font-bold text-um-ink">
+        {{ proveedor?.razonSocial ?? 'Movimientos del proveedor' }}
+      </h2>
+      <p class="text-xs text-um-muted">
+        @if (movimientos.length) {
+          {{ movimientos.length }} comprobantes en el período
+        } @else {
+          Cuenta corriente del proveedor
+        }
+      </p>
+    </div>
+
+    @if (!proveedor) {
+      <div class="p-12 text-center">
+        <p class="text-sm font-semibold text-um-ink">Elegí un proveedor</p>
+        <p class="mt-1 text-sm text-um-muted">
+          Buscá por CUIT o razón social y luego presioná Buscar.
+        </p>
+      </div>
+    } @else if (isLoading) {
+      <div class="p-12 text-center">
+        <p class="text-sm text-um-muted">Cargando comprobantes...</p>
+      </div>
+    } @else if (!movimientos.length) {
+      <div class="p-12 text-center">
+        <p class="text-sm font-semibold text-um-ink">Sin movimientos en el período</p>
+        <p class="mt-1 text-sm text-um-muted">Probá con otro rango de fechas.</p>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th>Comprobante</th>
+              <th>Número</th>
+              <th>Fecha</th>
+              <th class="text-right">Total</th>
+              <th class="text-right">A Cta</th>
+              <th class="text-right">Saldo</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (movimiento of movimientos; track movimiento.proveedorMovimientoId) {
+              <tr
+                class="cursor-pointer"
+                [class.bg-um-selected]="
+                  seleccionado?.proveedorMovimientoId === movimiento.proveedorMovimientoId
+                "
+                (click)="seleccionar(movimiento)"
+              >
+                <td>{{ movimiento.comprobanteDescripcion }}</td>
+                <td class="whitespace-nowrap font-mono text-xs">{{ movimiento.numero }}</td>
+                <td class="whitespace-nowrap">{{ movimiento.fechaComprobante | umFecha }}</td>
+                <td class="whitespace-nowrap text-right">
+                  {{ movimiento.importe | number: '1.2-2' }}
+                </td>
+                <td class="whitespace-nowrap text-right">
+                  {{ movimiento.cancelado | number: '1.2-2' }}
+                </td>
+                <td class="whitespace-nowrap text-right font-semibold">
+                  {{ movimiento.saldo | number: '1.2-2' }}
+                </td>
+                <td>
+                  @if (movimiento.fechaAnulacion) {
+                    <span class="um-badge bg-red-100 text-red-800">Anulado</span>
+                  } @else if (!movimiento.anulable) {
+                    <span class="um-badge bg-amber-100 text-amber-900">Con costos</span>
+                  } @else {
+                    <span class="um-badge bg-green-100 text-green-800">Anulable</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  @if (isLoadingDetalle) {
+    <div class="rounded-lg border border-um-border bg-white p-8 text-center shadow-sm">
+      <p class="text-sm text-um-muted">Cargando el detalle del comprobante...</p>
+    </div>
+  }
+
+  @if (detalle; as d) {
+    <div class="um-card space-y-4">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
+            {{ d.tipo === 'FACTURA' ? 'Pagos aplicados a la factura' : 'Valores de la orden de pago' }}
+          </h2>
+          <p class="mt-1 text-xs text-um-muted">
+            {{ d.cabecera.comprobanteDescripcion }} {{ d.cabecera.numero }} —
+            {{ d.cabecera.fechaComprobante | umFecha }}
+          </p>
+        </div>
+        <button
+          *uiPermiso="'pagos.comprobantes.anular'"
+          type="button"
+          class="um-btn-secondary text-red-700"
+          [disabled]="!puedeAnular"
+          (click)="abrirConfirmacion()"
+        >
+          Anular comprobante
+        </button>
+      </div>
+
+      @if (motivosNoAnulable.length) {
+        <div class="um-alert um-alert-warn">
+          <p class="font-semibold">No se puede anular:</p>
+          <ul class="mt-1 list-disc pl-5">
+            @for (motivo of motivosNoAnulable; track motivo) {
+              <li>{{ motivo }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (d.tipo === 'FACTURA') {
+        @if (d.pagos.length) {
+          <div class="overflow-x-auto">
+            <table class="um-table">
+              <thead>
+                <tr>
+                  <th>Comprobante</th>
+                  <th>Número</th>
+                  <th>Fecha</th>
+                  <th class="text-right">Total</th>
+                  <th class="text-right">A Cta</th>
+                  <th class="text-right">Saldo</th>
+                  <th class="text-right">Aplicado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (pago of d.pagos; track pago.proveedorPagoId) {
+                  <tr>
+                    <td>{{ pago.comprobanteDescripcion }}</td>
+                    <td class="whitespace-nowrap font-mono text-xs">{{ pago.numero }}</td>
+                    <td class="whitespace-nowrap">{{ pago.fechaComprobante | umFecha }}</td>
+                    <td class="whitespace-nowrap text-right">
+                      {{ pago.importe | number: '1.2-2' }}
+                    </td>
+                    <td class="whitespace-nowrap text-right">
+                      {{ pago.cancelado | number: '1.2-2' }}
+                    </td>
+                    <td class="whitespace-nowrap text-right">{{ pago.saldo | number: '1.2-2' }}</td>
+                    <td class="whitespace-nowrap text-right font-semibold">
+                      {{ pago.importeAplicado | number: '1.2-2' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="text-sm text-um-muted">La factura no tiene pagos aplicados.</p>
+        }
+      } @else {
+        @if (d.valores.length) {
+          <div class="overflow-x-auto">
+            <table class="um-table">
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Número</th>
+                  <th>Emisión</th>
+                  <th class="text-right">Importe</th>
+                  <th>Titular</th>
+                  <th>Cuenta</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (valor of d.valores; track valor.valorMovimientoId) {
+                  <tr>
+                    <td>{{ valor.concepto }}</td>
+                    <td class="whitespace-nowrap font-mono text-xs">{{ valor.numero }}</td>
+                    <td class="whitespace-nowrap">{{ valor.fechaEmision | umFecha }}</td>
+                    <td class="whitespace-nowrap text-right">
+                      {{ valor.importe | number: '1.2-2' }}
+                    </td>
+                    <td>{{ valor.nombreTitular }}</td>
+                    <td class="text-xs">{{ valor.bancaria }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="text-sm text-um-muted">La orden de pago no tiene valores registrados.</p>
+        }
+      }
+    </div>
+  }
+
+  @if (confirmacionAbierta) {
+    @if (seleccionado; as movimiento) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-um-ink/50 p-4">
+        <div class="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
+          <h2 class="text-lg font-bold text-um-ink">Anular comprobante</h2>
+          <p class="mt-2 text-sm text-um-text">
+            Se va a <strong>eliminar</strong> el comprobante y sus asientos contables. Esta acción
+            no se puede deshacer.
+          </p>
+
+          <dl class="mt-4 space-y-1 rounded border border-um-border bg-um-surface p-4 text-sm">
+            <div class="flex justify-between gap-4">
+              <dt class="text-um-muted">Proveedor</dt>
+              <dd class="text-right font-semibold text-um-ink">
+                {{ proveedor?.razonSocial ?? '—' }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-um-muted">Comprobante</dt>
+              <dd class="text-right font-semibold text-um-ink">
+                {{ movimiento.comprobanteDescripcion }} {{ movimiento.numero }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-um-muted">Fecha</dt>
+              <dd class="text-right">{{ movimiento.fechaComprobante | umFecha }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-um-muted">Importe</dt>
+              <dd class="text-right">{{ movimiento.importe | number: '1.2-2' }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-um-muted">Saldo</dt>
+              <dd class="text-right font-semibold">{{ movimiento.saldo | number: '1.2-2' }}</dd>
+            </div>
+          </dl>
+
+          @if (motivosRechazo.length) {
+            <div class="um-alert um-alert-error mt-4">
+              <p class="font-semibold">No se pudo anular:</p>
+              <ul class="mt-1 list-disc pl-5">
+                @for (motivo of motivosRechazo; track motivo) {
+                  <li>{{ motivo }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [disabled]="isAnulando"
+              (click)="cerrarConfirmacion()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="um-btn-primary"
+              [disabled]="isAnulando"
+              (click)="confirmarAnulacion()"
+            >
+              {{ isAnulando ? 'Anulando...' : 'Sí, anular' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

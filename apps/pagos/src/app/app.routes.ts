@@ -29,6 +29,11 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
+    path: 'comprobantes',
+    loadChildren: () => import('@tesoreria/feature-pagos').then(m => m.PAGOS_ROUTES),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
     path: '',
     redirectTo: 'pendientes',
     pathMatch: 'full'
