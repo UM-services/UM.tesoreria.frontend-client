@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { InputFechaComponent } from '@tesoreria/ui-layout';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -21,7 +22,7 @@ import {
 @Component({
   selector: 'app-importar-proceso',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, InputFechaComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './importar-proceso.html',
 })

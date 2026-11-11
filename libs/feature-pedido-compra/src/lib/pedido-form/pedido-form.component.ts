@@ -10,7 +10,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EditorEnriquecidoComponent } from '@tesoreria/ui-rich-text';
-import { TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
+import { InputFechaComponent, TextoEnriquecidoComponent } from '@tesoreria/ui-layout';
 import { PedidoCompraService } from '../data-access/pedido-compra.service';
 import {
   ContextoInicioPedido,
@@ -36,6 +36,7 @@ const MAX_REFERENCIA_WEB = 4096;
     RouterLink,
     TextoEnriquecidoComponent,
     EditorEnriquecidoComponent,
+    InputFechaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pedido-form.component.html',

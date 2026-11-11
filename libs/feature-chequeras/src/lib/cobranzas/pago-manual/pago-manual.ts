@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '@tesoreria/shared-api';
-import { BuscadorPersonaComponent } from '@tesoreria/ui-layout';
+import { BuscadorPersonaComponent, InputFechaComponent } from '@tesoreria/ui-layout';
 import { forkJoin } from 'rxjs';
 import { ChequeraConsultaService } from '../data-access/chequera-consulta.service';
 import { PagoManualService } from '../data-access/pago-manual.service';
@@ -16,7 +16,7 @@ import {
 @Component({
   selector: 'app-pago-manual',
   standalone: true,
-  imports: [RouterModule, BuscadorPersonaComponent],
+  imports: [RouterModule, BuscadorPersonaComponent, InputFechaComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pago-manual.html',
 })
