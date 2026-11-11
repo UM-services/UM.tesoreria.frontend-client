@@ -83,7 +83,7 @@
           <tr>
             <th scope="col">Cantidad</th>
             <th scope="col">Unidad</th>
-            <th scope="col">Bien / servicio</th>
+            <th scope="col">Objeto / Bien / Servicio</th>
             <th scope="col">Especificaciones</th>
             <th scope="col">Referencia web</th>
             <th scope="col" class="text-right">Acciones</th>
@@ -125,7 +125,9 @@
                   placeholder="https://…"
                   [(ngModel)]="item.referenciaWeb"
                 />
-                <span class="mt-1 block text-xs text-um-muted">Enlace del producto (opcional).</span>
+                <span class="mt-1 block text-xs text-um-muted"
+                  >Enlace del producto (opcional).</span
+                >
               </td>
               <td class="text-right">
                 <button type="button" class="um-link-btn" (click)="quitarItem(i)">Quitar</button>
@@ -175,7 +177,7 @@
       <div class="space-y-4">
         <div>
           <label class="um-label">Fecha requerida</label>
-          <input class="um-input" type="date" [(ngModel)]="fechaRequerida" />
+          <ui-input-fecha [(ngModel)]="fechaRequerida"></ui-input-fecha>
         </div>
         <div class="flex items-center gap-2">
           <input id="urgente" type="checkbox" [(ngModel)]="urgente" />
@@ -208,6 +210,10 @@
           <label class="um-label">Fuente de estimación</label>
           <input class="um-input" [(ngModel)]="fuenteEstimacion" />
         </div>
+      } @else {
+        <p class="text-sm text-um-muted md:col-span-2">
+          No es obligatorio: si no conocés el monto, Compras lo estimará durante la revisión.
+        </p>
       }
     </div>
   </section>

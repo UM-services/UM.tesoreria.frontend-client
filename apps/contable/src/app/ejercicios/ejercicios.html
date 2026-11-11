@@ -1,0 +1,123 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Contabilidad / Ejercicios</p>
+      <h1 class="um-page-title">Ejercicios</h1>
+      <p class="um-page-desc">Alta del ejercicio siguiente, baja, bloqueo y desbloqueo.</p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  @if (pendiente(); as accion) {
+    <div class="um-alert um-alert-warn" role="alertdialog" aria-label="Confirmar acción">
+      <p class="text-sm text-amber-800">{{ textoConfirmacion(accion) }}</p>
+      <div class="mt-3 flex justify-end gap-3">
+        <button type="button" class="um-btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button
+          type="button"
+          class="um-btn-primary"
+          [disabled]="procesando()"
+          (click)="confirmar()"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="um-card p-6">
+    <div class="flex flex-wrap items-center gap-4">
+      <button
+        type="button"
+        class="um-btn-primary"
+        [disabled]="procesando() || cargando()"
+        (click)="pedirAlta()"
+      >
+        Crear ejercicio siguiente
+      </button>
+      <p class="text-sm text-um-muted">{{ ejercicios().length }} ejercicios</p>
+    </div>
+
+    <div class="mt-4 min-h-[28rem] max-h-[70vh] overflow-auto">
+      <table class="um-table min-w-full">
+        <thead>
+          <tr>
+            <th scope="col" class="w-16">Id</th>
+            <th scope="col">Nombre</th>
+            <th scope="col" class="w-32">Inicio</th>
+            <th scope="col" class="w-32">Cierre</th>
+            <th scope="col" class="w-28">Estado</th>
+            <th scope="col" class="w-32">Orden resultado</th>
+            <th scope="col" class="w-32">Orden bienes de uso</th>
+            <th scope="col" class="w-64"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando() && ejercicios().length === 0) {
+            <tr>
+              <td colspan="8" class="py-8 text-center text-sm text-um-muted">
+                Cargando ejercicios...
+              </td>
+            </tr>
+          }
+          @for (ejercicio of ejercicios(); track ejercicio.ejercicioId) {
+            <tr>
+              <td class="whitespace-nowrap">{{ ejercicio.ejercicioId }}</td>
+              <td>{{ ejercicio.nombre }}</td>
+              <td class="whitespace-nowrap">{{ fecha(ejercicio.fechaInicio) }}</td>
+              <td class="whitespace-nowrap">{{ fecha(ejercicio.fechaFinal) }}</td>
+              <td>
+                @if (estaBloqueado(ejercicio)) {
+                  <span class="um-badge">Bloqueado</span>
+                } @else {
+                  <span class="text-um-muted">Abierto</span>
+                }
+              </td>
+              <td>{{ ejercicio.ordenContableResultado ?? '—' }}</td>
+              <td>{{ ejercicio.ordenContableBienesUso ?? '—' }}</td>
+              <td>
+                <div class="flex flex-nowrap justify-end gap-2">
+                  <button
+                    type="button"
+                    class="um-btn-secondary whitespace-nowrap"
+                    [disabled]="procesando()"
+                    (click)="pedirBloqueo(ejercicio)"
+                  >
+                    {{ estaBloqueado(ejercicio) ? 'Desbloquear' : 'Bloquear' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="um-btn-secondary whitespace-nowrap"
+                    [disabled]="procesando()"
+                    (click)="pedirBaja(ejercicio)"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            @if (!cargando()) {
+              <tr>
+                <td colspan="8" class="py-8 text-center text-sm text-um-muted">
+                  No hay ejercicios cargados.
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { FechaPipe, InputFechaComponent } from '@tesoreria/ui-layout';
 import { RecepcionService } from '../data-access/recepcion.service';
 import {
   RECEPCION_PATRIMONIOS,
@@ -35,7 +36,7 @@ interface LineaRecepcion {
 @Component({
   selector: 'app-recepcion-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, FechaPipe, InputFechaComponent],
   templateUrl: './recepcion-lista.component.html',
 })
 export class RecepcionListaComponent implements OnInit {
@@ -60,8 +61,10 @@ export class RecepcionListaComponent implements OnInit {
   observacion = '';
 
   /** La entrega es total cuando cubre el saldo de todos los ítems contratados. */
-  readonly esTotal = computed(() =>
-    this.lineas().length > 0 && this.lineas().every((linea) => (linea.cantidadRecibida ?? 0) >= linea.saldo),
+  readonly esTotal = computed(
+    () =>
+      this.lineas().length > 0 &&
+      this.lineas().every((linea) => (linea.cantidadRecibida ?? 0) >= linea.saldo),
   );
 
   /** Se excede el saldo cuando alguna cantidad recibida supera lo pendiente (D-REC-13). */
@@ -86,7 +89,9 @@ export class RecepcionListaComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('No se pudieron cargar las órdenes de compra pendientes de recepción.');
+        this.errorMessage.set(
+          'No se pudieron cargar las órdenes de compra pendientes de recepción.',
+        );
         this.isLoading.set(false);
       },
     });

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { FechaPipe } from '@tesoreria/ui-layout';
 import { FormalizacionService } from '../data-access/formalizacion.service';
 import {
   Formalizacion,
@@ -18,7 +19,7 @@ import {
 @Component({
   selector: 'app-formalizacion-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, FechaPipe],
   templateUrl: './formalizacion-lista.component.html',
 })
 export class FormalizacionListaComponent implements OnInit {
@@ -72,7 +73,7 @@ export class FormalizacionListaComponent implements OnInit {
     this.condicionPago = pendiente.condicionPago ?? '';
     this.plazoEntrega = pendiente.plazoEntrega ?? '';
     this.garantia = pendiente.garantia ?? '';
-    this.objeto = 'Bienes conforme a solicitud, cotización y adjudicación.';
+    this.objeto = 'Bienes conforme a solicitud, presupuesto y adjudicación.';
     this.observacion = '';
   }
 

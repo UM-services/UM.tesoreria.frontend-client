@@ -1,9 +1,9 @@
 <div class="mx-auto max-w-6xl p-4">
   <header class="um-page-header">
     <p class="um-eyebrow">Compras</p>
-    <h1 class="um-page-title">Procesos de cotización</h1>
+    <h1 class="um-page-title">Procesos de presupuesto</h1>
     <p class="um-page-desc">
-      Pedidos de cotización a proveedores a partir de los pedidos autorizados en presupuesto.
+      Pedidos de presupuesto a proveedores a partir de los pedidos autorizados en presupuesto.
     </p>
   </header>
 
@@ -17,7 +17,7 @@
     } @else if (errorMessage()) {
       <div class="um-alert-error m-4">{{ errorMessage() }}</div>
     } @else if (procesos().length === 0) {
-      <div class="p-6 text-sm text-um-muted">No hay procesos de cotización.</div>
+      <div class="p-6 text-sm text-um-muted">No hay procesos de presupuesto.</div>
     } @else {
       <div class="overflow-x-auto">
         <table class="um-table">
@@ -27,7 +27,7 @@
               <th scope="col">Estado</th>
               <th scope="col">Fecha</th>
               <th scope="col" class="text-right">Monto estimado</th>
-              <th scope="col" class="text-right">Cotizaciones mín.</th>
+              <th scope="col" class="text-right">Presupuestos mín.</th>
               <th scope="col" class="text-right">Proveedores</th>
               <th scope="col" class="text-right">Acciones</th>
             </tr>
@@ -41,14 +41,20 @@
                     {{ estadoLabel(proceso.estado) }}
                   </span>
                 </td>
-                <td>{{ proceso.fecha | date: 'short' }}</td>
+                <td>{{ proceso.fecha | umFecha }}</td>
                 <td class="text-right">
-                  {{ proceso.montoEstimado !== null && proceso.montoEstimado !== undefined ? (proceso.montoEstimado | number: '1.2-2') : '—' }}
+                  {{
+                    proceso.montoEstimado !== null && proceso.montoEstimado !== undefined
+                      ? (proceso.montoEstimado | number: '1.2-2')
+                      : '—'
+                  }}
                 </td>
                 <td class="text-right">{{ proceso.cantidadMinima ?? '—' }}</td>
                 <td class="text-right">{{ proceso.proveedores?.length ?? 0 }}</td>
                 <td class="text-right">
-                  <a [routerLink]="['/cotizacion', proceso.compraCotizacionId]" class="um-link-btn">Ver</a>
+                  <a [routerLink]="['/cotizacion', proceso.compraCotizacionId]" class="um-link-btn"
+                    >Ver</a
+                  >
                 </td>
               </tr>
             }

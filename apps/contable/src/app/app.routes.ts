@@ -20,6 +20,25 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard],
   },
   {
+    // Mayor: movimientos y saldos por cuenta en un rango de fechas (los calcula el core).
+    path: 'consultas/mayor',
+    loadComponent: () => import('./consultas/mayor/mayor').then(m => m.MayorComponent),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+    {
+    // Ejercicios: alta del siguiente, baja, bloqueo y desbloqueo (las reglas las aplica el core).
+    path: 'ejercicios',
+    loadComponent: () => import('./ejercicios/ejercicios').then(m => m.EjerciciosComponent),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
+    // Cuentas bancarias: lista, alta, edición y baja (las reglas las aplica el core).
+    path: 'cuentas-bancarias',
+    loadChildren: () =>
+      import('@tesoreria/feature-contable').then(m => m.CUENTAS_BANCARIAS_ROUTES),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
     path: '',
     component: BlankComponent,
     canActivate: [authGuard, usuarioInternoGuard],

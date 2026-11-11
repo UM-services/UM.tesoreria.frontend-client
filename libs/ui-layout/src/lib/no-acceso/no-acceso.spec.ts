@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
-import { API_URL } from '@tesoreria/shared-api';
+import { API_URL, AccesoDenegadoService } from '@tesoreria/shared-api';
 import { NoAccesoComponent } from './no-acceso';
 
 @Component({ standalone: true, selector: 'lib-login-stub', template: '' })
@@ -22,9 +22,31 @@ describe('NoAccesoComponent', () => {
   });
 
   it('muestra el mensaje de acceso restringido', () => {
-    const { nativeElement } = TestBed.createComponent(NoAccesoComponent);
-    expect(nativeElement.textContent).toContain('Acceso restringido');
-    expect(nativeElement.textContent).toContain('no está habilitado para su usuario');
+    const fixture = TestBed.createComponent(NoAccesoComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Acceso restringido');
+    expect(fixture.nativeElement.textContent).toContain('Este módulo no está habilitado');
+  });
+
+  it('muestra el permiso que falta y ofrece solicitar acceso', () => {
+    TestBed.inject(AccesoDenegadoService).reportar({
+      tipo: 'permiso',
+      mensaje: 'No tenés permiso para acceder a esta pantalla.',
+      clave: 'compras.gastos',
+    });
+    localStorage.setItem(
+      'currentUser',
+      JSON.stringify({ token: 'jwt', userId: 9, nombre: 'Sin Permiso', sede: 'Mendoza' }),
+    );
+
+    const fixture = TestBed.createComponent(NoAccesoComponent);
+    fixture.detectChanges();
+    const texto = fixture.nativeElement.textContent as string;
+
+    expect(texto).toContain('No tenés permiso para esta pantalla');
+    expect(texto).toContain('compras.gastos');
+    expect(texto).toContain('Solicitar acceso');
+    expect(texto).toContain('Ir al inicio');
   });
 
   it('el botón cierra la sesión guardada', () => {

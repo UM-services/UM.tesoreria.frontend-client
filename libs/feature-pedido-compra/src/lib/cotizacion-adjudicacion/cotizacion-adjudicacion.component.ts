@@ -95,11 +95,16 @@ export class CotizacionAdjudicacionComponent implements OnInit {
     }
     this.guardando.set(true);
     const fundamento = this.fundamento || null;
-    const request$ = decision === 'ADJUDICADA'
-      ? this.cotizacionProcesoService.adjudicar(proceso.compraCotizacionId, this.ofertaId, fundamento)
-      : decision === 'DEVUELTA_A_COMPRAS'
-        ? this.cotizacionProcesoService.devolver(proceso.compraCotizacionId, fundamento)
-        : this.cotizacionProcesoService.noAdjudicar(proceso.compraCotizacionId, fundamento);
+    const request$ =
+      decision === 'ADJUDICADA'
+        ? this.cotizacionProcesoService.adjudicar(
+            proceso.compraCotizacionId,
+            this.ofertaId,
+            fundamento,
+          )
+        : decision === 'DEVUELTA_A_COMPRAS'
+          ? this.cotizacionProcesoService.devolver(proceso.compraCotizacionId, fundamento)
+          : this.cotizacionProcesoService.noAdjudicar(proceso.compraCotizacionId, fundamento);
 
     request$.subscribe({
       next: () => {

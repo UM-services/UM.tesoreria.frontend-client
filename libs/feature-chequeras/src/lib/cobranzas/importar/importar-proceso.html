@@ -1,0 +1,270 @@
+<section class="p-6">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Chequeras / Cobranzas / Importar</p>
+    <h1 class="um-page-title">{{ canal()?.nombre ?? 'Importar archivo' }}</h1>
+    <p class="um-page-desc">{{ canal()?.descripcion }}</p>
+  </header>
+
+  @if (!canal()) {
+    <div class="um-alert um-alert-error mt-4">El canal solicitado no existe.</div>
+    <a class="um-link-btn mt-4 inline-block" routerLink="/cobranzas/importar">Volver</a>
+  } @else if (resultado(); as resultado) {
+    <div class="um-card mt-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="um-eyebrow">Importación terminada</p>
+          <h2 class="text-lg font-semibold text-um-ink">{{ resultado.filename }}</h2>
+        </div>
+        <span class="um-badge">{{ resultado.canal }}</span>
+      </div>
+
+      <dl class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="um-section">
+          <dt class="um-label">Registros</dt>
+          <dd class="text-xl font-semibold">{{ resultado.registros }}</dd>
+        </div>
+        <div class="um-section">
+          <dt class="um-label">Importados</dt>
+          <dd class="text-xl font-semibold">{{ resultado.importados }}</dd>
+        </div>
+        <div class="um-section">
+          <dt class="um-label">No encontrados</dt>
+          <dd class="text-xl font-semibold">{{ resultado.noEncontrados }}</dd>
+        </div>
+        <div class="um-section">
+          <dt class="um-label">Total importado</dt>
+          <dd class="text-xl font-semibold font-mono tabular-nums">
+            {{ importe(resultado.total) }}
+          </dd>
+        </div>
+      </dl>
+
+      @if (resultado.duplicados > 0 || resultado.rechazados > 0 || resultado.omitidos > 0) {
+        <div class="um-alert um-alert-warn mt-4">
+          Duplicados: {{ resultado.duplicados }} · Rechazados: {{ resultado.rechazados }} · Omitidos:
+          {{ resultado.omitidos }}
+        </div>
+      }
+
+      @if (resultado.errores.length > 0) {
+        <div class="um-alert um-alert-error mt-4">
+          @for (mensaje of resultado.errores; track mensaje) {
+            <p>{{ mensaje }}</p>
+          }
+        </div>
+      }
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <a class="um-btn-primary" routerLink="/cobranzas/importaciones">
+          Ver importaciones
+        </a>
+        <button type="button" class="um-btn-secondary" (click)="reiniciar()">
+          Importar otro archivo
+        </button>
+      </div>
+    </div>
+  } @else if (preview(); as preview) {
+    @if (preview.yaImportada) {
+      <div class="um-alert um-alert-warn mt-4">
+        Ya existe una importación con el nombre <strong>{{ preview.filename }}</strong>. Si
+        continuás, el backend la rechazará por duplicada.
+      </div>
+    }
+
+    <dl class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div class="um-section">
+        <dt class="um-label">Registros</dt>
+        <dd class="text-xl font-semibold">{{ preview.registros }}</dd>
+      </div>
+      <div class="um-section">
+        <dt class="um-label">Encontrados</dt>
+        <dd class="text-xl font-semibold">{{ preview.encontrados }}</dd>
+      </div>
+      <div class="um-section">
+        <dt class="um-label">Perdidos</dt>
+        <dd class="text-xl font-semibold">{{ preview.perdidos }}</dd>
+      </div>
+      <div class="um-section">
+        <dt class="um-label">Duplicados</dt>
+        <dd class="text-xl font-semibold">{{ preview.duplicados }}</dd>
+      </div>
+      <div class="um-section">
+        <dt class="um-label">Total</dt>
+        <dd class="text-xl font-semibold font-mono tabular-nums">{{ importe(preview.total) }}</dd>
+      </div>
+    </dl>
+
+    <div class="mt-5 flex flex-wrap items-center gap-4">
+      <label class="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          [checked]="soloProblemas()"
+          (change)="soloProblemas.set($any($event.target).checked)"
+        />
+        Ver sólo problemas
+      </label>
+      <label class="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          [checked]="permitirDuplicados()"
+          (change)="permitirDuplicados.set($any($event.target).checked)"
+        />
+        Permitir duplicados
+      </label>
+    </div>
+
+    <div class="mt-4 overflow-x-auto">
+      <table class="um-table">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">#</th>
+            <th scope="col">Facultad</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Chequera</th>
+            <th scope="col">Sede</th>
+            <th scope="col">Persona</th>
+            <th scope="col">Producto</th>
+            <th scope="col">Cuota</th>
+            <th scope="col">Vencimiento</th>
+            <th scope="col">Pago</th>
+            <th scope="col">Acreditación</th>
+            <th scope="col">Marca</th>
+            <th scope="col">Importe</th>
+            <th scope="col">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linea of lineasVisibles(); track linea.numeroLinea) {
+            <tr>
+              <td>
+                <input
+                  type="checkbox"
+                  [attr.aria-label]="'Seleccionar línea ' + linea.numeroLinea"
+                  [checked]="seleccionadas().has(linea.numeroLinea)"
+                  (change)="toggleLinea(linea.numeroLinea, $any($event.target).checked)"
+                />
+              </td>
+              <td>{{ linea.numeroLinea }}</td>
+              <td>{{ linea.facultadNombre ?? numero(linea.facultadId) }}</td>
+              <td>{{ linea.tipoChequeraNombre ?? numero(linea.tipoChequeraId) }}</td>
+              <td class="font-mono">{{ numero(linea.chequeraSerieId) }}</td>
+              <td>{{ linea.geograficaNombre ?? '—' }}</td>
+              <td>{{ linea.personaNombre ?? '—' }}</td>
+              <td>{{ linea.productoNombre ?? numero(linea.productoId) }}</td>
+              <td>{{ numero(linea.cuotaId) }}</td>
+              <td>{{ fecha(linea.vencimiento) }}</td>
+              <td>{{ fecha(linea.fechaPago) }}</td>
+              <td>{{ fecha(linea.fechaAcreditacion) }}</td>
+              <td>{{ linea.marcaAcreditacion ?? '—' }}</td>
+              <td class="font-mono tabular-nums">{{ importe(linea.importe) }}</td>
+              <td>
+                <span class="um-badge" [class.font-bold]="esProblema(linea.estado)">
+                  {{ estadoLabel(linea.estado) }}
+                </span>
+                @if (linea.reemplazo) {
+                  <span class="um-badge ml-1">Reemplazo</span>
+                }
+                @if (linea.motivo) {
+                  <span class="block text-xs text-um-muted">{{ linea.motivo }}</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="15" class="text-center text-um-muted">No hay líneas para mostrar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (error(); as error) {
+      <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+    }
+
+    <div class="mt-5 flex flex-wrap gap-3">
+      <button
+        type="button"
+        class="um-btn-primary"
+        [disabled]="cargando()"
+        (click)="importarTodas()"
+      >
+        Importar todas las encontradas
+      </button>
+      <button
+        type="button"
+        class="um-btn-secondary"
+        [disabled]="cargando() || seleccionadas().size === 0"
+        (click)="importarSeleccionadas()"
+      >
+        Importar seleccionadas ({{ seleccionadas().size }})
+      </button>
+      <button type="button" class="um-link-btn" (click)="reiniciar()">Elegir otro archivo</button>
+    </div>
+
+    @if (cargando()) {
+      <p class="mt-3 text-sm text-um-muted">Procesando…</p>
+    }
+  } @else {
+    <div class="um-card mt-6">
+      <p class="um-label">
+        {{ esPeriodo() ? 'Archivo XLSX de PayPerTIC' : 'Archivo de rendición' }}
+      </p>
+      <input
+        type="file"
+        class="um-input mt-2"
+        [attr.accept]="acepta()"
+        (change)="onArchivo($event)"
+      />
+      @if (esPeriodo()) {
+        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+          <label class="block">
+            <span class="um-label">Desde</span>
+            <ui-input-fecha
+              class="mt-1 block"
+              [valor]="desde()"
+              (valorChange)="desde.set($event)"
+            ></ui-input-fecha>
+          </label>
+          <label class="block">
+            <span class="um-label">Hasta</span>
+            <ui-input-fecha
+              class="mt-1 block"
+              [valor]="hasta()"
+              (valorChange)="hasta.set($event)"
+            ></ui-input-fecha>
+          </label>
+        </div>
+        <p class="mt-2 text-sm text-um-muted">
+          Primero se sube el XLSX y después se imputan las filas pendientes del período.
+        </p>
+      }
+      @if (archivo(); as archivo) {
+        <p class="mt-2 text-sm text-um-muted">
+          {{ archivo.name }} · {{ archivo.size }} bytes
+        </p>
+      }
+
+      @if (error(); as error) {
+        <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+      }
+
+      <div class="mt-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          class="um-btn-primary"
+          [disabled]="cargando() || !archivo() || (esPeriodo() && !periodoValido())"
+          (click)="previsualizar()"
+        >
+          {{ esPeriodo() ? 'Subir y previsualizar' : 'Previsualizar' }}
+        </button>
+        <a class="um-link-btn" routerLink="/cobranzas/importar">Volver</a>
+      </div>
+
+      @if (cargando()) {
+        <p class="mt-3 text-sm text-um-muted">Leyendo el archivo…</p>
+      }
+    </div>
+  }
+</section>

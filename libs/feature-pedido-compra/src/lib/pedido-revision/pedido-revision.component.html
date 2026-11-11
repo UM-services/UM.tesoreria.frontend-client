@@ -51,9 +51,10 @@
               <th scope="col">Número</th>
               <th scope="col">Estado</th>
               <th scope="col">Dependencia</th>
+              <th scope="col">Solicitante</th>
               <th scope="col">Fecha</th>
               <th scope="col">Valor estimado</th>
-              <th scope="col" class="text-right">Cotizaciones mín.</th>
+              <th scope="col" class="text-right">Presupuestos mín.</th>
               <th scope="col">Necesidad</th>
               <th scope="col" class="text-right">Acciones</th>
             </tr>
@@ -68,8 +69,21 @@
                   </span>
                 </td>
                 <td>{{ pedido.dependenciaNombre || pedido.dependenciaId }}</td>
-                <td>{{ pedido.fecha | date: 'short' }}</td>
-                <td>{{ pedido.montoEstimado !== null ? (pedido.montoEstimado | number: '1.2-2') : '—' }}</td>
+                <td>
+                  {{
+                    solicitanteLabel(
+                      pedido.solicitanteNombre,
+                      pedido.solicitanteLogin,
+                      pedido.solicitanteId
+                    )
+                  }}
+                </td>
+                <td>{{ pedido.fecha | umFecha }}</td>
+                <td>
+                  {{
+                    pedido.montoEstimado !== null ? (pedido.montoEstimado | number: '1.2-2') : '—'
+                  }}
+                </td>
                 <td class="text-right">{{ pedido.cantidadCotizacionesMinima ?? '—' }}</td>
                 <td class="align-top">
                   <div class="max-w-md">
@@ -119,12 +133,16 @@
                             type="text"
                             class="um-input"
                             [(ngModel)]="fuenteEstimacion"
-                            placeholder="Ej.: cotización del área solicitante…"
+                            placeholder="Ej.: presupuesto del área solicitante…"
                           />
                         </div>
                       </div>
                       <div class="flex justify-end gap-3">
-                        <button type="button" class="um-btn-secondary" (click)="cancelarEstimacion()">
+                        <button
+                          type="button"
+                          class="um-btn-secondary"
+                          (click)="cancelarEstimacion()"
+                        >
                           Cancelar
                         </button>
                         <button

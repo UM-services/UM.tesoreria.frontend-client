@@ -33,13 +33,19 @@
     <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
       <div>
         <label class="um-label" for="referencia-ejercicio">Ejercicio</label>
-        <input
+        <select
           id="referencia-ejercicio"
-          type="number"
           class="um-input"
           [(ngModel)]="ejercicioId"
-          placeholder="Ej.: 7"
-        />
+          (ngModelChange)="onEjercicioChange($event)"
+        >
+          <option [ngValue]="null">Seleccioná un ejercicio</option>
+          @for (ejercicio of ejercicios(); track ejercicio.ejercicioId) {
+            <option [ngValue]="ejercicio.ejercicioId">
+              {{ ejercicio.nombre?.trim() || 'Ejercicio ' + ejercicio.ejercicioId }}
+            </option>
+          }
+        </select>
       </div>
       <div>
         <label class="um-label" for="referencia-importe">Importe de referencia</label>
@@ -49,14 +55,19 @@
           min="0"
           step="0.01"
           class="um-input"
+          [disabled]="referenciaCargando()"
           [(ngModel)]="importe"
         />
+        @if (ejercicioId !== null && !referenciaCargando() && importe === 0) {
+          <p class="mt-1 text-xs text-um-muted">
+            Sin referencia cargada para este ejercicio. Ingresá un importe y guardá.
+          </p>
+        }
       </div>
-      <div class="flex items-end gap-3">
-        <button type="button" class="um-btn-secondary" [disabled]="referenciaCargando()" (click)="cargarReferencia()">
-          Cargar
+      <div class="flex items-end justify-end gap-3">
+        <button type="button" class="um-btn-primary" [disabled]="referenciaCargando()" (click)="guardarReferencia()">
+          Guardar
         </button>
-        <button type="button" class="um-btn-primary" (click)="guardarReferencia()">Guardar</button>
       </div>
     </div>
   </section>
@@ -69,6 +80,8 @@
       </h2>
       <p class="mt-1 text-sm text-um-muted">
         Un perfil define un nivel de autorización como múltiplo de la referencia. Sin límite = vacío.
+        La asignación a usuarios es global: el ejercicio no forma parte de la asignación, sólo
+        define la referencia con la que se calcula el límite.
       </p>
     </div>
 
@@ -111,13 +124,14 @@
             <th scope="col">Nombre</th>
             <th scope="col">Múltiplo</th>
             <th scope="col">Activo</th>
+            <th scope="col">Usuarios</th>
             <th scope="col" class="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
           @if (perfilesCargando()) {
             <tr>
-              <td colspan="4" class="p-6 text-sm text-um-muted">Cargando…</td>
+              <td colspan="5" class="p-6 text-sm text-um-muted">Cargando…</td>
             </tr>
           } @else {
             @for (perfil of perfiles(); track perfil.autoridadPerfilId) {
@@ -154,6 +168,19 @@
                       [(ngModel)]="edicionActivo"
                     />
                   </td>
+                  <td>
+                    @if (usuariosDePerfil(perfil.autoridadPerfilId).length > 0) {
+                      <div class="flex flex-wrap gap-1">
+                        @for (usuario of usuariosDePerfil(perfil.autoridadPerfilId); track usuario.usuarioId) {
+                          <span class="um-badge" [title]="usuario.login || ''">
+                            {{ usuario.nombre || usuario.login || 'Usuario ' + usuario.usuarioId }}
+                          </span>
+                        }
+                      </div>
+                    } @else {
+                      <span class="text-sm text-um-muted">Sin usuarios</span>
+                    }
+                  </td>
                   <td class="text-right">
                     <div class="flex justify-end gap-3">
                       <button type="button" class="um-link-btn" (click)="guardarEdicion(perfil)">
@@ -168,6 +195,19 @@
                   <td class="font-semibold text-um-ink">{{ perfil.nombre }}</td>
                   <td>{{ perfil.multiplico !== null ? perfil.multiplico : 'Sin límite' }}</td>
                   <td>{{ perfil.activo === 1 ? 'Sí' : 'No' }}</td>
+                  <td>
+                    @if (usuariosDePerfil(perfil.autoridadPerfilId).length > 0) {
+                      <div class="flex flex-wrap gap-1">
+                        @for (usuario of usuariosDePerfil(perfil.autoridadPerfilId); track usuario.usuarioId) {
+                          <span class="um-badge" [title]="usuario.login || ''">
+                            {{ usuario.nombre || usuario.login || 'Usuario ' + usuario.usuarioId }}
+                          </span>
+                        }
+                      </div>
+                    } @else {
+                      <span class="text-sm text-um-muted">Sin usuarios</span>
+                    }
+                  </td>
                   <td class="text-right">
                     <div class="flex justify-end gap-3">
                       <button type="button" class="um-link-btn" (click)="editar(perfil)">Editar</button>
@@ -180,7 +220,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="4" class="p-6 text-sm text-um-muted">
+                <td colspan="5" class="p-6 text-sm text-um-muted">
                   Todavía no hay perfiles de autoridad.
                 </td>
               </tr>
@@ -196,6 +236,10 @@
     <h2 class="text-sm font-semibold uppercase tracking-wider text-um-ink">
       3. Asignación de perfiles a usuarios
     </h2>
+    <p class="mt-1 text-sm text-um-muted">
+      El perfil asignado vale para todos los ejercicios. El ejercicio sólo define la referencia
+      con la que se calcula el límite.
+    </p>
 
     @if (!usuarioSeleccionado()) {
       <div class="mt-4">
@@ -271,17 +315,26 @@
           </ul>
         </div>
         <div>
-          <label class="um-label" for="limite-ejercicio">Ver límite por ejercicio</label>
-          <input
+          <label class="um-label" for="limite-ejercicio">Vista previa del límite</label>
+          <select
             id="limite-ejercicio"
-            type="number"
             class="um-input mt-2"
             [(ngModel)]="ejercicioLimite"
-            placeholder="Ej.: 7"
-          />
-          <button type="button" class="um-btn-secondary mt-2" (click)="calcularLimite()">
-            Calcular límite
-          </button>
+            (ngModelChange)="onEjercicioLimiteChange($event)"
+          >
+            <option [ngValue]="null">Seleccioná un ejercicio</option>
+            @for (ejercicio of ejercicios(); track ejercicio.ejercicioId) {
+              <option [ngValue]="ejercicio.ejercicioId">
+                {{ ejercicio.nombre?.trim() || 'Ejercicio ' + ejercicio.ejercicioId }}
+              </option>
+            }
+          </select>
+          <p class="mt-1 text-xs text-um-muted">
+            Es sólo una simulación: no guarda ni modifica la asignación.
+          </p>
+          @if (limiteError()) {
+            <p class="mt-3 text-sm text-red-600">{{ limiteError() }}</p>
+          }
           @if (limite()) {
             <p class="mt-3 text-sm text-um-ink">{{ textoLimite() }}</p>
           }

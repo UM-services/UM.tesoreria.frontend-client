@@ -3,8 +3,8 @@
     <p class="um-eyebrow">Compras</p>
     <h1 class="um-page-title">Adjudicación</h1>
     <p class="um-page-desc">
-      Procesos de cotización recomendados pendientes de la decisión de la autoridad competente. El
-      monto se evalúa contra el total de la cotización recomendada.
+      Procesos de presupuesto recomendados pendientes de la decisión de la autoridad competente. El
+      monto se evalúa contra el total del presupuesto recomendado.
     </p>
   </header>
 
@@ -26,7 +26,9 @@
     } @else if (errorMessage()) {
       <div class="um-alert-error m-4">{{ errorMessage() }}</div>
     } @else if (procesos().length === 0) {
-      <div class="p-6 text-sm text-um-muted">No hay procesos recomendados pendientes de adjudicación.</div>
+      <div class="p-6 text-sm text-um-muted">
+        No hay procesos recomendados pendientes de adjudicación.
+      </div>
     } @else {
       <div class="overflow-x-auto">
         <table class="um-table">
@@ -51,21 +53,39 @@
                 <td>
                   {{ proceso.proveedorRecomendadoId ?? '—' }}
                   @if (proceso.fundamentoRecomendacion) {
-                    <span class="block text-xs text-um-muted">{{ proceso.fundamentoRecomendacion }}</span>
+                    <span class="block text-xs text-um-muted">{{
+                      proceso.fundamentoRecomendacion
+                    }}</span>
                   }
                 </td>
                 <td class="text-right">
-                  {{ totalRecomendado(proceso) !== null ? (totalRecomendado(proceso) | number: '1.2-2') : '—' }}
+                  {{
+                    totalRecomendado(proceso) !== null
+                      ? (totalRecomendado(proceso) | number: '1.2-2')
+                      : '—'
+                  }}
                 </td>
                 <td class="text-right">
-                  <button type="button" class="um-link-btn" (click)="abrir(proceso, 'ADJUDICADA')">Adjudicar</button>
-                  <button type="button" class="um-link-btn" (click)="abrir(proceso, 'DEVUELTA_A_COMPRAS')">
+                  <button type="button" class="um-link-btn" (click)="abrir(proceso, 'ADJUDICADA')">
+                    Adjudicar
+                  </button>
+                  <button
+                    type="button"
+                    class="um-link-btn"
+                    (click)="abrir(proceso, 'DEVUELTA_A_COMPRAS')"
+                  >
                     Devolver
                   </button>
-                  <button type="button" class="um-link-btn" (click)="abrir(proceso, 'NO_ADJUDICADA')">
+                  <button
+                    type="button"
+                    class="um-link-btn"
+                    (click)="abrir(proceso, 'NO_ADJUDICADA')"
+                  >
                     No adjudicar
                   </button>
-                  <a [routerLink]="['/cotizacion', proceso.compraCotizacionId]" class="um-link-btn">Ver proceso</a>
+                  <a [routerLink]="['/cotizacion', proceso.compraCotizacionId]" class="um-link-btn"
+                    >Ver proceso</a
+                  >
                 </td>
               </tr>
             }
@@ -79,9 +99,15 @@
     <section class="um-card mt-4">
       <h2 class="um-section">
         @switch (decision()) {
-          @case ('ADJUDICADA') { Adjudicar el proceso {{ proceso.numero || '—' }} }
-          @case ('DEVUELTA_A_COMPRAS') { Devolver a compras el proceso {{ proceso.numero || '—' }} }
-          @default { No adjudicar el proceso {{ proceso.numero || '—' }} }
+          @case ('ADJUDICADA') {
+            Adjudicar el proceso {{ proceso.numero || '—' }}
+          }
+          @case ('DEVUELTA_A_COMPRAS') {
+            Devolver a compras el proceso {{ proceso.numero || '—' }}
+          }
+          @default {
+            No adjudicar el proceso {{ proceso.numero || '—' }}
+          }
         }
       </h2>
 
@@ -92,7 +118,9 @@
             @for (oferta of ofertas(proceso); track oferta.compraCotizacionProveedorId) {
               <option [ngValue]="oferta.compraCotizacionProveedorId">
                 Proveedor {{ oferta.proveedorId }} — {{ oferta.total | number: '1.2-2' }}
-                @if (oferta.compraCotizacionProveedorId === proceso.proveedorRecomendadoId) { (recomendada) }
+                @if (oferta.compraCotizacionProveedorId === proceso.proveedorRecomendadoId) {
+                  (recomendada)
+                }
               </option>
             }
           </select>
@@ -106,7 +134,9 @@
 
       <div class="mt-3 flex justify-end gap-3">
         <button type="button" class="um-btn-secondary" (click)="cerrar()">Cancelar</button>
-        <button type="button" class="um-btn-primary" [disabled]="guardando()" (click)="confirmar()">Confirmar</button>
+        <button type="button" class="um-btn-primary" [disabled]="guardando()" (click)="confirmar()">
+          Confirmar
+        </button>
       </div>
     </section>
   }

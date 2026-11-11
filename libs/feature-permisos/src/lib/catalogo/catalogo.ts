@@ -1,9 +1,8 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Permiso } from '../permisos.models';
+import { Permiso, SyncPermisosResultado } from '../permisos.models';
 import { PermisosService } from '../permisos.service';
 
 interface GrupoCatalogo {
@@ -12,13 +11,17 @@ interface GrupoCatalogo {
 }
 
 /**
- * ABM del catálogo de permisos: da de alta/edita/baja las claves que el sistema
- * y el código referencian (p. ej. `pagos.reembolsos`). Evita tocar la base a mano.
+ * Inventario de permisos (sólo lectura).
+ *
+ * La fuente de verdad es `tesoreria-core/src/main/resources/permisos.yaml`; el
+ * core lo aplica al arrancar. Esta pantalla permite consultar el catálogo y, como
+ * operación de administración, verificar el diff (dry-run) o forzar la
+ * sincronización. No se crean ni eliminan claves desde acá.
  */
 @Component({
   selector: 'app-catalogo',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './catalogo.html',
 })
@@ -33,11 +36,10 @@ export class CatalogoComponent implements OnInit {
   public errorMessage = '';
   public successMessage = '';
 
-  public pendientes = new Set<number>();
-  public mostrarForm = false;
-  public permisoEditando: Permiso | null = null;
-  public confirmandoEliminar: number | null = null;
-  public form = { clave: '', descripcion: '', modulo: '', activo: 1 };
+  public simulando = false;
+  public aplicando = false;
+  public confirmandoAplicar = false;
+  public syncResultado: SyncPermisosResultado | null = null;
 
   ngOnInit() {
     this.cargar(true);
@@ -69,104 +71,77 @@ export class CatalogoComponent implements OnInit {
     return grupo.permisos.length;
   }
 
-  nuevoPermiso() {
-    this.zone.run(() => {
-      this.mostrarForm = true;
-      this.permisoEditando = null;
-      this.form = { clave: '', descripcion: '', modulo: '', activo: 1 };
-      this.cdr.detectChanges();
-    });
-  }
-
-  editarPermiso(permiso: Permiso) {
-    this.zone.run(() => {
-      this.mostrarForm = true;
-      this.permisoEditando = permiso;
-      this.form = {
-        clave: permiso.clave,
-        descripcion: permiso.descripcion,
-        modulo: permiso.modulo,
-        activo: permiso.activo,
-      };
-      this.cdr.detectChanges();
-    });
-  }
-
-  cancelarForm() {
-    this.zone.run(() => {
-      this.mostrarForm = false;
-      this.permisoEditando = null;
-      this.cdr.detectChanges();
-    });
-  }
-
-  guardarPermiso() {
-    const clave = this.form.clave.trim();
-    const descripcion = this.form.descripcion.trim();
-    const modulo = this.form.modulo.trim();
-    if (!clave || !descripcion || !modulo) {
-      this.showError('Clave, descripción y módulo son obligatorios.');
+  simularSync() {
+    if (this.simulando || this.aplicando) {
       return;
     }
-    const editando = this.permisoEditando;
-    const payload = { clave, descripcion, modulo, aplicacion: 'TESORERIA', activo: this.form.activo };
-    const peticion$ = editando
-      ? this.service.actualizarPermiso(editando.permisoId, payload)
-      : this.service.crearPermiso(payload);
+    this.simulando = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.confirmandoAplicar = false;
 
-    peticion$.subscribe({
-      next: () =>
+    this.service.syncPermisos(true).subscribe({
+      next: resultado =>
         this.zone.run(() => {
-          this.showSuccess(editando ? 'Permiso actualizado.' : 'Permiso creado.');
-          this.mostrarForm = false;
-          this.permisoEditando = null;
+          this.simulando = false;
+          this.syncResultado = resultado;
+          this.cdr.detectChanges();
+        }),
+      error: (err: unknown) =>
+        this.zone.run(() => {
+          this.simulando = false;
+          this.showError(this.extraerError(err, 'al verificar la sincronización'));
+          this.cdr.detectChanges();
+        }),
+    });
+  }
+
+  aplicarSync() {
+    if (this.aplicando || this.simulando) {
+      return;
+    }
+    if (!this.confirmandoAplicar) {
+      this.confirmandoAplicar = true;
+      return;
+    }
+
+    this.aplicando = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.service.syncPermisos(false).subscribe({
+      next: resultado =>
+        this.zone.run(() => {
+          this.aplicando = false;
+          this.confirmandoAplicar = false;
+          this.syncResultado = resultado;
+          this.showSuccess(
+            `Inventario aplicado: ${resultado.agregados} agregadas, ` +
+              `${resultado.actualizados} actualizadas, ${resultado.retirados} retiradas.`,
+          );
           this.cargar(false);
           this.cdr.detectChanges();
         }),
       error: (err: unknown) =>
         this.zone.run(() => {
-          this.showError(this.extraerError(err, 'al guardar el permiso'));
+          this.aplicando = false;
+          this.confirmandoAplicar = false;
+          this.showError(this.extraerError(err, 'al aplicar la sincronización'));
           this.cdr.detectChanges();
         }),
     });
   }
 
-  pedirConfirmacion(permisoId: number) {
-    this.zone.run(() => {
-      this.confirmandoEliminar = permisoId;
-      this.cdr.detectChanges();
-    });
+  cancelarAplicar() {
+    this.confirmandoAplicar = false;
   }
 
-  cancelarConfirmacion() {
-    this.zone.run(() => {
-      this.confirmandoEliminar = null;
-      this.cdr.detectChanges();
-    });
+  descartarSync() {
+    this.syncResultado = null;
   }
 
-  eliminarPermiso(permiso: Permiso) {
-    if (this.pendientes.has(permiso.permisoId)) {
-      return;
-    }
-    this.pendientes.add(permiso.permisoId);
-    this.service.eliminarPermiso(permiso.permisoId).subscribe({
-      next: () =>
-        this.zone.run(() => {
-          this.pendientes.delete(permiso.permisoId);
-          this.confirmandoEliminar = null;
-          this.showSuccess(`Permiso "${permiso.clave}" eliminado.`);
-          this.cargar(false);
-          this.cdr.detectChanges();
-        }),
-      error: (err: unknown) =>
-        this.zone.run(() => {
-          this.pendientes.delete(permiso.permisoId);
-          this.confirmandoEliminar = null;
-          this.showError(this.extraerError(err, 'al eliminar el permiso'));
-          this.cdr.detectChanges();
-        }),
-    });
+  hayCambios(): boolean {
+    const resultado = this.syncResultado;
+    return !!resultado && resultado.agregados + resultado.actualizados + resultado.retirados > 0;
   }
 
   private agrupar(permisos: Permiso[]): GrupoCatalogo[] {

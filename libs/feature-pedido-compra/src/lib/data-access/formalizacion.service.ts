@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { API_URL } from '@tesoreria/shared-api';
 import { Observable } from 'rxjs';
@@ -20,22 +20,20 @@ export class FormalizacionService {
 
   /** Adjudicaciones pendientes de emitir la Orden de Compra. */
   pendientes(ejercicioId?: number | null): Observable<FormalizacionPendiente[]> {
-    let params = new HttpParams();
-    if (ejercicioId != null) {
-      params = params.set('ejercicioId', ejercicioId);
-    }
-    return this.http.get<FormalizacionPendiente[]>(`${this.baseUrl}/pendientes`, { params });
+    const url =
+      ejercicioId != null
+        ? `${this.baseUrl}/pendientes/${ejercicioId}`
+        : `${this.baseUrl}/pendientes`;
+    return this.http.get<FormalizacionPendiente[]>(url);
   }
 
   listar(ejercicioId?: number | null, proveedorId?: number | null): Observable<Formalizacion[]> {
-    let params = new HttpParams();
-    if (ejercicioId != null) {
-      params = params.set('ejercicioId', ejercicioId);
-    }
-    if (proveedorId != null) {
-      params = params.set('proveedorId', proveedorId);
-    }
-    return this.http.get<Formalizacion[]>(this.baseUrl, { params });
+    return this.http.post<Formalizacion[]>(`${this.baseUrl}/search`, {
+      ejercicioId: ejercicioId ?? null,
+      proveedorId: proveedorId ?? null,
+      fechaDesde: null,
+      fechaHasta: null,
+    });
   }
 
   getById(compraFormalizacionId: number): Observable<Formalizacion> {

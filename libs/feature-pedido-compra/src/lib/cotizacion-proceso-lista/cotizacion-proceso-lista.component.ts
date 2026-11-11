@@ -1,13 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { FechaPipe } from '@tesoreria/ui-layout';
 import { CotizacionProcesoService } from '../data-access/cotizacion-proceso.service';
-import { CotizacionProceso, cotizacionEstadoBadgeClass, cotizacionEstadoLabel } from '../models/cotizacion-proceso.models';
+import {
+  CotizacionProceso,
+  cotizacionEstadoBadgeClass,
+  cotizacionEstadoLabel,
+} from '../models/cotizacion-proceso.models';
 
 @Component({
   selector: 'app-cotizacion-proceso-lista',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FechaPipe],
   templateUrl: './cotizacion-proceso-lista.component.html',
 })
 export class CotizacionProcesoListaComponent implements OnInit {
@@ -32,7 +37,7 @@ export class CotizacionProcesoListaComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('No se pudieron cargar los procesos de cotización.');
+        this.errorMessage.set('No se pudieron cargar los procesos de presupuesto.');
         this.isLoading.set(false);
       },
     });

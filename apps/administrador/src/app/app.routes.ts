@@ -46,7 +46,7 @@ export const appRoutes: Route[] = [
     path: 'autorizantes-envio',
     loadComponent: () =>
       import('@tesoreria/feature-administrador').then(m => m.AutorizantesEnvioComponent),
-    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+    canActivate: [authGuard, usuarioInternoGuard, permisoGuard('compras.autorizantes.configurar')],
   },
   {
     // Referencia por ejercicio, perfiles de autoridad por monto y su asignación a usuarios.
@@ -56,7 +56,7 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {
-    // Tramos de cotizaciones mínimas por monto (configuración del proceso de compras).
+    // Tramos de presupuestos mínimos por monto (configuración del proceso de compras).
     path: 'cotizaciones-minimas',
     loadComponent: () =>
       import('@tesoreria/feature-administrador').then(m => m.CotizacionesMinimasComponent),
@@ -71,6 +71,13 @@ export const appRoutes: Route[] = [
     // Sólo administradores: asignación de roles y permisos a cualquier usuario.
     path: 'permisos',
     loadComponent: () => import('@tesoreria/feature-permisos').then(m => m.PermisosComponent),
+    canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
+  },
+  {
+    // Sólo administradores: bandeja de pedidos de acceso enviados desde `sin-acceso`.
+    path: 'solicitudes',
+    loadComponent: () =>
+      import('@tesoreria/feature-permisos').then(m => m.SolicitudesAccesoComponent),
     canActivate: [authGuard, usuarioInternoGuard, administradorGuard],
   },
   {

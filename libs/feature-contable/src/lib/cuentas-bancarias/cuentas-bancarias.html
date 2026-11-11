@@ -1,0 +1,345 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Contabilidad / Cuentas bancarias</p>
+      <h1 class="um-page-title">Cuentas bancarias</h1>
+      <p class="um-page-desc">
+        Bancos, números, CBU, titulares y cuenta contable de cada cuenta bancaria.
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        class="um-btn-primary"
+        [disabled]="procesando() || cargando()"
+        (click)="nueva()"
+      >
+        Nueva cuenta
+      </button>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+      @if (errorDeLista()) {
+        <div class="mt-3 flex justify-end">
+          <button type="button" class="um-btn-secondary" (click)="reintentar()">Reintentar</button>
+        </div>
+      }
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  @if (pendiente(); as cuenta) {
+    <div class="um-alert um-alert-warn" role="alertdialog" aria-label="Confirmar baja">
+      <p class="text-sm text-amber-800">
+        ¿Eliminar la cuenta {{ descripcion(cuenta) }}? La baja no se puede deshacer.
+      </p>
+      <div class="mt-3 flex justify-end gap-3">
+        <button type="button" class="um-btn-secondary" (click)="cancelarBaja()">Cancelar</button>
+        <button
+          type="button"
+          class="um-btn-primary"
+          [disabled]="procesando()"
+          (click)="confirmarBaja()"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (bloqueada(); as bloqueo) {
+    <div class="um-alert um-alert-warn" role="alert">
+      <p class="text-sm text-amber-800">{{ textoBloqueo(bloqueo.cuenta, bloqueo.uso) }}</p>
+      <div class="mt-3 flex justify-end">
+        <button type="button" class="um-btn-secondary" (click)="cancelarBaja()">Entendido</button>
+      </div>
+    </div>
+  }
+
+  <div class="um-card p-6">
+    <div class="flex flex-wrap items-center gap-4">
+      <div class="w-full sm:max-w-md">
+        <label class="um-label" for="filtro-cuentas">Buscar</label>
+        <input
+          #busqueda
+          id="filtro-cuentas"
+          type="text"
+          class="um-input"
+          placeholder="Banco, número, titular, CBU, CUIT o cuenta contable"
+          [value]="filtro()"
+          (input)="filtro.set(busqueda.value)"
+        />
+      </div>
+      <p class="text-sm text-um-muted sm:mt-6">
+        {{ filtradas().length }} de {{ cuentas().length }} cuentas
+      </p>
+    </div>
+
+    <div class="mt-4 min-h-[28rem] max-h-[70vh] overflow-auto">
+      <table class="um-table min-w-full">
+        <thead>
+          <tr>
+            <th scope="col" class="w-16">Id</th>
+            <th scope="col">Banco</th>
+            <th scope="col">Número</th>
+            <th scope="col">CBU</th>
+            <th scope="col">Titular</th>
+            <th scope="col">CUIT</th>
+            <th scope="col">Cuenta contable</th>
+            <th scope="col" class="w-48"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando() && cuentas().length === 0) {
+            <tr>
+              <td colspan="8" class="py-8 text-center text-sm text-um-muted">
+                Cargando cuentas...
+              </td>
+            </tr>
+          }
+          @for (cuenta of filtradas(); track cuenta.bancariaId) {
+            <tr>
+              <td class="whitespace-nowrap">{{ cuenta.bancariaId }}</td>
+              <td>{{ cuenta.banco }}</td>
+              <td class="whitespace-nowrap">{{ cuenta.numero }}</td>
+              <td class="whitespace-nowrap">{{ cuenta.cbu || '—' }}</td>
+              <td>{{ cuenta.titular }}</td>
+              <td class="whitespace-nowrap">{{ cuenta.cuit || '—' }}</td>
+              <td>
+                <div>{{ cuenta.cuenta?.nombre || '—' }}</div>
+                <div class="text-xs text-um-muted">{{ cuenta.numeroCuenta ?? '' }}</div>
+              </td>
+              <td>
+                <div class="flex flex-nowrap justify-end gap-2">
+                  <button
+                    type="button"
+                    class="um-btn-secondary whitespace-nowrap"
+                    [disabled]="procesando()"
+                    (click)="editar(cuenta)"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    class="um-btn-secondary whitespace-nowrap"
+                    [disabled]="procesando()"
+                    (click)="pedirBaja(cuenta)"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            @if (!cargando()) {
+              <tr>
+                <td colspan="8" class="py-8 text-center text-sm text-um-muted">
+                  @if (!listaCargada()) {
+                    La lista no está disponible.
+                  } @else if (cuentas().length) {
+                    Ninguna cuenta coincide con la búsqueda.
+                  } @else {
+                    No hay cuentas bancarias cargadas.
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (modalAbierto()) {
+  <div class="relative z-[9999]" aria-labelledby="cb-modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/50 transition-opacity"></div>
+
+    <div
+      tabindex="-1"
+      class="fixed inset-0 z-10 w-screen overflow-y-auto"
+      data-testid="modal-fondo"
+      (mousedown)="marcarClicEnFondo($event)"
+      (click)="clicFondo($event)"
+      (keydown.escape)="cerrarModal()"
+    >
+      <div class="flex min-h-full items-center justify-center p-4 sm:p-0">
+        <div
+          tabindex="-1"
+          (click)="$event.stopPropagation()"
+          (keydown)="$event.stopPropagation()"
+          (keydown.escape)="cerrarModal()"
+          data-modal-panel
+          class="relative flex w-full flex-col overflow-hidden rounded-lg bg-white text-left shadow-xl sm:my-8 sm:max-w-3xl"
+        >
+          <div
+            class="flex items-center justify-between border-b border-um-border px-4 py-4 sm:px-6"
+          >
+            <h3 class="text-lg font-bold leading-6 text-um-ink" id="cb-modal-title">
+              @if (editando(); as cuenta) {
+                Editar cuenta N.º {{ cuenta.bancariaId }}
+              } @else {
+                Nueva cuenta bancaria
+              }
+            </h3>
+            <button
+              type="button"
+              class="um-link-btn"
+              [disabled]="guardando()"
+              (click)="cerrarModal()"
+            >
+              Cerrar
+            </button>
+          </div>
+
+          @if (modalAviso(); as aviso) {
+            <div
+              role="alert"
+              class="um-alert"
+              [class.um-alert-error]="aviso.tipo === 'error'"
+              [class.um-alert-warn]="aviso.tipo === 'warn'"
+            >
+              {{ aviso.texto }}
+            </div>
+          }
+
+          <form [formGroup]="form" class="grid grid-cols-1 gap-5 px-4 py-5 sm:p-6 md:grid-cols-2">
+            <div>
+              <label class="um-label" for="cb-banco">Banco</label>
+              <input
+                id="cb-banco"
+                type="text"
+                formControlName="banco"
+                class="um-input"
+                [class.um-input-invalid]="errores().banco"
+              />
+              @if (errores().banco; as error) {
+                <p class="mt-1 text-xs text-red-700">{{ error }}</p>
+              }
+            </div>
+
+            <div>
+              <label class="um-label" for="cb-numero">Número de cuenta</label>
+              <input
+                id="cb-numero"
+                type="text"
+                formControlName="numero"
+                class="um-input"
+                [class.um-input-invalid]="errores().numero"
+              />
+              @if (errores().numero; as error) {
+                <p class="mt-1 text-xs text-red-700">{{ error }}</p>
+              }
+            </div>
+
+            <div>
+              <label class="um-label" for="cb-cbu">CBU</label>
+              <input
+                id="cb-cbu"
+                type="text"
+                inputmode="numeric"
+                formControlName="cbu"
+                class="um-input"
+                [class.um-input-invalid]="errores().cbu"
+              />
+              @if (errores().cbu; as error) {
+                <p class="mt-1 text-xs text-red-700">{{ error }}</p>
+              }
+            </div>
+
+            <div>
+              <label class="um-label" for="cb-cuit">CUIT</label>
+              <input
+                id="cb-cuit"
+                type="text"
+                formControlName="cuit"
+                class="um-input"
+                placeholder="XX-XXXXXXXX-X"
+                [class.um-input-invalid]="errores().cuit"
+              />
+              @if (errores().cuit; as error) {
+                <p class="mt-1 text-xs text-red-700">{{ error }}</p>
+              }
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="um-label" for="cb-titular">Titular</label>
+              <input
+                id="cb-titular"
+                type="text"
+                formControlName="titular"
+                class="um-input"
+                [class.um-input-invalid]="errores().titular"
+              />
+              @if (errores().titular; as error) {
+                <p class="mt-1 text-xs text-red-700">{{ error }}</p>
+              }
+            </div>
+
+            <div class="md:col-span-2">
+              <span class="um-label">Cuenta contable <span class="text-red-500">*</span></span>
+              <div class="flex flex-wrap items-center gap-3">
+                <p class="text-sm text-um-ink" data-testid="cuenta-elegida">
+                  @if (cuentaElegida(); as cuenta) {
+                    {{ cuenta.numeroCuenta }}
+                    @if (cuenta.nombre) {
+                      — {{ cuenta.nombre }}
+                    }
+                  } @else {
+                    <span class="text-um-muted">Sin cuenta contable</span>
+                  }
+                </p>
+                <button
+                  type="button"
+                  class="um-btn-secondary"
+                  [disabled]="guardando()"
+                  (click)="abrirBuscador()"
+                >
+                  {{ cuentaElegida() ? 'Cambiar cuenta' : 'Elegir cuenta' }}
+                </button>
+              </div>
+              @if (errores().numeroCuenta; as error) {
+                <p class="mt-1 text-xs text-red-700">{{ error }}</p>
+              }
+            </div>
+          </form>
+
+          <div
+            class="flex flex-col-reverse gap-3 border-t border-um-border bg-um-surface px-4 py-3 sm:flex-row sm:justify-end sm:px-6"
+          >
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [disabled]="guardando()"
+              (click)="cerrarModal()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="um-btn-primary"
+              [disabled]="guardando()"
+              (click)="guardar()"
+            >
+              {{ guardando() ? 'Guardando…' : 'Guardar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<ui-buscador-cuenta-contable
+  [isOpen]="buscadorAbierto()"
+  (cuentaSelected)="onCuentaSelected($event)"
+  (closed)="cerrarBuscador()"
+/>
