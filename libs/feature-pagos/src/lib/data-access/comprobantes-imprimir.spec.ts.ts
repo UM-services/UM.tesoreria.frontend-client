@@ -5,7 +5,7 @@ import { API_URL, PermisosService } from '@tesoreria/shared-api';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ComprobantesService } from '../data-access/comprobantes.service';
-import { ComprobantesComponent } from './comprobantes';
+import { ComprobantesComponent } from '../comprobantes/comprobantes';
 
 const PDF = '/api/tesoreria/report/contable/comprobante/10/pdf';
 
