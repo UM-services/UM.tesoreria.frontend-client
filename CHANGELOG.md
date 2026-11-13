@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.46.0] - 2026-11-12
+ 
+### Added
+ 
+- **Pagos › Comprobantes**: botón **Imprimir** en el detalle del comprobante, junto a «Anular comprobante». Pide a `report-service` (`GET /api/tesoreria/report/contable/comprobante/{proveedorMovimientoId}/pdf`) el PDF del comprobante seleccionado y lo abre en una pestaña nueva. Está habilitado para cualquier comprobante y no exige permiso específico: qué se puede imprimir lo decide el servidor (hoy, órdenes de pago; con otro comprobante `409 COMPROBANTE_NO_SOPORTADO` y se muestra su mensaje). La pestaña se abre en el clic y recibe el PDF al llegar, para que el navegador no la bloquee; si el pedido falla se cierra y se muestra el `message` de report (`404`, `409`, `502`). Muestra «Generando…» y no admite pedidos duplicados.
+- `ComprobantesImpresionService` (`data-access/comprobantes-impresion.service.ts`) con `imprimirComprobante()`, que deriva la URL de report de la base del core como el Mayor, y el helper `mensajeDeErrorBlob`.
+- Tests `comprobantes-impresion.service.spec.ts` y `comprobantes-imprimir.spec.ts`.
+
 ## [0.44.0] - 2026-11-10
  
 ### Added
