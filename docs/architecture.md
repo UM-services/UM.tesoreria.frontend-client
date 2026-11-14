@@ -327,6 +327,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
     ComprobantesComp --> BuscadorProveedor
     ComprobantesComp --> InputFecha["InputFecha Component<br/>@tesoreria/ui-layout"]
     ComprobantesComp --> MovimientoAPI["core: /proveedorMovimiento<br/>DELETE /compra/comprobante/{id}"]
+    ComprobantesComp --> ReportPDF["report: GET /contable/comprobante/{id}/pdf"]
 ```
 
 ## Estructura de Módulos - Guaraní
