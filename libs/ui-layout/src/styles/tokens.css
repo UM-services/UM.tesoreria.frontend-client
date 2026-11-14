@@ -94,6 +94,13 @@
     @apply font-semibold text-um-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-um-primary disabled:cursor-not-allowed disabled:opacity-50;
   }
 
+  /* Barra de acciones fija al pie (directiva [uiStickyFooter]).
+     `sticky` (no `fixed`): participa del flujo, queda visible durante el scroll y
+     no tapa el final del contenido. Las utilidades del consumidor pisan esta capa. */
+  .um-sticky-footer {
+    @apply sticky bottom-0 z-10 mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-um-border bg-white/95 px-1 py-3 backdrop-blur;
+  }
+
   /* Paneles de estado y errores */
   .um-alert {
     @apply border-l-4 border-um-border-strong bg-um-surface p-4 text-sm text-um-muted;

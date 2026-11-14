@@ -19,7 +19,7 @@
         subgraph "Libraries"
             SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>AccesoDenegadoService<br/>SolicitudAccesoService<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent y submenús<br/>Buscadores compartidos<br/>InputFechaComponent<br/>TextoEnriquecidoComponent<br/>InactividadComponent<br/>SolicitarAccesoModalComponent<br/>PermisoDirective y PermisoAlgunoDirective"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent y submenús<br/>Buscadores compartidos<br/>InputFechaComponent<br/>TextoEnriquecidoComponent<br/>InactividadComponent<br/>SolicitarAccesoModalComponent<br/>PermisoDirective y PermisoAlgunoDirective<br/>StickyFooterDirective (uiStickyFooter)"]
             UIRichText["@tesoreria/ui-rich-text<br/>EditorEnriquecidoComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
@@ -327,6 +327,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
     ComprobantesComp --> BuscadorProveedor
     ComprobantesComp --> InputFecha["InputFecha Component<br/>@tesoreria/ui-layout"]
     ComprobantesComp --> MovimientoAPI["core: /proveedorMovimiento<br/>DELETE /compra/comprobante/{id}"]
+    ComprobantesComp --> ReportPDF["report: GET /contable/comprobante/{id}/pdf"]
 ```
 
 ## Estructura de Módulos - Guaraní

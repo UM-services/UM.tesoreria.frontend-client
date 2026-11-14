@@ -1,36 +1,31 @@
 # Changelog
 
-## [0.46.0] - 2026-11-12
- 
-### Added
- 
-- **Pagos › Comprobantes**: botón **Imprimir** en el detalle del comprobante, junto a «Anular comprobante». Pide a `report-service` (`GET /api/tesoreria/report/contable/comprobante/{proveedorMovimientoId}/pdf`) el PDF del comprobante seleccionado y lo abre en una pestaña nueva. Está habilitado para cualquier comprobante y no exige permiso específico: qué se puede imprimir lo decide el servidor (hoy, órdenes de pago; con otro comprobante `409 COMPROBANTE_NO_SOPORTADO` y se muestra su mensaje). La pestaña se abre en el clic y recibe el PDF al llegar, para que el navegador no la bloquee; si el pedido falla se cierra y se muestra el `message` de report (`404`, `409`, `502`). Muestra «Generando…» y no admite pedidos duplicados.
-- `ComprobantesImpresionService` (`data-access/comprobantes-impresion.service.ts`) con `imprimirComprobante()`, que deriva la URL de report de la base del core como el Mayor, y el helper `mensajeDeErrorBlob`.
-- Tests `comprobantes-impresion.service.spec.ts` y `comprobantes-imprimir.spec.ts`.
+## [0.50.0] - 2026-11-13
 
-## [0.44.0] - 2026-11-10
- 
 ### Added
- 
+
 - feat(contable): nuevo grupo desplegable **Consultas** en el menú (solo encabezado, sin pantalla propia) con la consulta **Mayor** como hijo (`/consultas/mayor`, `MayorComponent` en `apps/contable/src/app/consultas/mayor`), con `authGuard` y `usuarioInternoGuard`. Sin clave de permiso nueva.
 - feat(contable): el Mayor se consulta por **una cuenta**, un **rango de cuentas** o **cuentas elegidas**, entre dos fechas que pueden cruzar ejercicios (`POST /balance/mayor/consulta`). Muestra, por cuenta, saldo inicial, movimientos (con ejercicio por línea), totales y saldo final tal como los devuelve el core, sin recalcular. Cuando el core rechaza el pedido (`409`/`404`/`400`) muestra su `message`.
-- feat(contable): **Exportar a Excel** con el mismo pedido contra report (`POST /report/contable/mayor/excel`, archivo `mayor.xlsx`); si report responde con error, se muestra su `message`.
-- feat(contable): **Exportar a PDF** con el mismo pedido contra report (`POST /report/contable/mayor/pdf`, archivo `mayor.pdf`); mismo manejo de errores que el Excel.
+- feat(contable): **Exportar a Excel** con el mismo pedido contra report (`POST /report/contable/mayor/excel`, archivo `mayor.xlsx`) y **Exportar a PDF** (`POST /report/contable/mayor/pdf`, archivo `mayor.pdf`). Mientras genera, el botón dice «Generando…» y no admite pedidos duplicados; si report responde con error se muestra su `message`.
 - feat(contable): `MayorService` (consulta, Excel y PDF).
 - test(contable): `mayor.spec.ts` con casos con ficha.
-> Depende de los cambios de core (`/balance/mayor/consulta`) y report (`/contable/mayor/excel` y `/contable/mayor/pdf`) y de `soloGrupo` en `ShellMenuItem` (`@tesoreria/ui-layout`).
+- feat(pagos): botón **Imprimir** en el detalle del comprobante, junto a «Anular comprobante», y también por fila del listado (imprime el comprobante de esa fila aunque haya otro seleccionado). Pide a `report-service` (`GET /api/tesoreria/report/contable/comprobante/{proveedorMovimientoId}/pdf`) el PDF del comprobante y lo abre en una pestaña nueva. Está habilitado para cualquier comprobante y no exige permiso específico: qué se puede imprimir lo decide el servidor (hoy, órdenes de pago; con otro comprobante `409 COMPROBANTE_NO_SOPORTADO` y se muestra su mensaje). La pestaña se abre en el clic y recibe el PDF al llegar, para que el navegador no la bloquee; si el pedido falla se cierra y se muestra el `message` de report (`404`, `409`, `502`). Muestra «Generando…» y no admite pedidos duplicados.
+- feat(pagos): `ComprobantesImpresionService` (`data-access/comprobantes-impresion.service.ts`) con `imprimirComprobante()`, que deriva la URL de report de la base del core como el Mayor, y el helper `mensajeDeErrorBlob`.
+- feat(ui-layout): nueva directiva standalone `[uiStickyFooter]` (`StickyFooterDirective`) que convierte un contenedor en **barra de acciones fija al pie**: aplica la clase de tema `.um-sticky-footer` (`position: sticky` con `bottom: 0`, borde superior, fondo blanco translúcido con desenfoque y layout flex que envuelve en pantallas angostas). No tapa el final del contenido como `position: fixed` y las utilidades del consumidor pisan la capa de componentes. Se extrajo de **Control del Período** de `haberes-frontend` para reutilizarla; el uso previsto es comprobantes del módulo de pagos. Se exporta desde `@tesoreria/ui-layout`.
+- test(ui-layout): `sticky-footer.directive.spec.ts` (aplica `um-sticky-footer`, conserva contenido, id y clases propias del consumidor).
+- test(pagos): `comprobantes-imprimir.spec.ts` (pestaña abierta en el clic, `409` con `message`, doble clic, pestaña bloqueada, sin selección, impresión desde una fila).
 
-## [0.50.0] - 2026-11-11
+### Changed
 
-### Added
+- docs(ui-layout): `libs/ui-layout/README.md` deja de ser el texto genérico de Nx y documenta la directiva `[uiStickyFooter]`, sus requisitos (`position: sticky`, último elemento del contenido que scrollea, sin ancestro con `overflow: hidden`/`auto`) y su ejemplo de uso.
+- chore(pagos): se eliminó `data-access/comprobantes-impresion.service.spec.ts`, que era una copia del servicio con extensión `.spec.ts` (no contenía pruebas), y se renombró `comprobantes-imprimir.spec.ts.ts` a `comprobantes-imprimir.spec.ts`. `tsconfig.spec.json` ya no lista ese archivo por nombre: lo cubre el glob `src/**/*.spec.ts`.
 
-- feat(contable): nuevo grupo desplegable **Consultas** en el menú (solo encabezado, sin pantalla propia) con la consulta **Mayor** como hijo (`/consultas/mayor`, `MayorComponent` en `apps/contable/src/app/consultas/mayor`), con `authGuard` y `usuarioInternoGuard`. Sin clave de permiso nueva.
-- feat(contable): el Mayor se consulta por **una cuenta**, un **rango de cuentas** o **cuentas elegidas**, entre dos fechas que pueden cruzar ejercicios (`POST /balance/mayor/consulta`). Muestra, por cuenta, saldo inicial, movimientos (con ejercicio por línea), totales y saldo final tal como los devuelve el core, sin recalcular. Cuando el core rechaza el pedido (`409`/`404`/`400`) muestra su `message`.
-- feat(contable): **Exportar a Excel** con el mismo pedido contra report (`POST /report/contable/mayor/excel`, archivo `mayor.xlsx`); si report responde con error, se muestra su `message`.
-- feat(contable): `MayorService` (consulta y Excel).
-- test(contable): `mayor.spec.ts` con casos con ficha.
+### Requisitos
 
-> Depende de los cambios de core (`/balance/mayor/consulta`) y report (`/contable/mayor/excel`) y de `soloGrupo` en `ShellMenuItem` (`@tesoreria/ui-layout`).
+- Core con `POST /balance/mayor/consulta` (`MayorService.consultar`).
+- report con `POST /contable/mayor/excel`, `POST /contable/mayor/pdf` y `GET /contable/comprobante/{proveedorMovimientoId}/pdf`.
+- `soloGrupo` en `ShellMenuItem` (`@tesoreria/ui-layout`) para el encabezado desplegable sin pantalla propia.
+- `package.json`, `package-lock.json` y `README.md` pasan a **0.50.0**. El CHANGELOG queda con una sola sección por versión: se corrigieron los encabezados duplicados `0.46.0` y `0.44.0` que dejó la resolución de conflictos de la rama del Mayor.
 
 ## [0.49.0] - 2026-11-11
 

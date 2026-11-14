@@ -33,7 +33,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 - `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard`, `permisoAlgunoGuard`, `AccesoDenegadoService`, `SolicitudAccesoService` y `INACTIVIDAD_CONFIG`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el input de fecha `ui-input-fecha` (siempre `dd/mm/aaaa`, con calendario y valor ISO en el formulario), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso`, el pipe `umFecha` (fechas `dd/MM/yyyy` con hora opcional) y las directivas `*uiPermiso` y `*uiPermisoAlguno`
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el input de fecha `ui-input-fecha` (siempre `dd/mm/aaaa`, con calendario y valor ISO en el formulario), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso`, el pipe `umFecha` (fechas `dd/MM/yyyy` con hora opcional), las directivas `*uiPermiso` y `*uiPermisoAlguno`, y la directiva `[uiStickyFooter]` (barra de acciones fija al pie con la clase `.um-sticky-footer`)
 - `@tesoreria/ui-rich-text` - Editor de texto enriquecido (WYSIWYG) compartido (`ui-editor-enriquecido`, Quill 2 vía `ngx-quill@31`); vive en su propia lib para mantener Quill en chunks lazy
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
@@ -231,7 +231,7 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 - **Tokens**: paleta `um-*` (p. ej. `bg-um-sidebar`, `text-um-ink`, `border-um-border`), tipografía, espaciados y radios. Es la única fuente de colores: no agregar hex sueltos en templates.
 - **Shell**: `<ui-shell moduleName="..." [menuItems]="...">` (`@tesoreria/ui-layout`) aporta sidebar oscuro, badge de entorno con color por ambiente, usuario, logout y layout responsive. Las apps solo definen marca y menú.
 - **Permisos**: los ítems del menú con `permiso` y las acciones con `*uiPermiso="'modulo.accion'"` sólo se muestran si el bundle efectivo del usuario (`PermisosService`, convención `modulo.accion`) incluye la clave; sin backend o ante error el bundle queda vacío (fail-closed). Las rutas se protegen con `permisoGuard('<clave>')` o, en vistas compartidas por varios roles, con `permisoAlgunoGuard(['<clave>', ...])` (autoriza con al menos una). Un **401** cierra la sesión y vuelve al login con `motivo=sesion-expirada`; un **403** no cierra la sesión: el shell muestra un aviso descartable, las guards llevan a `sin-acceso` y desde ahí se puede **solicitar acceso** a un administrador.
-- **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`.
+- **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`, `.um-sticky-footer`.
 - **Referencia viva**: la vista `libs/feature-externo-consulta/src/lib/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
 
 ## Tecnologías
@@ -290,7 +290,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.49.0**
+Versión actual: **0.50.0**
 
 ## Licencia
 
