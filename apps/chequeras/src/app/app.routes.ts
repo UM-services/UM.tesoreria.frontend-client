@@ -26,6 +26,12 @@ export const appRoutes: Route[] = [
     data: { eyebrow: 'Chequeras / Cobranzas' },
   },
   {
+    path: 'emision',
+    loadChildren: () => import('@tesoreria/feature-chequeras').then((m) => m.emisionRoutes),
+    canActivate: [authGuard, usuarioInternoGuard],
+    data: { eyebrow: 'Chequeras / Emisión' },
+  },
+  {
     path: 'consultas',
     loadChildren: () => import('@tesoreria/feature-chequeras').then((m) => m.consultaRoutes),
     canActivate: [authGuard, usuarioInternoGuard],

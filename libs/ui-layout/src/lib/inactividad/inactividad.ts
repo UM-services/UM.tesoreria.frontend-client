@@ -112,7 +112,7 @@ export class InactividadComponent implements OnInit, OnDestroy {
   cerrarSesion(): void {
     this.detener();
     this.authService.logout();
-    void this.router.navigate(['/login']);
+    void this.router.navigate(['/login'], { replaceUrl: true });
   }
 
   private iniciar(): void {

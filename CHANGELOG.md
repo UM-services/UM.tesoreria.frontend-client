@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.52.0] - 2026-11-17
+
+### Added
+
+- feat(contable): **Asiento de ingreso** (`libs/feature-contable/src/lib/asiento-ingreso`) migrado de `frmAsientoIngreso`: fecha de acreditación y tipo de pago, totales debe/haber con aviso de descuadre, lista de **Registrados**, grilla de **Cuentas Faltantes**, detalle del asiento y **Regenerar Ingresos**.
+- feat(contable): **Regenerar Masivo** por rango de fechas como job del core, con progreso por polling, resumen por día, errores por tarea y cancelación; botón «Duplicar rango» (equivalente al `>` del legacy).
+- feat(contable): ruta `/asientos/ingreso` y grupo **Asientos › Ingreso** en el menú, con `permisoGuard('contable.asiento_ingreso.consultar')`; las acciones usan `*uiPermiso` con `contable.asiento_ingreso.regenerar` y `.masivo`.
+- test(contable): contrato de UI (tipo de pago como `<select>` alimentado por el servicio, tres `<ui-input-fecha>`, faltantes visibles, acciones ocultas sin permiso y polling que termina en estado final).
+
+### Requisitos
+
+- Core con `/api/tesoreria/core/asientoIngreso/**` y tablas `contable_asiento_ingreso_job*` (V425).
+- Permisos `contable.asiento_ingreso.consultar|regenerar|masivo`.
+
+### Notes
+
+- «Ver Import/Cuentas» y «Ver Import/Cuentas-R» **no** se publican: los reportes Crystal quedan para una fase posterior.
+
+## [0.51.0] - 2026-11-17
+
+### Added
+
+- feat(chequeras): módulo **Emisión** (`libs/feature-chequeras/src/lib/emision`) con el wizard de emisión individual (migración de `frmImpChequera`): paso 1 persona/chequera, paso 2 cuotas/beca/mails, paso 3 confirmación y paso 4 entrega.
+- feat(chequeras): edición de cuotas (vencimientos e importes), “Calcular/Limpiar beca”, “Completar faltantes” con fuente diseño/plantilla/guardadas, “Aplicar P.A. (10 días)”, HPUM, código de barras y copia a facultad.
+- feat(chequeras): entrega posterior sin reemitir: descarga de PDF y envío por correo contra `tesoreria-sender`.
+- feat(chequeras): pantalla de **Borradores pendientes** con abrir y descartar, y rutas `/emision`, `/emision/individual`, `/emision/individual/:borradorId`, `/emision/borradores`.
+- feat(chequeras): grupo **Emisión** en el menú con permisos `chequeras.emision.individual`.
+
+### Requisitos
+
+- Core con `/api/tesoreria/core/emision/chequera/**` y tablas `chequera_borrador*` (V423).
+- Permiso `chequeras.emision.individual` (y `chequeras.emision.forzar` para el override de deuda).
+
+### Fixed
+
+- fix(chequeras): el paso 1 del wizard de emisión reemplaza el campo numérico de lectivo por un **desplegable con los lectivos del sistema** (`GET /lectivo/reverse`), con el más nuevo preseleccionado, igual que en Consultas › Detalle de cuotas. El lectivo elegido se conserva al abrir un borrador y el contexto se recarga al cambiarlo; `EmisionService.lectivos()` y su test cubren la carga.
+- fix(chequeras): la **chequera nueva** del paso 1 ya no pide facultad y tipo de chequera por número. Ahora son desplegables alimentados por las vistas de diseño de la sede del usuario (`/facultad/disenho/{lectivo}/{sede}` y `/tipochequeralectivosede/disenho/{fac}/{lec}/{sede}`), con la sede mostrada como dato de sesión. Si no hay diseño cargado, el botón «Crear borrador» queda deshabilitado con el motivo a la vista.
+- fix(chequeras): el **curso** deja de ser un `input[type=number]` editable; se muestra como dato de la chequera y, si no está, se resuelve por la inscripción al emitir (el backend devuelve `SIN_CURSO` si no puede).
+- test(chequeras): `emision-individual.spec.ts` fija el contrato de UI del paso 1: lectivo como `<select>` con las opciones del catálogo (sin `input[type=number]`), facultad y tipo desde las vistas de diseño, y curso como texto de sólo lectura. `emision.service.spec.ts` cubre los endpoints de los dos catálogos nuevos.
+- fix(chequeras): el wizard de emisión muestra **en qué paso está** («Paso N de 4 · …» y un indicador con el paso activo resaltado y los completados tildados).
+- fix(chequeras): la tabla de chequeras del lectivo recupera los datos del legacy: **sede**, **arancel**, **última emisión** y **estado de baja**. Una chequera de baja se marca en rojo, muestra la fecha y el motivo, y no ofrece «Editar / emitir».
+- fix(chequeras): el paso 1 del wizard muestra el **mail institucional** del domicilio junto al personal y al pagador, con su indicador de formato (sólo lectura), como en el legacy. El test del paso 1 cubre el valor y el label.
+- fix(chequeras): la **confirmación** de la emisión deja de mostrar códigos sueltos: muestra el nombre de la **facultad** y del **tipo de chequera** que devuelve el core en el borrador (`facultadNombre`/`tipoChequeraNombre`, con el código como respaldo) y la **alternativa** como `id · título`. Tests nuevos para los nombres y para el respaldo por código.
+- fix(chequeras): el paso 2 muestra la **facultad** y el **tipo de chequera por nombre** en el encabezado del borrador (con el código como respaldo si el core todavía no los envía).
+- fix(chequeras): en el paso 2 las cuotas **pagadas, de baja, compensadas o manuales de la chequera real** ya no se pueden editar: la fila dice «No editable» en lugar de «Editar» y `seleccionarCuota` lo rechaza con un aviso, siguiendo el legacy. El candado lo decide el core (`CuotaDto.editable`) y además rechaza los cambios reales con `409 CUOTA_INMUTABLE`.
+- fix(chequeras): **«Incluir código de barras» arranca destildado** en el borrador, como el legacy (`chkCodigoBarras = 0`); el core también crea el borrador con `incluyeBarras = false` cuando el pedido no lo envía.
+- fix(shared-api, ui-layout): el **botón atrás del navegador** deja de devolver pantallas privadas ya cerradas. El logout del shell y del aviso de inactividad navegan a `/login` con `replaceUrl: true`, y el 401 del interceptor hace lo mismo (el login ya lo hacía). Al volver, el `authGuard` resuelve a `/login?returnUrl=…` sin rebotes.
+- feat(shared-api): guard reutilizable **`confirmarSalida(pregunta)`** (`canDeactivate`) para pantallas con cambios sin guardar. Aplicado al wizard de emisión de chequeras: si hay un borrador abierto en los pasos 2/3, salir (enlace o atrás) pide confirmación. Tests del guard y de `hayCambiosSinGuardar()`.
+
 ## [0.50.0] - 2026-11-13
 
 ### Added

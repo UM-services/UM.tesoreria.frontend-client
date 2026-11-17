@@ -1,5 +1,10 @@
 import { Route } from '@angular/router';
-import { authGuard, SIN_ACCESO_RUTA, usuarioInternoGuard } from '@tesoreria/shared-api';
+import {
+  authGuard,
+  permisoGuard,
+  SIN_ACCESO_RUTA,
+  usuarioInternoGuard,
+} from '@tesoreria/shared-api';
 import { NoAccesoComponent } from '@tesoreria/ui-layout';
 import { BlankComponent } from './blank.component';
 
@@ -37,6 +42,17 @@ export const appRoutes: Route[] = [
     loadChildren: () =>
       import('@tesoreria/feature-contable').then(m => m.CUENTAS_BANCARIAS_ROUTES),
     canActivate: [authGuard, usuarioInternoGuard],
+  },
+  {
+    // Asiento de ingreso: consulta, regeneración unitaria y masivo por rango de fechas.
+    path: 'asientos/ingreso',
+    loadChildren: () =>
+      import('@tesoreria/feature-contable').then(m => m.ASIENTO_INGRESO_ROUTES),
+    canActivate: [
+      authGuard,
+      usuarioInternoGuard,
+      permisoGuard('contable.asiento_ingreso.consultar'),
+    ],
   },
   {
     path: '',

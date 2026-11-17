@@ -61,6 +61,26 @@
 - Use it with `formControlName`/`[(ngModel)]`, or with `[valor]`/`(valorChange)` for signal bindings; pass `inputId` so `<label for="...">` keeps pointing at the internal input.
 - For **read-only** display of stored dates keep using the `umFecha` pipe.
 
+## Catálogos y Controles de Selección (Selects)
+
+- **Regla dura — los catálogos nunca se escriben a mano.** Todo dato que identifica una entidad del sistema (lectivo, facultad, tipo de chequera, arancel, alternativa, sede, curso, etc.) se elige con un `<select>`/widget alimentado por su endpoint de catálogo. Nunca con `input[type=number]`, ni con un valor hardcodeado (por ejemplo el año actual como lectivo).
+- **Selecciones obligatorias en Chequeras:**
+
+  | Dato | Control | Fuente |
+  |---|---|---|
+  | Lectivo | `<select>` | `GET /lectivo/reverse` |
+  | Facultad (con diseño) | `<select>` | `GET /facultad/disenho/{lectivoId}/{geograficaId}` |
+  | Tipo de chequera (con diseño) | `<select>` | `GET /tipochequeralectivosede/disenho/{facultadId}/{lectivoId}/{geograficaId}` |
+  | Arancel | `<select>` | `borrador.arancelTipos` |
+  | Alternativa de pago | `<select>` | `borrador.alternativas` |
+  | Sede del usuario | texto readonly | `AuthService.currentUserSignal().geograficaId/sede` |
+  | Persona | `<ui-buscador-persona>` | widget compartido |
+  | Fechas | `<ui-input-fecha>` | widget compartido |
+
+- Los catálogos existen porque el legacy usaba combos con datos; si el legacy muestra un catálogo, la migración muestra un catálogo. Sólo quedan como inputs numéricos los importes y porcentajes (no son entidades).
+- **Definición de terminado de una pantalla:** recorrer cada `<select>`, `<input type="number">` y campo de fecha y verificar contra esta tabla (o contra el catálogo real) que el control y la fuente sean los correctos. Un `input[type=number]` para una entidad es un defecto, no un detalle.
+- **Test de contrato:** las pantallas con catálogos deben tener al menos un test de componente que verifique que el control es un `<select>` y que sus opciones vienen del servicio (`HttpTestingController` o servicio mockeado). El test debe fallar si alguien vuelve a poner un número.
+
 ## Nomenclature & Legacy VB6 Strict Ban (Limpieza de UI)
 
 - NEVER expose Visual Basic 6 legacy artifacts in user-facing UI: no `.frm`/`.vbp` extensions in titles, tables, or badges, and no phrases like "migración desde VB6", "formulario VB6", or legacy project names (`prjGestion.vbp`, `prjChequera.vbp`).

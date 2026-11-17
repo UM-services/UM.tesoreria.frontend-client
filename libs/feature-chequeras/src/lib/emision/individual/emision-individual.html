@@ -1,0 +1,747 @@
+<section class="p-6">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Chequeras / Emisión / Individual</p>
+    <h1 class="um-page-title">Emisión individual de chequera</h1>
+    <p class="um-page-desc">
+      Armá el borrador, ajustá cuotas y beca, y emití la chequera. La entrega (PDF o correo)
+      puede repetirse sin volver a emitir.
+    </p>
+  </header>
+
+  <nav class="mt-6" aria-label="Pasos de la emisión">
+    <p class="text-sm font-semibold text-um-ink" data-testid="paso-actual">
+      Paso {{ paso() }} de 4 · {{ nombrePaso(paso()) }}
+    </p>
+    <ol class="mt-3 grid gap-2 sm:grid-cols-4">
+      @for (etapa of etapas; track etapa.numero) {
+        <li
+          class="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+          [class.border-um-primary]="paso() === etapa.numero"
+          [class.text-um-primary]="paso() === etapa.numero"
+          [class.font-semibold]="paso() === etapa.numero"
+          [class.border-um-border]="paso() !== etapa.numero"
+          [class.text-um-muted]="paso() > etapa.numero"
+          [attr.aria-current]="paso() === etapa.numero ? 'step' : null"
+        >
+          <span class="um-badge">{{ paso() > etapa.numero ? '✓' : etapa.numero }}</span>
+          <span>{{ etapa.titulo }}</span>
+        </li>
+      }
+    </ol>
+  </nav>
+
+  @if (error(); as error) {
+    <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+  }
+  @if (aviso(); as aviso) {
+    <div class="um-alert um-alert-success mt-4">{{ aviso }}</div>
+  }
+
+  @if (paso() === 1) {
+    <div class="um-card mt-6">
+      <ui-buscador-persona
+        label="Apellido y nombre"
+        inputId="emisionPersona"
+        [(texto)]="texto"
+        (seleccionada)="elegirPersona($event)"
+      />
+      <div class="mt-4 grid gap-4 md:grid-cols-3">
+        <label class="block">
+          <span class="um-label">Lectivo</span>
+          <select
+            class="um-input mt-1"
+            data-testid="lectivo"
+            [value]="lectivoId() ?? ''"
+            (change)="cambiarLectivo($any($event.target).value)"
+          >
+            <option value="" disabled>Seleccione un lectivo</option>
+            @for (lectivo of lectivos(); track lectivo.lectivoId) {
+              <option [value]="lectivo.lectivoId" [selected]="lectivo.lectivoId === lectivoId()">
+                {{ lectivo.nombre }}
+              </option>
+            }
+          </select>
+          @if (lectivos().length === 0) {
+            <span class="mt-1 block text-sm text-um-muted">No hay lectivos disponibles.</span>
+          }
+        </label>
+        @if (persona(); as persona) {
+          <p class="text-sm text-um-muted md:col-span-2">
+            {{ persona.apellido }}, {{ persona.nombre }} · {{ persona.personaId }}.{{
+              persona.documentoId
+            }}
+          </p>
+        }
+      </div>
+    </div>
+
+    @if (contexto(); as contexto) {
+      <div class="um-card mt-6">
+        <h2 class="text-lg font-semibold text-um-ink">Situación de la persona</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p class="um-label">Deuda</p>
+            <p class="text-um-ink">
+              {{ contexto.deuda?.cuotas ?? 0 }} cuotas ·
+              {{ formatoNumero(contexto.deuda?.importe) }}
+            </p>
+            <p class="text-xs text-um-muted">
+              Tope de cuotas permitidas: {{ contexto.deuda?.cuotasPermitidas ?? '—' }}
+            </p>
+          </div>
+          <div>
+            <p class="um-label">Mail personal</p>
+            <p class="text-um-ink">{{ contexto.domicilio?.emailPersonal ?? 'Sin mail' }}</p>
+            <p class="text-xs text-um-muted">
+              {{ contexto.domicilio?.emailPersonalValido ? 'Formato válido' : 'Revisar el formato' }}
+            </p>
+          </div>
+          <div>
+            <p class="um-label">Mail institucional</p>
+            <p class="text-um-ink" data-testid="mail-institucional">
+              {{ contexto.domicilio?.emailInstitucional ?? 'Sin mail' }}
+            </p>
+            <p class="text-xs text-um-muted">
+              {{
+                contexto.domicilio?.emailInstitucionalValido
+                  ? 'Formato válido'
+                  : 'Revisar el formato'
+              }}
+            </p>
+          </div>
+          <div>
+            <p class="um-label">Mail pagador</p>
+            <p class="text-um-ink">{{ contexto.domicilio?.emailPagador ?? '—' }}</p>
+          </div>
+        </div>
+
+        @if (contexto.avisos.length > 0) {
+          <ul class="mt-4 space-y-2">
+            @for (item of contexto.avisos; track item.codigo + item.mensaje) {
+              <li
+                class="um-alert"
+                [class.um-alert-error]="item.bloqueante"
+                [class.um-alert-success]="!item.bloqueante"
+              >
+                {{ item.mensaje }}
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="um-card mt-6">
+        <h2 class="text-lg font-semibold text-um-ink">Chequeras del lectivo</h2>
+        @if (contexto.series.length === 0) {
+          <p class="mt-2 text-sm text-um-muted">
+            La persona no tiene chequeras en el lectivo {{ nombreLectivo(lectivoId()) }}.
+          </p>
+        } @else {
+          <div class="mt-4 overflow-x-auto">
+            <table class="um-table">
+              <thead>
+                <tr>
+                  <th scope="col">Facultad</th>
+                  <th scope="col">Sede</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Chequera</th>
+                  <th scope="col">Arancel</th>
+                  <th scope="col">Curso</th>
+                  <th scope="col">Última emisión</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (serie of contexto.series; track serie.chequeraId) {
+                  <tr>
+                    <td>{{ serie.facultadNombre ?? serie.facultadId }}</td>
+                    <td>{{ serie.geograficaNombre ?? '—' }}</td>
+                    <td>{{ serie.tipoChequeraNombre ?? serie.tipoChequeraId }}</td>
+                    <td class="font-mono">
+                      {{ serie.facultadId }}/{{ serie.tipoChequeraId }}/{{
+                        serie.chequeraSerieId
+                      }}
+                    </td>
+                    <td>{{ serie.arancelTipoDescripcion ?? serie.arancelTipoId ?? '—' }}</td>
+                    <td>{{ serie.cursoId ?? '—' }}</td>
+                    <td>{{ fechaHoraVisible(serie.ultimoEnvio) }}</td>
+                    <td>
+                      @if (serie.deBaja) {
+                        <span
+                          class="um-badge bg-red-100 text-red-800"
+                          [attr.data-testid]="'serie-' + serie.chequeraId + '-estado'"
+                          [title]="serie.bajaObservaciones ?? ''"
+                        >
+                          Baja{{ serie.bajaFecha ? ' · ' + fechaVisible(serie.bajaFecha) : '' }}
+                        </span>
+                        @if (serie.bajaObservaciones) {
+                          <span class="mt-1 block text-xs text-um-muted">
+                            {{ serie.bajaObservaciones }}
+                          </span>
+                        }
+                      } @else if (serie.pagada) {
+                        <span class="um-badge">Pagada</span>
+                      } @else {
+                        <span class="um-badge">Con deuda</span>
+                      }
+                    </td>
+                    <td>
+                      @if (serie.deBaja) {
+                        <span class="text-sm text-um-muted" [title]="serie.bajaObservaciones ?? ''">
+                          No disponible
+                        </span>
+                      } @else {
+                        <button
+                          type="button"
+                          class="um-link-btn"
+                          [attr.data-testid]="'serie-' + serie.chequeraId + '-accion'"
+                          (click)="usarSerie(serie)"
+                        >
+                          Editar / emitir
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <div class="mt-6 border-t border-um-line pt-4">
+          <h3 class="text-base font-semibold text-um-ink">Chequera nueva</h3>
+          <p class="mt-1 text-sm text-um-muted">
+            Sede: {{ sedeNombre() }}. Los combos muestran sólo lo que tiene diseño de cuotas
+            cargado para esa sede.
+          </p>
+          <div class="mt-3 grid gap-3 md:grid-cols-3">
+            <label class="block">
+              <span class="um-label">Facultad</span>
+              <select
+                class="um-input mt-1"
+                data-testid="facultad-nueva"
+                [value]="facultadNueva() ?? ''"
+                [disabled]="facultades().length === 0"
+                (change)="cambiarFacultad($any($event.target).value)"
+              >
+                <option value="" disabled>Seleccione una facultad</option>
+                @for (facultad of facultades(); track facultad.facultadId) {
+                  <option [value]="facultad.facultadId" [selected]="facultad.facultadId === facultadNueva()">
+                    {{ facultad.facultadId }} · {{ facultad.nombre }}
+                  </option>
+                }
+              </select>
+              @if (facultades().length === 0) {
+                <span class="mt-1 block text-sm text-um-muted">
+                  No hay facultades con diseño para el lectivo y la sede.
+                </span>
+              }
+            </label>
+            <label class="block">
+              <span class="um-label">Tipo de chequera</span>
+              <select
+                class="um-input mt-1"
+                data-testid="tipo-chequera-nueva"
+                [value]="tipoNueva() ?? ''"
+                [disabled]="!facultadNueva() || tiposChequera().length === 0"
+                (change)="tipoNueva.set(+$any($event.target).value || null)"
+              >
+                <option value="" disabled>Seleccione un tipo</option>
+                @for (tipo of tiposChequera(); track tipo.tipoChequeraId) {
+                  <option [value]="tipo.tipoChequeraId" [selected]="tipo.tipoChequeraId === tipoNueva()">
+                    {{ tipo.tipoChequeraId }} · {{ tipo.nombre }}
+                  </option>
+                }
+              </select>
+              @if (facultadNueva() && tiposChequera().length === 0) {
+                <span class="mt-1 block text-sm text-um-muted">
+                  No hay tipos de chequera con diseño para esa facultad.
+                </span>
+              }
+            </label>
+            <div class="flex items-end">
+              <button
+                type="button"
+                class="um-btn-primary"
+                [disabled]="cargando() || !facultadNueva() || !tipoNueva()"
+                (click)="crearNueva()"
+              >
+                Crear borrador
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  @if (paso() === 2 && borrador(); as b) {
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">
+        Chequera {{ b.chequeraSerieId ?? 'Nueva' }} ·
+        {{ b.facultadNombre ?? 'facultad ' + b.facultadId }} ·
+        {{ b.tipoChequeraNombre ?? 'tipo ' + b.tipoChequeraId }}
+      </h2>
+      <div class="mt-4 grid gap-4 md:grid-cols-3">
+        <label class="block">
+          <span class="um-label">Arancel</span>
+          <select
+            class="um-input mt-1"
+            [value]="arancelTipoId() ?? ''"
+            (change)="arancelTipoId.set(+$any($event.target).value || null)"
+          >
+            <option value="">Seleccione…</option>
+            @for (tipo of b.arancelTipos; track tipo.arancelTipoId) {
+              <option [value]="tipo.arancelTipoId">{{ tipo.arancelTipoId }} · {{ tipo.nombre }}</option>
+            }
+          </select>
+        </label>
+        <label class="block">
+          <span class="um-label">Alternativa de pago</span>
+          <select
+            class="um-input mt-1"
+            [value]="alternativaId() ?? ''"
+            (change)="alternativaId.set(+$any($event.target).value || null)"
+          >
+            <option value="">Seleccione…</option>
+            @for (alternativa of b.alternativas; track alternativa.alternativaId + '.' + alternativa.productoId) {
+              <option [value]="alternativa.alternativaId">
+                {{ alternativa.alternativaId }} · {{ alternativa.titulo }} ({{
+                  alternativa.cuotas
+                }}
+                cuotas)
+              </option>
+            }
+          </select>
+        </label>
+        <div class="block">
+          <span class="um-label">Curso</span>
+          <p class="text-um-ink" data-testid="curso-resuelto">
+            {{ b.cursoId ?? 'Se resuelve al emitir' }}
+          </p>
+        </div>
+        <label class="block">
+          <span class="um-label">Fecha de emisión</span>
+          <ui-input-fecha class="mt-1 block" [valor]="fecha()" (valorChange)="fecha.set($event)" />
+        </label>
+        <label class="block">
+          <span class="um-label">Beca (%)</span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            class="um-input mt-1"
+            [value]="becaPorcentaje()"
+            (input)="becaPorcentaje.set(+$any($event.target).value)"
+          />
+        </label>
+        <label class="block">
+          <span class="um-label">Resolución de beca</span>
+          <input
+            type="text"
+            class="um-input mt-1"
+            [value]="becaResolucion()"
+            (input)="becaResolucion.set($any($event.target).value)"
+          />
+        </label>
+        <label class="block">
+          <span class="um-label">Fecha de beca</span>
+          <ui-input-fecha
+            class="mt-1 block"
+            [valor]="becaFecha()"
+            (valorChange)="becaFecha.set($event)"
+          />
+        </label>
+        <label class="flex items-center gap-2 md:col-span-2">
+          <input
+            type="checkbox"
+            [checked]="hpum()"
+            (change)="hpum.set($any($event.target).checked)"
+          />
+          <span class="text-sm text-um-ink">HPUM</span>
+        </label>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-3">
+        <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="calcularBeca()">
+          Calcular beca
+        </button>
+        <button type="button" class="um-link-btn" [disabled]="cargando()" (click)="limpiarBeca()">
+          Limpiar beca
+        </button>
+      </div>
+    </div>
+
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">Mails y entrega</h2>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <label class="block">
+          <span class="um-label">Mail personal (obligatorio)</span>
+          <input
+            type="email"
+            class="um-input mt-1"
+            [value]="emailPersonal()"
+            (input)="emailPersonal.set($any($event.target).value)"
+          />
+        </label>
+        <label class="block">
+          <span class="um-label">Mail institucional</span>
+          <input
+            type="email"
+            class="um-input mt-1"
+            [value]="emailInstitucional()"
+            (input)="emailInstitucional.set($any($event.target).value)"
+          />
+        </label>
+        <label class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            data-testid="incluye-barras"
+            [checked]="incluyeBarras()"
+            (change)="incluyeBarras.set($any($event.target).checked)"
+          />
+          <span class="text-sm text-um-ink">Incluir código de barras</span>
+        </label>
+        <label class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            [checked]="copiaFacultad()"
+            (change)="copiaFacultad.set($any($event.target).checked)"
+          />
+          <span class="text-sm text-um-ink">Copiar a la facultad</span>
+        </label>
+      </div>
+      <p class="mt-3 text-xs text-um-muted">
+        Los mails se guardan con el borrador. La emisión no modifica el domicilio de la persona.
+      </p>
+    </div>
+
+    <div class="um-card mt-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-lg font-semibold text-um-ink">
+          Cuotas ({{ b.cuotas.length }}) · Total {{ formatoNumero(total()) }}
+        </h2>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="um-link-btn" [disabled]="cargando()" (click)="completar('DISENO')">
+            Completar (diseño)
+          </button>
+          <button type="button" class="um-link-btn" [disabled]="cargando()" (click)="completar('PLANTILLA')">
+            Completar (plantilla)
+          </button>
+          <button type="button" class="um-link-btn" [disabled]="cargando()" (click)="completar('GUARDADAS')">
+            Completar (guardadas)
+          </button>
+        </div>
+      </div>
+
+      @if (b.avisos.length > 0) {
+        <ul class="mt-3 space-y-2">
+          @for (item of b.avisos; track item.codigo + item.mensaje) {
+            <li
+              class="um-alert"
+              [class.um-alert-error]="item.bloqueante"
+              [class.um-alert-success]="!item.bloqueante"
+            >
+              {{ item.mensaje }}
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th scope="col">Producto</th>
+              <th scope="col">Alt.</th>
+              <th scope="col">Cuota</th>
+              <th scope="col">Período</th>
+              <th scope="col">1er venc.</th>
+              <th scope="col">1er importe</th>
+              <th scope="col">2do importe</th>
+              <th scope="col">3er importe</th>
+              <th scope="col">Estado</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cuota of b.cuotas; track cuota.productoId + '.' + cuota.alternativaId + '.' + cuota.cuotaId) {
+              <tr [class.font-bold]="cuotaSeleccionada() === cuota">
+                <td>{{ cuota.productoId }}</td>
+                <td>{{ cuota.alternativaId }}</td>
+                <td>{{ cuota.cuotaId }}</td>
+                <td>{{ cuota.mes }}/{{ cuota.anio }}</td>
+                <td>{{ fechaVisible(cuota.vencimiento1) }}</td>
+                <td class="text-right">{{ formatoNumero(cuota.importe1Borrador) }}</td>
+                <td class="text-right">{{ formatoNumero(cuota.importe2Borrador) }}</td>
+                <td class="text-right">{{ formatoNumero(cuota.importe3Borrador) }}</td>
+                <td>
+                  @if (cuota.pagado === 1) {
+                    <span class="um-badge">Pagada</span>
+                  } @else if (cuota.compensada === 1) {
+                    <span class="um-badge">Compensada</span>
+                  } @else if (cuota.manual === 1) {
+                    <span class="um-badge">Manual</span>
+                  } @else {
+                    <span class="um-badge">Pendiente</span>
+                  }
+                </td>
+                <td>
+                  @if (cuota.editable) {
+                    <button type="button" class="um-link-btn" (click)="seleccionarCuota(cuota)">
+                      Editar
+                    </button>
+                  } @else {
+                    <span
+                      class="text-sm text-um-muted"
+                      [attr.data-testid]="
+                        'cuota-' + cuota.productoId + '-' + cuota.alternativaId + '-' + cuota.cuotaId + '-no-editable'
+                      "
+                      title="Cuota pagada, de baja, compensada o manual: no se puede modificar"
+                    >
+                      No modificable
+                    </span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (cuotaSeleccionada(); as cuota) {
+      <div class="um-card mt-6">
+        <h2 class="text-lg font-semibold text-um-ink">
+          Cuota {{ cuota.productoId }}.{{ cuota.alternativaId }}.{{ cuota.cuotaId }}
+        </h2>
+        <div class="mt-4 grid gap-4 md:grid-cols-3">
+          <label class="block">
+            <span class="um-label">1er vencimiento</span>
+            <ui-input-fecha
+              class="mt-1 block"
+              [valor]="editVenc1()"
+              (valorChange)="editVenc1.set($event)"
+            />
+          </label>
+          <label class="block">
+            <span class="um-label">2do vencimiento</span>
+            <ui-input-fecha
+              class="mt-1 block"
+              [valor]="editVenc2()"
+              (valorChange)="editVenc2.set($event)"
+            />
+          </label>
+          <label class="block">
+            <span class="um-label">3er vencimiento</span>
+            <ui-input-fecha
+              class="mt-1 block"
+              [valor]="editVenc3()"
+              (valorChange)="editVenc3.set($event)"
+            />
+          </label>
+          <label class="block">
+            <span class="um-label">1er importe</span>
+            <input
+              type="number"
+              step="0.01"
+              class="um-input mt-1"
+              [value]="editImporte1()"
+              (input)="editImporte1.set(+$any($event.target).value)"
+            />
+          </label>
+          <label class="block">
+            <span class="um-label">2do importe</span>
+            <input
+              type="number"
+              step="0.01"
+              class="um-input mt-1"
+              [value]="editImporte2()"
+              (input)="editImporte2.set(+$any($event.target).value)"
+            />
+          </label>
+          <label class="block">
+            <span class="um-label">3er importe</span>
+            <input
+              type="number"
+              step="0.01"
+              class="um-input mt-1"
+              [value]="editImporte3()"
+              (input)="editImporte3.set(+$any($event.target).value)"
+            />
+          </label>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="aplicarCambiosCuota()">
+            Aplicar cambios
+          </button>
+          <button type="button" class="um-link-btn" [disabled]="cargando()" (click)="aplicarPolitica()">
+            Aplicar P.A. (10 días)
+          </button>
+          <button type="button" class="um-link-btn" (click)="cuotaSeleccionada.set(null)">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    }
+
+    <div class="mt-6 flex flex-wrap gap-3">
+      <button type="button" class="um-link-btn" (click)="volverAPaso(1)">Volver</button>
+      <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="guardar(2)">
+        Guardar borrador
+      </button>
+      <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="irAConfirmacion()">
+        Continuar
+      </button>
+    </div>
+  }
+
+  @if (paso() === 3 && borrador(); as b) {
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">Confirmación de la emisión</h2>
+      <dl class="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <dt class="um-label">Persona</dt>
+          <dd class="text-um-ink">
+            {{ persona()?.apellido }}, {{ persona()?.nombre }} · {{ b.personaId }}.{{ b.documentoId }}
+          </dd>
+        </div>
+        <div>
+          <dt class="um-label">Chequera</dt>
+          <dd class="text-um-ink">
+            {{ b.chequeraSerieId ?? 'Nueva' }} ·
+            {{ b.facultadNombre ?? 'facultad ' + b.facultadId }} ·
+            {{ b.tipoChequeraNombre ?? 'tipo ' + b.tipoChequeraId }}
+          </dd>
+        </div>
+        <div>
+          <dt class="um-label">Alternativa</dt>
+          <dd class="text-um-ink">
+            {{ alternativaId() ?? '—' }}
+            @if (alternativaTitulo(); as titulo) {
+              · {{ titulo }}
+            }
+          </dd>
+        </div>
+        <div>
+          <dt class="um-label">Total del borrador</dt>
+          <dd class="text-um-ink">{{ formatoNumero(total()) }}</dd>
+        </div>
+        <div>
+          <dt class="um-label">Cuotas pendientes</dt>
+          <dd class="text-um-ink">{{ cuotasPendientes().length }}</dd>
+        </div>
+        <div>
+          <dt class="um-label">Mails</dt>
+          <dd class="text-um-ink">
+            {{ emailPersonal() || 'Sin mail personal' }}
+            @if (emailInstitucional()) {
+              · {{ emailInstitucional() }}
+            }
+          </dd>
+        </div>
+      </dl>
+
+      <div class="mt-6 grid gap-4 md:grid-cols-2">
+        <label class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            [checked]="forzarNueva()"
+            (change)="forzarNueva.set($any($event.target).checked)"
+          />
+          <span class="text-sm text-um-ink">Forzar chequera nueva</span>
+        </label>
+        <label class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            [checked]="forzarDeuda()"
+            (change)="forzarDeuda.set($any($event.target).checked)"
+          />
+          <span class="text-sm text-um-ink">Forzar emisión con deuda excedida</span>
+        </label>
+      </div>
+      @if (forzarDeuda()) {
+        <label class="mt-4 block">
+          <span class="um-label">Motivo de la autorización</span>
+          <input
+            type="text"
+            class="um-input mt-1"
+            [value]="motivoOverride()"
+            (input)="motivoOverride.set($any($event.target).value)"
+          />
+        </label>
+      }
+
+      @if (b.avisos.length > 0) {
+        <ul class="mt-4 space-y-2">
+          @for (item of b.avisos; track item.codigo + item.mensaje) {
+            <li class="um-alert" [class.um-alert-error]="item.bloqueante" [class.um-alert-success]="!item.bloqueante">
+              {{ item.mensaje }}
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="mt-6 flex flex-wrap gap-3">
+        <button type="button" class="um-link-btn" (click)="volverAPaso(2)">Volver</button>
+        <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="emitir()">
+          Emitir chequera
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (paso() === 4 && resultado(); as resultado) {
+    <div class="um-card mt-6">
+      <h2 class="text-lg font-semibold text-um-ink">Chequera emitida</h2>
+      <dl class="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <dt class="um-label">Número</dt>
+          <dd class="text-um-ink">
+            {{ resultado.facultadId }}/{{ resultado.tipoChequeraId }}/{{ resultado.chequeraSerieId }}
+          </dd>
+        </div>
+        <div>
+          <dt class="um-label">Número nuevo</dt>
+          <dd class="text-um-ink">{{ resultado.numeroNuevo ? 'Sí' : 'No (se reutilizó la chequera)' }}</dd>
+        </div>
+        <div>
+          <dt class="um-label">Estado del borrador</dt>
+          <dd class="text-um-ink">{{ resultado.borradorEstado }}</dd>
+        </div>
+        <div>
+          <dt class="um-label">Auditoría</dt>
+          <dd class="text-um-ink font-mono text-xs">{{ resultado.auditoriaId }}</dd>
+        </div>
+      </dl>
+
+      @if (resultado.avisos.length > 0) {
+        <ul class="mt-4 space-y-2">
+          @for (item of resultado.avisos; track item.codigo + item.mensaje) {
+            <li class="um-alert um-alert-success">{{ item.mensaje }}</li>
+          }
+        </ul>
+      }
+
+      @if (emailEnviado(); as enviado) {
+        <div class="um-alert um-alert-success mt-4">{{ enviado }}</div>
+      }
+
+      <div class="mt-6 flex flex-wrap gap-3">
+        <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="descargarPdf()">
+          Descargar PDF
+        </button>
+        <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="enviarCorreo()">
+          Enviar por correo
+        </button>
+        <button type="button" class="um-link-btn" (click)="reiniciar()">Nueva emisión</button>
+      </div>
+      <p class="mt-3 text-xs text-um-muted">
+        La entrega puede repetirse desde
+        <a class="um-link" routerLink="/emision/borradores">Borradores</a> sin volver a emitir.
+      </p>
+    </div>
+  }
+</section>

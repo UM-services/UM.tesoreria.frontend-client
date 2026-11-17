@@ -62,6 +62,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         if (!returnUrl.startsWith('/login')) {
           void router.navigate(['/login'], {
             queryParams: { returnUrl, motivo: 'sesion-expirada' },
+            replaceUrl: true,
           });
         }
       }
