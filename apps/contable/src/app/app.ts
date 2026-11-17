@@ -17,6 +17,18 @@ export class AppComponent {
     { label: 'Ejercicios', path: '/ejercicios' },
     { label: 'Cuentas bancarias', path: '/cuentas-bancarias' },
     {
+      label: 'Asientos',
+      path: '/asientos',
+      soloGrupo: true,
+      children: [
+        {
+          label: 'Ingreso',
+          path: '/asientos/ingreso',
+          permiso: 'contable.asiento_ingreso.consultar',
+        },
+      ],
+    },
+    {
       label: 'Consultas',
       path: '/consultas',
       soloGrupo: true,
