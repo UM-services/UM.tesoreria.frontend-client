@@ -31,6 +31,13 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard, usuarioInternoGuard],
   },
     {
+    // Sumas y saldos: balance por cuenta imputable entre dos fechas de un ejercicio (lo calcula el core).
+    path: 'consultas/sumas-saldos',
+    loadComponent: () =>
+      import('./consultas/sumas-saldos/sumas-saldos').then(m => m.SumasSaldosComponent),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
+    {
     // Ejercicios: alta del siguiente, baja, bloqueo y desbloqueo (las reglas las aplica el core).
     path: 'ejercicios',
     loadComponent: () => import('./ejercicios/ejercicios').then(m => m.EjerciciosComponent),
