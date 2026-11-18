@@ -25,6 +25,17 @@ export class EntregaService {
     );
   }
 
+  /**
+   * PDF del borrador (revisión previa a la emisión). Sender lo marca con la leyenda BORRADOR y no
+   * incluye código de barras ni datos de pago.
+   */
+  descargarBorrador(borradorId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.sender}/chequera/borrador/${borradorId}`, {
+      observe: 'response',
+      responseType: 'blob',
+    });
+  }
+
   enviarCorreo(
     resultado: ResultadoEmision,
     copiaFacultad: boolean,

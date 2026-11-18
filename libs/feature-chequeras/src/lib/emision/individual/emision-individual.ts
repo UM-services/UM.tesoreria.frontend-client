@@ -14,7 +14,13 @@ import {
   PersonaBusqueda,
 } from '@tesoreria/ui-layout';
 import { AuthService } from '@tesoreria/shared-api';
+import { descargarBlob } from '../../cobranzas/shared/descarga-archivo';
 import { EntregaService } from '../data-access/entrega.service';
+import {
+  SIN_CUOTAS_ADEUDADAS,
+  mensajeImpresionBorrador,
+  sinCuotasAdeudadas,
+} from '../data-access/impresion-borrador';
 import { EmisionService } from '../data-access/emision.service';
 import {
   ActualizarBorradorRequest,
@@ -384,6 +390,37 @@ export class EmisionIndividualComponent implements OnInit {
         );
       },
       error: (error) => this.fallar(error),
+    });
+  }
+
+  /**
+   * PDF del borrador abierto, con la leyenda BORRADOR y sin código de barras ni datos de pago.
+   * Sirve para revisar en papel antes de emitir.
+   */
+  imprimirBorrador(): void {
+    const borrador = this.borrador();
+    if (!borrador || borrador.estado !== 'ABIERTO') {
+      return;
+    }
+    this.cargando.set(true);
+    this.entrega.descargarBorrador(borrador.borradorId).subscribe({
+      next: (respuesta) => {
+        this.cargando.set(false);
+        if (sinCuotasAdeudadas(respuesta)) {
+          this.aviso.set(SIN_CUOTAS_ADEUDADAS);
+          return;
+        }
+        descargarBlob(
+          respuesta.body!,
+          `borrador-chequera-${borrador.borradorId}.pdf`,
+          respuesta.headers.get('Content-Disposition'),
+        );
+      },
+      error: (error) => {
+        this.cargando.set(false);
+        this.aviso.set(null);
+        this.error.set(mensajeImpresionBorrador(error, mensaje(error)));
+      },
     });
   }
 

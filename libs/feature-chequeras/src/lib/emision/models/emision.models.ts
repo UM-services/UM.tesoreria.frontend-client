@@ -137,9 +137,14 @@ export interface BorradorChequera {
   documentoId: number;
   facultadId: number;
   facultadNombre: string | null;
+  personaApellido: string | null;
+  personaNombre: string | null;
   lectivoId: number;
+  lectivoNombre: string | null;
   tipoChequeraId: number;
   tipoChequeraNombre: string | null;
+  geograficaId: number | null;
+  geograficaNombre: string | null;
   arancelTipoId: number;
   alternativaId: number | null;
   cursoId: number | null;
