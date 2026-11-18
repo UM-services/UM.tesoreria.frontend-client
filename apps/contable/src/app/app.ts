@@ -32,7 +32,10 @@ export class AppComponent {
       label: 'Consultas',
       path: '/consultas',
       soloGrupo: true,
-      children: [{ label: 'Mayor', path: '/consultas/mayor' }],
+      children: [
+        { label: 'Mayor', path: '/consultas/mayor' },
+        { label: 'Sumas y saldos', path: '/consultas/sumas-saldos' },
+      ],
     },
   ];
 }
