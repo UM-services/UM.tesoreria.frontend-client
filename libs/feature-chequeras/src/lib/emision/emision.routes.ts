@@ -31,6 +31,11 @@ export const emisionRoutes: Route[] = [
       import('./borradores/borradores-pendientes').then((m) => m.BorradoresPendientesComponent),
   },
   {
+    path: 'incompletas',
+    canActivate: [permisoGuard('chequeras.incompletas.consultar')],
+    loadComponent: () => import('./incompletas/incompletas').then((m) => m.IncompletasComponent),
+  },
+  {
     path: '**',
     redirectTo: '',
   },

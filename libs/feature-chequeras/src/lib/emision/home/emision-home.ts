@@ -29,6 +29,12 @@ import { RouterModule } from '@angular/router';
             Retomá un borrador abierto o descartá los que ya no se van a usar.
           </p>
         </a>
+        <a class="um-card block" routerLink="/emision/incompletas">
+          <h2 class="text-lg font-semibold text-um-ink">Chequeras incompletas</h2>
+          <p class="mt-2 text-sm text-um-muted">
+            Repará las chequeras con cuotas sin precio: primero borradores, después la emisión.
+          </p>
+        </a>
       </div>
     </section>
   `,
