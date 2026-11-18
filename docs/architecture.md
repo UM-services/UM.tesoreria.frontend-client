@@ -29,7 +29,7 @@
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
             FeatureContable["@tesoreria/feature-contable<br/>CUENTAS_BANCARIAS_ROUTES<br/>CuentasBancariasComponent<br/>BancariaService<br/>ASIENTO_INGRESO_ROUTES<br/>AsientoIngresoComponent<br/>AsientoIngresoService"]
-            FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes, consultaRoutes, emisionRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera<br/>ConsultasHome, DetalleCuotas<br/>EmisionHome, EmisionIndividual<br/>BorradoresPendientes<br/>EmisionService, EntregaService"]
+            FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes, consultaRoutes, emisionRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera<br/>ConsultasHome, DetalleCuotas<br/>EmisionHome, EmisionIndividual<br/>BorradoresPendientes, Incompletas<br/>EmisionService, EntregaService, IncompletasService"]
             FeaturePagos["@tesoreria/feature-pagos<br/>PAGOS_ROUTES<br/>ComprobantesComponent<br/>ComprobantesService"]
         end
     end
@@ -301,6 +301,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
     Emision --> EmisionHome["EmisionHome Component<br/>chequeras.emision.individual"]
     Emision --> EmisionIndividual["EmisionIndividual Component<br/>wizard de 4 pasos<br/>chequeras.emision.individual"]
     Emision --> Borradores["BorradoresPendientes Component<br/>chequeras.emision.individual"]
+    Emision --> Incompletas["IncompletasComponent<br/>chequeras.incompletas.consultar"]
 
     Importar --> CobranzaAPI["Fachada de cobranzas del core<br/>/cobranza/importacion"]
     Importaciones --> CobranzaAPI
@@ -312,8 +313,11 @@ asignación efectiva se hace en la pantalla de Usuarios.
     PagoManual --> BuscadorPersona["BuscadorPersona Component<br/>@tesoreria/ui-layout"]
     Baja --> BuscadorPersona
     EmisionIndividual --> EmisionAPI["core: /emision/chequera<br/>borradores, contexto, cuotas,<br/>beca y emisión"]
-    EmisionIndividual --> EntregaAPI["tesoreria-sender:<br/>PDF y correo de la chequera"]
+    EmisionIndividual --> EntregaAPI["tesoreria-sender:<br/>PDF y correo de la chequera<br/>PDF del borrador (BORRADOR)"]
     Borradores --> EmisionAPI
+    Borradores --> EntregaAPI
+    Incompletas --> IncompletasAPI["core: /emision/chequera/incompletas<br/>padrón y job de dos etapas<br/>(borradores y emisión)"]
+    Incompletas --> EntregaAPI
     EmisionIndividual --> BuscadorPersona
     EmisionIndividual --> InputFecha["InputFecha Component<br/>@tesoreria/ui-layout"]
 ```
