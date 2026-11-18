@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.53.0] - 2026-11-18
+ 
+### Added
+ 
+- feat(contable): pantalla **Sumas y saldos** (`/consultas/sumas-saldos`, menú **Consultas › Sumas y saldos**) en `apps/contable/src/app/consultas/sumas-saldos`: se elige el **ejercicio** de una lista (`GET /ejercicio/`, por defecto el vigente) y las fechas desde/hasta con `<ui-input-fecha>`, acotadas a ese ejercicio. «Consultar» llama a `POST /balance/sumasysaldos/consulta` del core y muestra una fila por cuenta imputable (saldo inicial, débitos, créditos, saldo deudor y acreedor) y los totales tal cual los devuelve el core, sin recalcular. Un buscador por número o nombre y «Ocultar cuentas sin importes» sólo filtran lo mostrado.
+- feat(contable): «Exportar a Excel» con `GET /balance/sumasysaldos/{desde}/{hasta}` del core (mismo cálculo que la consulta).
+- test(contable): `sumas-saldos.spec.ts` con el contrato de UI (ejercicio en un `<select>` alimentado por el servicio, fechas con `ui-input-fecha`), el pedido, el rechazo de fechas fuera del ejercicio, los totales, el filtro, el error del core y el Excel.
+
 ## [0.52.0] - 2026-11-17
 
 ### Added
