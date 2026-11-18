@@ -1,0 +1,269 @@
+<section class="p-6">
+  <header class="um-page-header">
+    <p class="um-eyebrow">Chequeras / Emisión</p>
+    <h1 class="um-page-title">Chequeras incompletas</h1>
+    <p class="um-page-desc">
+      Chequeras cuyas cuotas quedaron sin precio. Primero se generan borradores que completan las
+      cuotas faltantes (sin modificar la chequera) y después se emiten.
+    </p>
+  </header>
+
+  <div class="um-card mt-6">
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div>
+        <label class="um-label" for="incompletasLectivo">Lectivo</label>
+        <select
+          id="incompletasLectivo"
+          class="um-input mt-1"
+          [value]="lectivoId() ?? ''"
+          [disabled]="enCurso()"
+          (change)="cambiarLectivo($any($event.target).value)"
+        >
+          @for (lectivo of lectivos(); track lectivo.lectivoId) {
+            <option [value]="lectivo.lectivoId">{{ lectivo.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="um-label" for="incompletasSede">Sede</label>
+        <select
+          id="incompletasSede"
+          class="um-input mt-1"
+          [value]="sedeId() ?? ''"
+          [disabled]="enCurso()"
+          (change)="cambiarSede($any($event.target).value)"
+        >
+          @for (sede of sedes(); track sede.geograficaId) {
+            <option [value]="sede.geograficaId">{{ sede.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="um-label" for="incompletasFacultad">Unidad académica</label>
+        <select
+          id="incompletasFacultad"
+          class="um-input mt-1"
+          [value]="facultadId() ?? ''"
+          [disabled]="enCurso()"
+          (change)="cambiarFacultad($any($event.target).value)"
+        >
+          @for (facultad of facultades(); track facultad.facultadId) {
+            <option [value]="facultad.facultadId">{{ facultad.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="um-label" for="incompletasClase">Clase de chequera</label>
+        <select
+          id="incompletasClase"
+          class="um-input mt-1"
+          [value]="claseId() ?? ''"
+          [disabled]="enCurso()"
+          (change)="cambiarClase($any($event.target).value)"
+        >
+          @for (clase of clases(); track clase.claseChequeraId) {
+            <option [value]="clase.claseChequeraId">{{ clase.nombre }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-center gap-4">
+      <label class="flex items-center gap-2 text-sm text-um-ink">
+        <input
+          type="checkbox"
+          class="h-4 w-4 rounded border-um-border text-um-primary"
+          [checked]="soloNoEnviadas()"
+          [disabled]="enCurso()"
+          (change)="soloNoEnviadas.set($any($event.target).checked)"
+        />
+        Sólo no enviadas
+      </label>
+      <button type="button" class="um-btn-secondary" [disabled]="!puedeBuscar() || enCurso()" (click)="buscar()">
+        @if (cargando()) {
+          Buscando…
+        } @else {
+          Buscar
+        }
+      </button>
+    </div>
+  </div>
+
+  @if (error(); as error) {
+    <div class="um-alert um-alert-error mt-4">{{ error }}</div>
+  }
+  @if (aviso(); as aviso) {
+    <div class="um-alert um-alert-success mt-4">{{ aviso }}</div>
+  }
+
+  @if (filas().length > 0) {
+    <div class="um-card mt-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-um-ink">Chequeras incompletas</h2>
+          <p class="mt-1 text-sm text-um-muted">{{ filas().length }} series para reparar</p>
+        </div>
+        <button
+          *uiPermiso="'chequeras.incompletas.generar'"
+          type="button"
+          class="um-btn-primary"
+          [disabled]="enCurso()"
+          (click)="generarBorradores()"
+        >
+          Generar borradores ({{ filas().length }})
+        </button>
+      </div>
+
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table" aria-label="Chequeras incompletas">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Documento</th>
+              <th scope="col">Apellido, Nombre</th>
+              <th scope="col">Tipo de chequera</th>
+              <th scope="col">Tipo de arancel</th>
+              <th scope="col">Número</th>
+              <th scope="col">Enviada</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of filas(); track fila.chequeraId; let indice = $index) {
+              <tr>
+                <td>{{ indice + 1 }}</td>
+                <td class="font-mono">{{ documento(fila) }}</td>
+                <td>{{ nombre(fila) }}</td>
+                <td>{{ fila.tipoChequera?.nombre ?? '—' }}</td>
+                <td>{{ fila.arancelTipo?.descripcion ?? '—' }}</td>
+                <td class="font-mono">{{ numero(fila) }}</td>
+                <td>
+                  <span class="um-badge">{{ fila.enviado === 1 ? 'Sí' : 'No' }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else if (!cargando() && puedeBuscar() && !error()) {
+    <div class="um-alert mt-6">No hay chequeras incompletas para los filtros seleccionados.</div>
+  }
+
+  @if (job(); as job) {
+    <div class="um-card mt-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-um-ink">
+            {{ job.etapa === 'BORRADORES' ? 'Generación de borradores' : 'Emisión' }}
+            <span class="um-badge ml-2">{{ job.estado }}</span>
+          </h2>
+          <p class="mt-1 text-sm text-um-muted">
+            {{ job.tareasOk }} ok · {{ job.tareasOmitidas }} omitidas · {{ job.tareasError }} errores ·
+            {{ job.tareasPendientes }} pendientes ({{ job.totalTareas }} en total)
+          </p>
+        </div>
+        @if (enCurso()) {
+          <button type="button" class="um-link-btn" (click)="cancelar()">Cancelar</button>
+        }
+      </div>
+
+      @if (borradores().length > 0) {
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-um-muted">
+            Revisá cada borrador (o imprimilo con la leyenda BORRADOR) antes de emitir. Si no
+            seleccionás ninguno se emiten todos.
+          </p>
+          <button
+            *uiPermiso="'chequeras.incompletas.generar'"
+            type="button"
+            class="um-btn-primary"
+            [disabled]="enCurso()"
+            (click)="emitir()"
+          >
+            Emitir {{ seleccion().size > 0 ? seleccion().size : borradores().length }} borradores
+          </button>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table" aria-label="Borradores generados">
+            <thead>
+              <tr>
+                <th scope="col" class="w-10">Emitir</th>
+                <th scope="col">Chequera</th>
+                <th scope="col">Persona</th>
+                <th scope="col">Borrador</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (tarea of borradores(); track tarea.tareaId) {
+                <tr>
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="h-4 w-4 rounded border-um-border text-um-primary"
+                      [checked]="seleccion().has(tarea.borradorId!)"
+                      [disabled]="enCurso()"
+                      (change)="toggleBorrador(tarea.borradorId!)"
+                      [attr.aria-label]="'Emitir el borrador ' + tarea.borradorId"
+                    />
+                  </td>
+                  <td class="font-mono">{{ numeroTarea(tarea) }}</td>
+                  <td>{{ tarea.personaNombre ?? '—' }}</td>
+                  <td class="font-mono">{{ tarea.borradorId }}</td>
+                  <td class="flex flex-wrap gap-2">
+                    <a class="um-link-btn" [routerLink]="['/emision/individual', tarea.borradorId]">
+                      Revisar
+                    </a>
+                    <button
+                      type="button"
+                      class="um-link-btn"
+                      [disabled]="imprimiendo() === tarea.borradorId"
+                      (click)="imprimirBorrador(tarea.borradorId!)"
+                    >
+                      Imprimir borrador
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (omitidas().length > 0) {
+        <details class="mt-5">
+          <summary class="cursor-pointer text-sm font-semibold text-um-ink">
+            Omitidas ({{ omitidas().length }})
+          </summary>
+          <ul class="mt-2 space-y-1 text-sm text-um-muted">
+            @for (tarea of omitidas(); track tarea.tareaId) {
+              <li>
+                <span class="font-mono">{{ numeroTarea(tarea) }}</span> ·
+                {{ tarea.personaNombre ?? '—' }} — {{ tarea.codigo }}: {{ tarea.mensaje }}
+              </li>
+            }
+          </ul>
+        </details>
+      }
+
+      @if (errores().length > 0) {
+        <details class="mt-3" open>
+          <summary class="cursor-pointer text-sm font-semibold text-um-ink">
+            Errores ({{ errores().length }})
+          </summary>
+          <ul class="mt-2 space-y-1 text-sm">
+            @for (tarea of errores(); track tarea.tareaId) {
+              <li class="um-alert um-alert-error">
+                <span class="font-mono">{{ numeroTarea(tarea) }}</span> · {{ tarea.codigo }}:
+                {{ tarea.mensaje }}
+              </li>
+            }
+          </ul>
+        </details>
+      }
+    </div>
+  }
+
+  <a class="um-link-btn mt-6 inline-block" routerLink="/emision">Volver a Emisión</a>
+</section>

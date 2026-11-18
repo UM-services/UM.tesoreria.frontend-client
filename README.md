@@ -44,7 +44,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
 - `@tesoreria/feature-contable` - Módulo contable: **Cuentas bancarias** (`CUENTAS_BANCARIAS_ROUTES`, montada por la app contable en `/cuentas-bancarias` con `loadChildren`) y **Asiento de ingreso** (`ASIENTO_INGRESO_ROUTES`, `/asientos/ingreso`: consulta del asiento por fecha y tipo de pago, lista de registrados, cuentas faltantes, regeneración unitaria y masivo por rango de fechas con job del core y progreso por polling)
 - `@tesoreria/feature-pagos` - Módulo Pagos: **Comprobantes de proveedor** (`PAGOS_ROUTES`, montada por la app pagos en `/comprobantes` con `loadChildren`): consulta de movimientos por proveedor y anulación con los permisos `pagos.comprobantes.consultar`, `pagos.comprobantes.anular` y `pagos.comprobantes.anular_op`
-- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas de **Cobranzas** (`cobranzaRoutes`, montadas por la app chequeras en `/cobranzas`: importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera), de **Consultas** (`consultaRoutes`, `/consultas`: planillas de cuotas por facultad y sede para un lectivo) y de **Emisión** (`emisionRoutes`, `/emision`: wizard de emisión individual de chequeras con borradores pendientes y entrega posterior)
+- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas de **Cobranzas** (`cobranzaRoutes`, montadas por la app chequeras en `/cobranzas`: importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera), de **Consultas** (`consultaRoutes`, `/consultas`: planillas de cuotas por facultad y sede para un lectivo) y de **Emisión** (`emisionRoutes`, `/emision`: wizard de emisión individual de chequeras, borradores pendientes agrupados por facultad y sede, impresión de borradores como PDF y reparación de **Chequeras incompletas** en dos etapas —borradores y emisión— como job del core)
 
 La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
 
@@ -290,7 +290,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.52.0**
+Versión actual: **0.53.0**
 
 ## Licencia
 

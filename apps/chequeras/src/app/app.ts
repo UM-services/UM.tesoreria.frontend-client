@@ -58,6 +58,11 @@ export class AppComponent {
           path: '/emision/borradores',
           permiso: 'chequeras.emision.individual',
         },
+        {
+          label: 'Chequeras incompletas',
+          path: '/emision/incompletas',
+          permiso: 'chequeras.incompletas.consultar',
+        },
       ],
     },
     {

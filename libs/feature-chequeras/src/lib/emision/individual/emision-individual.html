@@ -686,6 +686,9 @@
 
       <div class="mt-6 flex flex-wrap gap-3">
         <button type="button" class="um-link-btn" (click)="volverAPaso(2)">Volver</button>
+        <button type="button" class="um-btn-secondary" [disabled]="cargando()" (click)="imprimirBorrador()">
+          Imprimir borrador
+        </button>
         <button type="button" class="um-btn-primary" [disabled]="cargando()" (click)="emitir()">
           Emitir chequera
         </button>
