@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.53.0] - 2026-11-18
+
+### Added
+
+- feat(chequeras): pantalla **Chequeras incompletas** (`libs/feature-chequeras/src/lib/emision/incompletas`) migrada de `frmIncompletas`, en `/emision/incompletas`. Filtra por **lectivo, sede, unidad académica y clase de chequera** (cuatro `<select>` alimentados por `/lectivo/reverse`, `/geografica/`, `/facultad/disenho/{lectivo}/{sede}` y `/clasechequera/`), con la opción «Sólo no enviadas», y lista las series del padrón `/chequeraSerie/incompletas/{lectivo}/{facultad}/{sede}/clase/{clase}` con documento, persona, tipo de chequera, tipo de arancel, número y estado de envío.
+- feat(chequeras): reparación en **dos etapas como job del core**: «Generar borradores» (`POST /emision/chequera/incompletas/borradores`) completa las cuotas faltantes sin tocar la chequera y luego «Emitir» (`POST /emision/chequera/incompletas/job/{jobId}/emision`) escribe la chequera, con selección opcional de borradores (sin selección se emiten todos), progreso por polling cada 1,5 s, resumen ok/omitidas/errores/pendientes, detalle de omitidas y errores, y cancelación.
+- feat(chequeras): **impresión del borrador** antes de emitir contra `tesoreria-sender` (`GET /chequera/borrador/{borradorId}`, `EntregaService.descargarBorrador`): PDF con la leyenda BORRADOR, sin código de barras ni datos de pago. Disponible en el paso de confirmación del wizard, en **Borradores pendientes** y en la tabla de borradores generados de Chequeras incompletas.
+- feat(chequeras): **Borradores pendientes** se agrupa por unidad académica y sede, y muestra persona (apellido y nombre), documento, tipo de chequera y lectivo en lugar de los códigos sueltos. `BorradorChequera` suma `personaApellido`, `personaNombre`, `lectivoNombre`, `geograficaId` y `geograficaNombre`.
+- feat(chequeras): ítem de menú **Chequeras incompletas** en el grupo Emisión con `permiso: 'chequeras.incompletas.consultar'` y ruta con `permisoGuard('chequeras.incompletas.consultar')`; las acciones de generar y emitir usan `*uiPermiso` con `chequeras.incompletas.generar`.
+- test(chequeras): `impresion-borrador.spec.ts` (204 sin cuotas adeudadas y traducción de `409`/`404`), `borradores-pendientes.spec.ts` (agrupación por facultad y sede, datos de persona/tipo/lectivo e impresión) e `incompletas.spec.ts` (los cuatro filtros son `<select>` con opciones del servicio, sin `input[type=number]`, listado del padrón y acciones ocultas sin permiso).
+
+### Requisitos
+
+- Core con `/api/tesoreria/core/emision/chequera/incompletas/**` y el padrón `vw_chequera_incompleta`, con las etapas `BORRADORES` y `EMISION` del job.
+- `tesoreria-sender` con `GET /chequera/borrador/{borradorId}` (responde `204` cuando el borrador no tiene cuotas adeudadas y `409`/`404` cuando no se puede imprimir).
+- Permisos `chequeras.incompletas.consultar` y `chequeras.incompletas.generar`.
+
 ## [0.52.0] - 2026-11-17
 
 ### Added
