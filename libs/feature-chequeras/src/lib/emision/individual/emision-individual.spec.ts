@@ -164,12 +164,14 @@ describe('EmisionIndividualComponent — catálogos del paso 1', () => {
   const tiposChequeraDisenho = vi.fn(() =>
     of([{ tipoChequeraId: 2, nombre: 'Cuota', claseChequeraId: 1, geograficaId: 1 }]),
   );
+  const crear = vi.fn(() => of(borrador));
   let fixture: ComponentFixture<EmisionIndividualComponent>;
   let component: EmisionIndividualComponent;
 
   beforeEach(async () => {
     facultadesDisenho.mockClear();
     tiposChequeraDisenho.mockClear();
+    crear.mockClear();
 
     await TestBed.configureTestingModule({
       imports: [EmisionIndividualComponent],
@@ -183,6 +185,7 @@ describe('EmisionIndividualComponent — catálogos del paso 1', () => {
           facultadesDisenho,
           tiposChequeraDisenho,
           contexto: () => of(contexto),
+          crear,
         } },
         { provide: EntregaService, useValue: {} },
         {
@@ -238,6 +241,24 @@ describe('EmisionIndividualComponent — catálogos del paso 1', () => {
     expect(tiposChequeraDisenho).toHaveBeenCalledWith(5, 38, 1);
     expect(tipo.options.length).toBe(2);
     expect(tipo.textContent).toContain('Cuota');
+  });
+
+  it('retoma una chequera preseleccionando su tipo de arancel', () => {
+    component.lectivoId.set(38);
+    component.elegirPersona({
+      uniqueId: 1,
+      personaId: '49024730',
+      documentoId: 1,
+      apellido: 'González',
+      nombre: 'Manuel',
+    });
+
+    component.usarSerie(contexto.series[0]);
+
+    expect(component.arancelTipoId()).toBe(1);
+    expect(crear).toHaveBeenCalledWith(
+      expect.objectContaining({ arancelTipoId: 1, chequeraSerieId: 1865 }),
+    );
   });
 
   it('muestra el curso resuelto como dato, sin pedirlo por input', () => {
