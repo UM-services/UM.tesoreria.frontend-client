@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.53.1] - 2026-11-19
+
+### Fixed
+
+- fix(chequeras): al retomar una chequera existente en el paso 1 del wizard de emisión individual, `usarSerie()` ahora preselecciona el **tipo de arancel** de la serie (`SerieEmision.arancelTipoId`), replicando el precargado del combo en el legacy (`frmImpChequera:1040`); el paso 2 arrancaba sin arancel y la emisión fallaba.
+- fix(chequeras): el paso a confirmación valida que haya un tipo de arancel elegido y muestra «Seleccione el tipo de arancel» en lugar de enviar el borrador con `arancelTipoId` vacío.
+- test(chequeras): `emision-individual.spec.ts` verifica que al usar una serie se fija su `arancelTipoId` y que `crear` recibe ese arancel junto con `chequeraSerieId`.
+
 ## [0.53.0] - 2026-11-18
 
 ### Added

@@ -190,6 +190,9 @@ export class EmisionIndividualComponent implements OnInit {
       );
       return;
     }
+    // El legacy precarga el combo con el arancel de la chequera al seleccionar la fila
+    // (frmImpChequera:1040): sin esto el paso 2 arranca sin arancel y la emisión falla.
+    this.arancelTipoId.set(serie.arancelTipoId ?? null);
     this.crearBorrador(serie.facultadId, serie.tipoChequeraId, serie.chequeraSerieId);
   }
 
@@ -334,6 +337,10 @@ export class EmisionIndividualComponent implements OnInit {
     }
     if (!this.alternativaId()) {
       this.error.set('Seleccione una alternativa de pago');
+      return;
+    }
+    if (!this.arancelTipoId()) {
+      this.error.set('Seleccione el tipo de arancel');
       return;
     }
     if (this.cuotasPendientes().length === 0) {
