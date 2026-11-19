@@ -51,6 +51,7 @@ describe('errorInterceptor', () => {
     expect(authService.logout).toHaveBeenCalledOnce();
     expect(router.navigate).toHaveBeenCalledWith(['/login'], {
       queryParams: { returnUrl: '/chequeras?pagina=2', motivo: 'sesion-expirada' },
+      replaceUrl: true,
     });
   });
 

@@ -12,3 +12,4 @@ export * from './lib/permiso.directive';
 export * from './lib/permiso-alguno.directive';
 export * from './lib/fecha/fecha.pipe';
 export * from './lib/input-fecha/input-fecha';
+export * from './lib/sticky-footer/sticky-footer.directive';

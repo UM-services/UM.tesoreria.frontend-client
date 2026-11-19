@@ -125,6 +125,7 @@
               <th class="text-right">A Cta</th>
               <th class="text-right">Saldo</th>
               <th>Estado</th>
+              <th class="text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -157,6 +158,25 @@
                     <span class="um-badge bg-green-100 text-green-800">Anulable</span>
                   }
                 </td>
+                <td class="whitespace-nowrap text-right">
+                  <button
+                    type="button"
+                    class="um-btn-secondary text-xs"
+                    [disabled]="isImprimiendo"
+                    (click)="$event.stopPropagation(); imprimir(movimiento)"
+                  >
+                    Imprimir
+                  </button>
+                  <button
+                    *uiPermiso="'pagos.comprobantes.anular'"
+                    type="button"
+                    class="um-btn-secondary ml-2 text-xs text-red-700"
+                    [disabled]="!puedeAnularFila(movimiento)"
+                    (click)="$event.stopPropagation(); anularFila(movimiento)"
+                  >
+                    Anular
+                  </button>
+                </td>
               </tr>
             }
           </tbody>
@@ -183,15 +203,6 @@
             {{ d.cabecera.fechaComprobante | umFecha }}
           </p>
         </div>
-        <button
-          *uiPermiso="'pagos.comprobantes.anular'"
-          type="button"
-          class="um-btn-secondary text-red-700"
-          [disabled]="!puedeAnular"
-          (click)="abrirConfirmacion()"
-        >
-          Anular comprobante
-        </button>
       </div>
 
       @if (motivosNoAnulable.length) {

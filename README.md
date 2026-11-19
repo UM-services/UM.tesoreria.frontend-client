@@ -31,9 +31,9 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 
 ### Librerías
 
-- `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard`, `permisoAlgunoGuard`, `AccesoDenegadoService`, `SolicitudAccesoService` y `INACTIVIDAD_CONFIG`)
+- `@tesoreria/shared-api` - Servicios API, autenticación, permisos y modelos compartidos (`PermisosService`, `permisoGuard`, `permisoAlgunoGuard`, `confirmarSalida` (guard `canDeactivate` para pantallas con cambios sin guardar), `AccesoDenegadoService`, `SolicitudAccesoService` y `INACTIVIDAD_CONFIG`)
 - `@tesoreria/ui-auth` - Componentes de interfaz para autenticación
-- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el input de fecha `ui-input-fecha` (siempre `dd/mm/aaaa`, con calendario y valor ISO en el formulario), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso`, el pipe `umFecha` (fechas `dd/MM/yyyy` con hora opcional) y las directivas `*uiPermiso` y `*uiPermisoAlguno`
+- `@tesoreria/ui-layout` - Layout compartido: shell con sidebar J2 (`ui-shell`) y submenús colapsables, buscadores (buscador-cuenta-contable, buscador-proveedor, buscador-persona), el input de fecha `ui-input-fecha` (siempre `dd/mm/aaaa`, con calendario y valor ISO en el formulario), el render de solo lectura `ui-texto-enriquecido`, el aviso `ui-inactividad`, el modal `ui-solicitar-acceso`, el pipe `umFecha` (fechas `dd/MM/yyyy` con hora opcional), las directivas `*uiPermiso` y `*uiPermisoAlguno`, y la directiva `[uiStickyFooter]` (barra de acciones fija al pie con la clase `.um-sticky-footer`)
 - `@tesoreria/ui-rich-text` - Editor de texto enriquecido (WYSIWYG) compartido (`ui-editor-enriquecido`, Quill 2 vía `ngx-quill@31`); vive en su propia lib para mantener Quill en chunks lazy
 - `@tesoreria/feature-proveedores` - Módulo compartido de proveedores (reutilizado por compras, administrador y pagos)
 - `@tesoreria/feature-gastos` - Módulo compartido de gastos (reutilizado por compras, administrador y pagos)
@@ -42,9 +42,9 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` (inventario de sólo lectura y sincronización con `permisos.yaml`), `/simulador` y `/solicitudes` (app administrador)
 - `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
 - `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
-- `@tesoreria/feature-contable` - Módulo contable: **Cuentas bancarias** (`CUENTAS_BANCARIAS_ROUTES`, montada por la app contable en `/cuentas-bancarias` con `loadChildren`)
+- `@tesoreria/feature-contable` - Módulo contable: **Cuentas bancarias** (`CUENTAS_BANCARIAS_ROUTES`, montada por la app contable en `/cuentas-bancarias` con `loadChildren`) y **Asiento de ingreso** (`ASIENTO_INGRESO_ROUTES`, `/asientos/ingreso`: consulta del asiento por fecha y tipo de pago, lista de registrados, cuentas faltantes, regeneración unitaria y masivo por rango de fechas con job del core y progreso por polling)
 - `@tesoreria/feature-pagos` - Módulo Pagos: **Comprobantes de proveedor** (`PAGOS_ROUTES`, montada por la app pagos en `/comprobantes` con `loadChildren`): consulta de movimientos por proveedor y anulación con los permisos `pagos.comprobantes.consultar`, `pagos.comprobantes.anular` y `pagos.comprobantes.anular_op`
-- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas de **Cobranzas** (`cobranzaRoutes`, montadas por la app chequeras en `/cobranzas`: importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera) y de **Consultas** (`consultaRoutes`, `/consultas`: planillas de cuotas por facultad y sede para un lectivo)
+- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas de **Cobranzas** (`cobranzaRoutes`, montadas por la app chequeras en `/cobranzas`: importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera), de **Consultas** (`consultaRoutes`, `/consultas`: planillas de cuotas por facultad y sede para un lectivo) y de **Emisión** (`emisionRoutes`, `/emision`: wizard de emisión individual de chequeras, borradores pendientes agrupados por facultad y sede, impresión de borradores como PDF y reparación de **Chequeras incompletas** en dos etapas —borradores y emisión— como job del core)
 
 La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
 
@@ -152,8 +152,8 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
         FPERM["feature-permisos<br/>Permisos, roles, catálogo y simulador"]
         FGUAR["feature-guarani<br/>GUARANI_ROUTES y vistas"]
         FEXT["feature-externo-consulta<br/>Vista chequeras del portal externo"]
-        FCHQ["feature-chequeras<br/>cobranzaRoutes y consultaRoutes<br/>Cobranzas y Consultas"]
-        FCONT["feature-contable<br/>CUENTAS_BANCARIAS_ROUTES<br/>Cuentas bancarias"]
+        FCHQ["feature-chequeras<br/>cobranzaRoutes, consultaRoutes y emisionRoutes<br/>Cobranzas, Consultas y Emisión"]
+        FCONT["feature-contable<br/>CUENTAS_BANCARIAS_ROUTES y ASIENTO_INGRESO_ROUTES<br/>Cuentas bancarias y Asiento de ingreso"]
         FPAY["feature-pagos<br/>PAGOS_ROUTES<br/>Comprobantes de proveedor"]
     end
 
@@ -231,7 +231,7 @@ Todas las aplicaciones comparten el tema visual **J2** (dirección J2), definido
 - **Tokens**: paleta `um-*` (p. ej. `bg-um-sidebar`, `text-um-ink`, `border-um-border`), tipografía, espaciados y radios. Es la única fuente de colores: no agregar hex sueltos en templates.
 - **Shell**: `<ui-shell moduleName="..." [menuItems]="...">` (`@tesoreria/ui-layout`) aporta sidebar oscuro, badge de entorno con color por ambiente, usuario, logout y layout responsive. Las apps solo definen marca y menú.
 - **Permisos**: los ítems del menú con `permiso` y las acciones con `*uiPermiso="'modulo.accion'"` sólo se muestran si el bundle efectivo del usuario (`PermisosService`, convención `modulo.accion`) incluye la clave; sin backend o ante error el bundle queda vacío (fail-closed). Las rutas se protegen con `permisoGuard('<clave>')` o, en vistas compartidas por varios roles, con `permisoAlgunoGuard(['<clave>', ...])` (autoriza con al menos una). Un **401** cierra la sesión y vuelve al login con `motivo=sesion-expirada`; un **403** no cierra la sesión: el shell muestra un aviso descartable, las guards llevan a `sin-acceso` y desde ahí se puede **solicitar acceso** a un administrador.
-- **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`.
+- **Utilidades de componentes**: clases en `@layer components` para patrones repetidos: `.um-page-header`, `.um-eyebrow`, `.um-page-title`, `.um-label`, `.um-input` (`.um-input-invalid`), `.um-btn-primary`, `.um-btn-secondary`, `.um-link-btn`, `.um-alert` (+ `-error/-warn/-success`), `.um-card`, `.um-badge`, `.um-table`, `.um-sticky-footer`.
 - **Referencia viva**: la vista `libs/feature-externo-consulta/src/lib/chequeras` es el piloto del diseño; usarla como modelo para nuevas pantallas.
 
 ## Tecnologías
@@ -290,7 +290,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.49.0**
+Versión actual: **0.53.0**
 
 ## Licencia
 

@@ -17,9 +17,9 @@
         end
 
         subgraph "Libraries"
-            SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>AccesoDenegadoService<br/>SolicitudAccesoService<br/>Models, tokens API_URL y EXTERNO_*"]
+            SharedAPI["@tesoreria/shared-api<br/>AuthService, guards e interceptores<br/>PermisosService, permisoGuard<br/>y permisoAlgunoGuard<br/>confirmarSalida (canDeactivate)<br/>AccesoDenegadoService<br/>SolicitudAccesoService<br/>Models, tokens API_URL y EXTERNO_*"]
             UIAuth["@tesoreria/ui-auth<br/>LoginComponent<br/>CambioClaveModalComponent"]
-            UILayout["@tesoreria/ui-layout<br/>UiShellComponent y submenús<br/>Buscadores compartidos<br/>InputFechaComponent<br/>TextoEnriquecidoComponent<br/>InactividadComponent<br/>SolicitarAccesoModalComponent<br/>PermisoDirective y PermisoAlgunoDirective"]
+            UILayout["@tesoreria/ui-layout<br/>UiShellComponent y submenús<br/>Buscadores compartidos<br/>InputFechaComponent<br/>TextoEnriquecidoComponent<br/>InactividadComponent<br/>SolicitarAccesoModalComponent<br/>PermisoDirective y PermisoAlgunoDirective<br/>StickyFooterDirective (uiStickyFooter)"]
             UIRichText["@tesoreria/ui-rich-text<br/>EditorEnriquecidoComponent"]
             FeatureProveedores["@tesoreria/feature-proveedores<br/>ProveedoresComponent"]
             FeatureGastos["@tesoreria/feature-gastos<br/>GastosComponent"]
@@ -28,8 +28,8 @@
             FeaturePermisos["@tesoreria/feature-permisos<br/>PermisosComponent, RolesComponent<br/>CatalogoComponent (sólo lectura + sync)<br/>SolicitudesAccesoComponent<br/>SimuladorComponent"]
             FeatureGuarani["@tesoreria/feature-guarani<br/>GUARANI_ROUTES<br/>Pendientes, Ubicaciones, Beneficios<br/>Datos Personales, SedePrincipalGuard"]
             FeatureExterno["@tesoreria/feature-externo-consulta<br/>ChequerasComponent<br/>ChequerasBusquedaStore<br/>ChequerasService"]
-            FeatureContable["@tesoreria/feature-contable<br/>CUENTAS_BANCARIAS_ROUTES<br/>CuentasBancariasComponent<br/>BancariaService"]
-            FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes, consultaRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera<br/>ConsultasHome, DetalleCuotas"]
+            FeatureContable["@tesoreria/feature-contable<br/>CUENTAS_BANCARIAS_ROUTES<br/>CuentasBancariasComponent<br/>BancariaService<br/>ASIENTO_INGRESO_ROUTES<br/>AsientoIngresoComponent<br/>AsientoIngresoService"]
+            FeatureChequeras["@tesoreria/feature-chequeras<br/>cobranzaRoutes, consultaRoutes, emisionRoutes<br/>CobranzasHome, Importar, Importaciones<br/>Generar, PagoManual, BajaChequera<br/>ConsultasHome, DetalleCuotas<br/>EmisionHome, EmisionIndividual<br/>BorradoresPendientes, Incompletas<br/>EmisionService, EntregaService, IncompletasService"]
             FeaturePagos["@tesoreria/feature-pagos<br/>PAGOS_ROUTES<br/>ComprobantesComponent<br/>ComprobantesService"]
         end
     end
@@ -286,6 +286,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
     AppRoutes --> Personas["Personas Component<br/>@tesoreria/feature-personas"]
     AppRoutes --> Cobranzas["cobranzaRoutes<br/>@tesoreria/feature-chequeras<br/>permisoAlgunoGuard"]
     AppRoutes --> Consultas["consultaRoutes<br/>@tesoreria/feature-chequeras<br/>permisoAlgunoGuard"]
+    AppRoutes --> Emision["emisionRoutes<br/>@tesoreria/feature-chequeras<br/>permisoGuard"]
 
     Cobranzas --> CobranzasHome["CobranzasHome Component<br/>chequeras.cobranzas.*"]
     Cobranzas --> Importar["ImportarLista e ImportarProceso<br/>chequeras.cobranzas.importar"]
@@ -297,6 +298,11 @@ asignación efectiva se hace en la pantalla de Usuarios.
     Consultas --> ConsultasHome["ConsultasHome Component<br/>chequeras.consultas.detalleCuotas"]
     Consultas --> DetalleCuotas["DetalleCuotasFacultadSede Component<br/>chequeras.consultas.detalleCuotas"]
 
+    Emision --> EmisionHome["EmisionHome Component<br/>chequeras.emision.individual"]
+    Emision --> EmisionIndividual["EmisionIndividual Component<br/>wizard de 4 pasos<br/>chequeras.emision.individual"]
+    Emision --> Borradores["BorradoresPendientes Component<br/>chequeras.emision.individual"]
+    Emision --> Incompletas["IncompletasComponent<br/>chequeras.incompletas.consultar"]
+
     Importar --> CobranzaAPI["Fachada de cobranzas del core<br/>/cobranza/importacion"]
     Importaciones --> CobranzaAPI
     Generar --> GeneracionAPI["/cobranza/generacion"]
@@ -306,6 +312,14 @@ asignación efectiva se hace en la pantalla de Usuarios.
     DetalleCuotas --> ReportZip["report: /chequeras/planilla/detalle/zip"]
     PagoManual --> BuscadorPersona["BuscadorPersona Component<br/>@tesoreria/ui-layout"]
     Baja --> BuscadorPersona
+    EmisionIndividual --> EmisionAPI["core: /emision/chequera<br/>borradores, contexto, cuotas,<br/>beca y emisión"]
+    EmisionIndividual --> EntregaAPI["tesoreria-sender:<br/>PDF y correo de la chequera<br/>PDF del borrador (BORRADOR)"]
+    Borradores --> EmisionAPI
+    Borradores --> EntregaAPI
+    Incompletas --> IncompletasAPI["core: /emision/chequera/incompletas<br/>padrón y job de dos etapas<br/>(borradores y emisión)"]
+    Incompletas --> EntregaAPI
+    EmisionIndividual --> BuscadorPersona
+    EmisionIndividual --> InputFecha["InputFecha Component<br/>@tesoreria/ui-layout"]
 ```
 
 ## Estructura de Módulos - Pagos
@@ -327,6 +341,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
     ComprobantesComp --> BuscadorProveedor
     ComprobantesComp --> InputFecha["InputFecha Component<br/>@tesoreria/ui-layout"]
     ComprobantesComp --> MovimientoAPI["core: /proveedorMovimiento<br/>DELETE /compra/comprobante/{id}"]
+    ComprobantesComp --> ReportPDF["report: GET /contable/comprobante/{id}/pdf"]
 ```
 
 ## Estructura de Módulos - Guaraní

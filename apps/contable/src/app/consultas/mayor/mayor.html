@@ -115,6 +115,9 @@
       <button type="button" class="um-btn-secondary" [disabled]="!pedido() || exportando()" (click)="exportar()">
         {{ exportando() ? 'Generando…' : 'Exportar a Excel' }}
       </button>
+      <button type="button" class="um-btn-secondary" [disabled]="!pedido() || exportandoPdf()" (click)="exportarPdf()">
+        {{ exportandoPdf() ? 'Generando…' : 'Exportar a PDF' }}
+      </button>
     </div>
   </div>
 

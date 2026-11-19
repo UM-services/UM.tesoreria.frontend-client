@@ -45,6 +45,27 @@ export class AppComponent {
       ],
     },
     {
+      label: 'Emisión',
+      path: '/emision',
+      children: [
+        {
+          label: 'Emisión individual',
+          path: '/emision/individual',
+          permiso: 'chequeras.emision.individual',
+        },
+        {
+          label: 'Borradores pendientes',
+          path: '/emision/borradores',
+          permiso: 'chequeras.emision.individual',
+        },
+        {
+          label: 'Chequeras incompletas',
+          path: '/emision/incompletas',
+          permiso: 'chequeras.incompletas.consultar',
+        },
+      ],
+    },
+    {
       label: 'Consultas',
       path: '/consultas',
       children: [

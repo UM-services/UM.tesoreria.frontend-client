@@ -1,16 +1,100 @@
 # Changelog
 
-## [0.50.0] - 2026-11-11
+## [0.53.0] - 2026-11-18
+
+### Added
+
+- feat(chequeras): pantalla **Chequeras incompletas** (`libs/feature-chequeras/src/lib/emision/incompletas`) migrada de `frmIncompletas`, en `/emision/incompletas`. Filtra por **lectivo, sede, unidad académica y clase de chequera** (cuatro `<select>` alimentados por `/lectivo/reverse`, `/geografica/`, `/facultad/disenho/{lectivo}/{sede}` y `/clasechequera/`), con la opción «Sólo no enviadas», y lista las series del padrón `/chequeraSerie/incompletas/{lectivo}/{facultad}/{sede}/clase/{clase}` con documento, persona, tipo de chequera, tipo de arancel, número y estado de envío.
+- feat(chequeras): reparación en **dos etapas como job del core**: «Generar borradores» (`POST /emision/chequera/incompletas/borradores`) completa las cuotas faltantes sin tocar la chequera y luego «Emitir» (`POST /emision/chequera/incompletas/job/{jobId}/emision`) escribe la chequera, con selección opcional de borradores (sin selección se emiten todos), progreso por polling cada 1,5 s, resumen ok/omitidas/errores/pendientes, detalle de omitidas y errores, y cancelación.
+- feat(chequeras): **impresión del borrador** antes de emitir contra `tesoreria-sender` (`GET /chequera/borrador/{borradorId}`, `EntregaService.descargarBorrador`): PDF con la leyenda BORRADOR, sin código de barras ni datos de pago. Disponible en el paso de confirmación del wizard, en **Borradores pendientes** y en la tabla de borradores generados de Chequeras incompletas.
+- feat(chequeras): **Borradores pendientes** se agrupa por unidad académica y sede, y muestra persona (apellido y nombre), documento, tipo de chequera y lectivo en lugar de los códigos sueltos. `BorradorChequera` suma `personaApellido`, `personaNombre`, `lectivoNombre`, `geograficaId` y `geograficaNombre`.
+- feat(chequeras): ítem de menú **Chequeras incompletas** en el grupo Emisión con `permiso: 'chequeras.incompletas.consultar'` y ruta con `permisoGuard('chequeras.incompletas.consultar')`; las acciones de generar y emitir usan `*uiPermiso` con `chequeras.incompletas.generar`.
+- test(chequeras): `impresion-borrador.spec.ts` (204 sin cuotas adeudadas y traducción de `409`/`404`), `borradores-pendientes.spec.ts` (agrupación por facultad y sede, datos de persona/tipo/lectivo e impresión) e `incompletas.spec.ts` (los cuatro filtros son `<select>` con opciones del servicio, sin `input[type=number]`, listado del padrón y acciones ocultas sin permiso).
+- feat(contable): pantalla **Sumas y saldos** (`/consultas/sumas-saldos`, menú **Consultas › Sumas y saldos**) en `apps/contable/src/app/consultas/sumas-saldos`: se elige el **ejercicio** de una lista (`GET /ejercicio/`, por defecto el vigente) y las fechas desde/hasta con `<ui-input-fecha>`, acotadas a ese ejercicio. «Consultar» llama a `POST /balance/sumasysaldos/consulta` del core y muestra una fila por cuenta imputable (saldo inicial, débitos, créditos, saldo deudor y acreedor) y los totales tal cual los devuelve el core, sin recalcular. Un buscador por número o nombre y «Ocultar cuentas sin importes» sólo filtran lo mostrado.
+- feat(contable): «Exportar a Excel» con `GET /balance/sumasysaldos/{desde}/{hasta}` del core (mismo cálculo que la consulta).
+- test(contable): `sumas-saldos.spec.ts` con el contrato de UI (ejercicio en un `<select>` alimentado por el servicio, fechas con `ui-input-fecha`), el pedido, el rechazo de fechas fuera del ejercicio, los totales, el filtro, el error del core y el Excel.
+
+### Requisitos
+
+- Core con `/api/tesoreria/core/emision/chequera/incompletas/**` y el padrón `vw_chequera_incompleta`, con las etapas `BORRADORES` y `EMISION` del job.
+- `tesoreria-sender` con `GET /chequera/borrador/{borradorId}` (responde `204` cuando el borrador no tiene cuotas adeudadas y `409`/`404` cuando no se puede imprimir).
+- Permisos `chequeras.incompletas.consultar` y `chequeras.incompletas.generar`.
+
+## [0.52.0] - 2026-11-17
+
+### Added
+
+- feat(contable): **Asiento de ingreso** (`libs/feature-contable/src/lib/asiento-ingreso`) migrado de `frmAsientoIngreso`: fecha de acreditación y tipo de pago, totales debe/haber con aviso de descuadre, lista de **Registrados**, grilla de **Cuentas Faltantes**, detalle del asiento y **Regenerar Ingresos**.
+- feat(contable): **Regenerar Masivo** por rango de fechas como job del core, con progreso por polling, resumen por día, errores por tarea y cancelación; botón «Duplicar rango» (equivalente al `>` del legacy).
+- feat(contable): ruta `/asientos/ingreso` y grupo **Asientos › Ingreso** en el menú, con `permisoGuard('contable.asiento_ingreso.consultar')`; las acciones usan `*uiPermiso` con `contable.asiento_ingreso.regenerar` y `.masivo`.
+- test(contable): contrato de UI (tipo de pago como `<select>` alimentado por el servicio, tres `<ui-input-fecha>`, faltantes visibles, acciones ocultas sin permiso y polling que termina en estado final).
+
+### Requisitos
+
+- Core con `/api/tesoreria/core/asientoIngreso/**` y tablas `contable_asiento_ingreso_job*` (V425).
+- Permisos `contable.asiento_ingreso.consultar|regenerar|masivo`.
+
+### Notes
+
+- «Ver Import/Cuentas» y «Ver Import/Cuentas-R» **no** se publican: los reportes Crystal quedan para una fase posterior.
+
+## [0.51.0] - 2026-11-17
+
+### Added
+
+- feat(chequeras): módulo **Emisión** (`libs/feature-chequeras/src/lib/emision`) con el wizard de emisión individual (migración de `frmImpChequera`): paso 1 persona/chequera, paso 2 cuotas/beca/mails, paso 3 confirmación y paso 4 entrega.
+- feat(chequeras): edición de cuotas (vencimientos e importes), “Calcular/Limpiar beca”, “Completar faltantes” con fuente diseño/plantilla/guardadas, “Aplicar P.A. (10 días)”, HPUM, código de barras y copia a facultad.
+- feat(chequeras): entrega posterior sin reemitir: descarga de PDF y envío por correo contra `tesoreria-sender`.
+- feat(chequeras): pantalla de **Borradores pendientes** con abrir y descartar, y rutas `/emision`, `/emision/individual`, `/emision/individual/:borradorId`, `/emision/borradores`.
+- feat(chequeras): grupo **Emisión** en el menú con permisos `chequeras.emision.individual`.
+
+### Requisitos
+
+- Core con `/api/tesoreria/core/emision/chequera/**` y tablas `chequera_borrador*` (V423).
+- Permiso `chequeras.emision.individual` (y `chequeras.emision.forzar` para el override de deuda).
+
+### Fixed
+
+- fix(chequeras): el paso 1 del wizard de emisión reemplaza el campo numérico de lectivo por un **desplegable con los lectivos del sistema** (`GET /lectivo/reverse`), con el más nuevo preseleccionado, igual que en Consultas › Detalle de cuotas. El lectivo elegido se conserva al abrir un borrador y el contexto se recarga al cambiarlo; `EmisionService.lectivos()` y su test cubren la carga.
+- fix(chequeras): la **chequera nueva** del paso 1 ya no pide facultad y tipo de chequera por número. Ahora son desplegables alimentados por las vistas de diseño de la sede del usuario (`/facultad/disenho/{lectivo}/{sede}` y `/tipochequeralectivosede/disenho/{fac}/{lec}/{sede}`), con la sede mostrada como dato de sesión. Si no hay diseño cargado, el botón «Crear borrador» queda deshabilitado con el motivo a la vista.
+- fix(chequeras): el **curso** deja de ser un `input[type=number]` editable; se muestra como dato de la chequera y, si no está, se resuelve por la inscripción al emitir (el backend devuelve `SIN_CURSO` si no puede).
+- test(chequeras): `emision-individual.spec.ts` fija el contrato de UI del paso 1: lectivo como `<select>` con las opciones del catálogo (sin `input[type=number]`), facultad y tipo desde las vistas de diseño, y curso como texto de sólo lectura. `emision.service.spec.ts` cubre los endpoints de los dos catálogos nuevos.
+- fix(chequeras): el wizard de emisión muestra **en qué paso está** («Paso N de 4 · …» y un indicador con el paso activo resaltado y los completados tildados).
+- fix(chequeras): la tabla de chequeras del lectivo recupera los datos del legacy: **sede**, **arancel**, **última emisión** y **estado de baja**. Una chequera de baja se marca en rojo, muestra la fecha y el motivo, y no ofrece «Editar / emitir».
+- fix(chequeras): el paso 1 del wizard muestra el **mail institucional** del domicilio junto al personal y al pagador, con su indicador de formato (sólo lectura), como en el legacy. El test del paso 1 cubre el valor y el label.
+- fix(chequeras): la **confirmación** de la emisión deja de mostrar códigos sueltos: muestra el nombre de la **facultad** y del **tipo de chequera** que devuelve el core en el borrador (`facultadNombre`/`tipoChequeraNombre`, con el código como respaldo) y la **alternativa** como `id · título`. Tests nuevos para los nombres y para el respaldo por código.
+- fix(chequeras): el paso 2 muestra la **facultad** y el **tipo de chequera por nombre** en el encabezado del borrador (con el código como respaldo si el core todavía no los envía).
+- fix(chequeras): en el paso 2 las cuotas **pagadas, de baja, compensadas o manuales de la chequera real** ya no se pueden editar: la fila dice «No editable» en lugar de «Editar» y `seleccionarCuota` lo rechaza con un aviso, siguiendo el legacy. El candado lo decide el core (`CuotaDto.editable`) y además rechaza los cambios reales con `409 CUOTA_INMUTABLE`.
+- fix(chequeras): **«Incluir código de barras» arranca destildado** en el borrador, como el legacy (`chkCodigoBarras = 0`); el core también crea el borrador con `incluyeBarras = false` cuando el pedido no lo envía.
+- fix(shared-api, ui-layout): el **botón atrás del navegador** deja de devolver pantallas privadas ya cerradas. El logout del shell y del aviso de inactividad navegan a `/login` con `replaceUrl: true`, y el 401 del interceptor hace lo mismo (el login ya lo hacía). Al volver, el `authGuard` resuelve a `/login?returnUrl=…` sin rebotes.
+- feat(shared-api): guard reutilizable **`confirmarSalida(pregunta)`** (`canDeactivate`) para pantallas con cambios sin guardar. Aplicado al wizard de emisión de chequeras: si hay un borrador abierto en los pasos 2/3, salir (enlace o atrás) pide confirmación. Tests del guard y de `hayCambiosSinGuardar()`.
+
+## [0.50.0] - 2026-11-13
 
 ### Added
 
 - feat(contable): nuevo grupo desplegable **Consultas** en el menú (solo encabezado, sin pantalla propia) con la consulta **Mayor** como hijo (`/consultas/mayor`, `MayorComponent` en `apps/contable/src/app/consultas/mayor`), con `authGuard` y `usuarioInternoGuard`. Sin clave de permiso nueva.
 - feat(contable): el Mayor se consulta por **una cuenta**, un **rango de cuentas** o **cuentas elegidas**, entre dos fechas que pueden cruzar ejercicios (`POST /balance/mayor/consulta`). Muestra, por cuenta, saldo inicial, movimientos (con ejercicio por línea), totales y saldo final tal como los devuelve el core, sin recalcular. Cuando el core rechaza el pedido (`409`/`404`/`400`) muestra su `message`.
-- feat(contable): **Exportar a Excel** con el mismo pedido contra report (`POST /report/contable/mayor/excel`, archivo `mayor.xlsx`); si report responde con error, se muestra su `message`.
-- feat(contable): `MayorService` (consulta y Excel).
+- feat(contable): **Exportar a Excel** con el mismo pedido contra report (`POST /report/contable/mayor/excel`, archivo `mayor.xlsx`) y **Exportar a PDF** (`POST /report/contable/mayor/pdf`, archivo `mayor.pdf`). Mientras genera, el botón dice «Generando…» y no admite pedidos duplicados; si report responde con error se muestra su `message`.
+- feat(contable): `MayorService` (consulta, Excel y PDF).
 - test(contable): `mayor.spec.ts` con casos con ficha.
+- feat(pagos): botón **Imprimir** en el detalle del comprobante, junto a «Anular comprobante», y también por fila del listado (imprime el comprobante de esa fila aunque haya otro seleccionado). Pide a `report-service` (`GET /api/tesoreria/report/contable/comprobante/{proveedorMovimientoId}/pdf`) el PDF del comprobante y lo abre en una pestaña nueva. Está habilitado para cualquier comprobante y no exige permiso específico: qué se puede imprimir lo decide el servidor (hoy, órdenes de pago; con otro comprobante `409 COMPROBANTE_NO_SOPORTADO` y se muestra su mensaje). La pestaña se abre en el clic y recibe el PDF al llegar, para que el navegador no la bloquee; si el pedido falla se cierra y se muestra el `message` de report (`404`, `409`, `502`). Muestra «Generando…» y no admite pedidos duplicados.
+- feat(pagos): `ComprobantesImpresionService` (`data-access/comprobantes-impresion.service.ts`) con `imprimirComprobante()`, que deriva la URL de report de la base del core como el Mayor, y el helper `mensajeDeErrorBlob`.
+- feat(ui-layout): nueva directiva standalone `[uiStickyFooter]` (`StickyFooterDirective`) que convierte un contenedor en **barra de acciones fija al pie**: aplica la clase de tema `.um-sticky-footer` (`position: sticky` con `bottom: 0`, borde superior, fondo blanco translúcido con desenfoque y layout flex que envuelve en pantallas angostas). No tapa el final del contenido como `position: fixed` y las utilidades del consumidor pisan la capa de componentes. Se extrajo de **Control del Período** de `haberes-frontend` para reutilizarla; el uso previsto es comprobantes del módulo de pagos. Se exporta desde `@tesoreria/ui-layout`.
+- test(ui-layout): `sticky-footer.directive.spec.ts` (aplica `um-sticky-footer`, conserva contenido, id y clases propias del consumidor).
+- test(pagos): `comprobantes-imprimir.spec.ts` (pestaña abierta en el clic, `409` con `message`, doble clic, pestaña bloqueada, sin selección, impresión desde una fila).
 
-> Depende de los cambios de core (`/balance/mayor/consulta`) y report (`/contable/mayor/excel`) y de `soloGrupo` en `ShellMenuItem` (`@tesoreria/ui-layout`).
+### Changed
+
+- docs(ui-layout): `libs/ui-layout/README.md` deja de ser el texto genérico de Nx y documenta la directiva `[uiStickyFooter]`, sus requisitos (`position: sticky`, último elemento del contenido que scrollea, sin ancestro con `overflow: hidden`/`auto`) y su ejemplo de uso.
+- chore(pagos): se eliminó `data-access/comprobantes-impresion.service.spec.ts`, que era una copia del servicio con extensión `.spec.ts` (no contenía pruebas), y se renombró `comprobantes-imprimir.spec.ts.ts` a `comprobantes-imprimir.spec.ts`. `tsconfig.spec.json` ya no lista ese archivo por nombre: lo cubre el glob `src/**/*.spec.ts`.
+
+### Requisitos
+
+- Core con `POST /balance/mayor/consulta` (`MayorService.consultar`).
+- report con `POST /contable/mayor/excel`, `POST /contable/mayor/pdf` y `GET /contable/comprobante/{proveedorMovimientoId}/pdf`.
+- `soloGrupo` en `ShellMenuItem` (`@tesoreria/ui-layout`) para el encabezado desplegable sin pantalla propia.
+- `package.json`, `package-lock.json` y `README.md` pasan a **0.50.0**. El CHANGELOG queda con una sola sección por versión: se corrigieron los encabezados duplicados `0.46.0` y `0.44.0` que dejó la resolución de conflictos de la rama del Mayor.
 
 ## [0.49.0] - 2026-11-11
 

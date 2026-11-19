@@ -81,6 +81,6 @@ describe('InactividadComponent', () => {
     componente.cerrarSesion();
 
     expect(authService.logout).toHaveBeenCalledOnce();
-    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+    expect(router.navigate).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
   });
 });

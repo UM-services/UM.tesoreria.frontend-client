@@ -70,4 +70,11 @@ export class MayorService {
       responseType: 'blob',
     });
   }
+
+  /** El PDF lo arma report con el mismo pedido. */
+  exportarPdf(pedido: MayorRequest): Observable<Blob> {
+    return this.http.post(`${this.reportUrl}/contable/mayor/pdf`, pedido, {
+      responseType: 'blob',
+    });
+  }
 }
