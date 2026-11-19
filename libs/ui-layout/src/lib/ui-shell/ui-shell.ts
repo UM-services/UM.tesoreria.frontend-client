@@ -571,6 +571,6 @@ export class UiShellComponent {
 
   cerrarSesion(): void {
     this.authService.logout();
-    void this.router.navigate(['/login']);
+    void this.router.navigate(['/login'], { replaceUrl: true });
   }
 }

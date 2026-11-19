@@ -18,6 +18,10 @@ import {
 } from '@tesoreria/ui-layout';
 import { ComprobantesService } from '../data-access/comprobantes.service';
 import {
+  ComprobantesImpresionService,
+  mensajeDeErrorBlob,
+} from '../data-access/comprobantes-impresion.service';
+import {
   AnulacionRechazada,
   ProveedorMovimientoDetalle,
   ProveedorMovimientoResumen,
@@ -47,6 +51,7 @@ const DIAS_RANGO_INICIAL = 180;
 export class ComprobantesComponent {
   private readonly fb = inject(FormBuilder);
   private readonly comprobantes = inject(ComprobantesService);
+  private readonly impresion = inject(ComprobantesImpresionService);
   private readonly permisos = inject(PermisosService);
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -58,6 +63,7 @@ export class ComprobantesComponent {
   public isLoading = false;
   public isLoadingDetalle = false;
   public isAnulando = false;
+  public isImprimiendo = false;
   public errorMessage = '';
   public successMessage = '';
 
@@ -178,6 +184,67 @@ export class ComprobantesComponent {
         this.detalle = detalle;
         this.cdr.detectChanges();
       });
+  }
+
+  /**
+   * Abre el PDF del comprobante indicado (por defecto, el seleccionado) en una pestaña nueva. Sirve para cualquier
+   * comprobante: qué se puede imprimir lo decide el servidor (hoy, sólo órdenes de pago).
+   */
+  imprimir(movimiento: ProveedorMovimientoResumen | null = this.seleccionado): void {
+    if (!movimiento || this.isImprimiendo) {
+      return;
+    }
+
+    // La pestaña se abre en el clic: si se abriera al llegar el PDF, el navegador la bloquearía.
+    const pestana = window.open('', '_blank');
+    if (!pestana) {
+      this.showError(
+        'El navegador bloqueó la pestaña del PDF. Permití las ventanas emergentes para este sitio.',
+      );
+      return;
+    }
+
+    this.isImprimiendo = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.impresion.imprimirComprobante(movimiento.proveedorMovimientoId).subscribe({
+      next: (pdf) => {
+        const url = URL.createObjectURL(pdf);
+        pestana.location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        this.isImprimiendo = false;
+        this.cdr.detectChanges();
+      },
+      error: async (err: HttpErrorResponse) => {
+        pestana.close();
+        this.showError(
+          await mensajeDeErrorBlob(err, 'No se pudo generar el PDF del comprobante.'),
+        );
+        this.isImprimiendo = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Anulación desde la fila: lo informado en el listado alcanza; el backend la revalida igual. */
+  puedeAnularFila(movimiento: ProveedorMovimientoResumen): boolean {
+    if (movimiento.fechaAnulacion || !movimiento.anulable) {
+      return false;
+    }
+    return !movimiento.requierePrivilegioOp || this.permisos.hasPermiso(PERMISO_ANULAR_OP);
+  }
+
+  /** Selecciona la fila (carga su detalle) y abre la confirmación de anulación. */
+  anularFila(movimiento: ProveedorMovimientoResumen): void {
+    if (!this.puedeAnularFila(movimiento)) {
+      return;
+    }
+    if (this.seleccionado?.proveedorMovimientoId !== movimiento.proveedorMovimientoId) {
+      this.seleccionar(movimiento);
+    }
+    this.motivosRechazo = [];
+    this.confirmacionAbierta = true;
   }
 
   abrirConfirmacion(): void {

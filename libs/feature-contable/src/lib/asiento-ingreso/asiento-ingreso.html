@@ -1,0 +1,336 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Contabilidad / Asientos</p>
+      <h1 class="um-page-title">Asiento de ingreso</h1>
+      <p class="um-page-desc">
+        Consulta y regenera el asiento de ingreso de una fecha y un tipo de pago. Las cuentas
+        faltantes indican productos sin imputación contable.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  @if (descuadrado()) {
+    <div class="um-alert um-alert-warn" role="alert">
+      <p class="text-sm text-amber-800">
+        El asiento no cuadra: debe {{ formatear(resumen()?.totalDebe) }} y haber
+        {{ formatear(resumen()?.totalHaber) }}.
+      </p>
+    </div>
+  }
+
+  <div class="um-card p-6">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div>
+        <label class="um-label" for="fecha-acreditacion">Fecha Acreditación</label>
+        <ui-input-fecha
+          inputId="fecha-acreditacion"
+          [valor]="fecha()"
+          (valorChange)="cambiarFecha($event)"
+        />
+      </div>
+
+      <div>
+        <label class="um-label" for="tipo-pago">Pago</label>
+        <select
+          id="tipo-pago"
+          class="um-input"
+          [value]="tipoPagoId()?.toString() ?? ''"
+          (change)="seleccionarTipo(+$any($event.target).value)"
+        >
+          @for (tipo of tiposPago(); track tipo.tipoPagoId) {
+            <option [value]="tipo.tipoPagoId">{{ tipo.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex items-end">
+        <button
+          type="button"
+          class="um-btn-primary w-full"
+          id="btn-regenerar-ingreso"
+          *uiPermiso="'contable.asiento_ingreso.regenerar'"
+          [disabled]="regenerando() || tipoPagoId() === null"
+          (click)="regenerar()"
+        >
+          {{ regenerando() ? 'Regenerando…' : 'Regenerar Ingresos' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Total Debe</p>
+        <p class="text-2xl font-semibold">{{ formatear(resumen()?.totalDebe) }}</p>
+      </div>
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Total Haber</p>
+        <p class="text-2xl font-semibold">{{ formatear(resumen()?.totalHaber) }}</p>
+      </div>
+    </div>
+
+    @if (tiposRegistrados().length > 0) {
+      <div class="mt-6">
+        <p class="um-label">Registrados</p>
+        <div class="flex flex-wrap gap-2">
+          @for (tipo of tiposRegistrados(); track tipo.tipoPagoId) {
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [class.ring-2]="tipo.tipoPagoId === tipoPagoId()"
+              [attr.aria-pressed]="tipo.tipoPagoId === tipoPagoId()"
+              (click)="seleccionarRegistrado(tipo)"
+            >
+              {{ tipo.nombre }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    @if (cargando()) {
+      <p class="mt-4 text-sm text-um-muted">Consultando el asiento…</p>
+    }
+
+    <div class="mt-6 flex justify-end">
+      <button
+        type="button"
+        class="um-btn-secondary"
+        [disabled]="!resumen()?.existe"
+        (click)="alternarDetalle()"
+      >
+        {{ detalleVisible() ? 'Ocultar Asiento Ingreso' : 'Ver Asiento Ingreso' }}
+      </button>
+    </div>
+
+    @if (detalleVisible() && resumen(); as resumen) {
+      @if (resumen.existe) {
+        <div class="mt-4 overflow-auto">
+          <table class="um-table min-w-full">
+            <thead>
+              <tr>
+                <th scope="col">Cuenta</th>
+                <th scope="col">Nombre</th>
+                <th scope="col" class="text-right">Debe</th>
+                <th scope="col" class="text-right">Haber</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (linea of resumen.lineas; track $index) {
+                <tr>
+                  <td class="whitespace-nowrap">{{ linea.numeroCuenta }}</td>
+                  <td>{{ linea.nombreCuenta || '—' }}</td>
+                  <td class="text-right">{{ esDebe(linea.debita) ? formatear(linea.importe) : '' }}</td>
+                  <td class="text-right">{{ esDebe(linea.debita) ? '' : formatear(linea.importe) }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="py-6 text-center text-sm text-um-muted">
+                    El asiento no tiene líneas.
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" colspan="2">Totales</th>
+                <th class="text-right">{{ formatear(resumen.totalDebe) }}</th>
+                <th class="text-right">{{ formatear(resumen.totalHaber) }}</th>
+              </tr>
+            </tfoot>
+          </table>
+          <p class="mt-2 text-right">
+            <span class="um-badge">{{ resumen.cuadra ? 'Cuadrado' : 'Descuadrado' }}</span>
+          </p>
+        </div>
+      } @else {
+        <p class="mt-4 text-sm text-um-muted">
+          No hay asiento generado para esa fecha y tipo de pago.
+        </p>
+      }
+    }
+
+    @if (faltantes().length > 0) {
+      <div class="mt-8">
+        <h2 class="um-section">Cuentas Faltantes</h2>
+        <p class="text-sm text-um-muted">
+          Pagos sin cuenta de imputación para su producto. El asiento se generó sin el haber de
+          esas cuentas.
+        </p>
+        <div class="mt-3 overflow-auto">
+          <table class="um-table min-w-full">
+            <thead>
+              <tr>
+                <th scope="col">Facultad</th>
+                <th scope="col">Lectivo</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Producto</th>
+                <th scope="col">Sede</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (faltante of faltantes(); track $index) {
+                <tr>
+                  <td>{{ faltante.facultadNombre || faltante.facultadId || '—' }}</td>
+                  <td>{{ faltante.lectivoNombre || faltante.lectivoId || '—' }}</td>
+                  <td>{{ faltante.tipoChequeraNombre || faltante.tipoChequeraId || '—' }}</td>
+                  <td>{{ faltante.productoNombre || faltante.productoId || '—' }}</td>
+                  <td>{{ faltante.geograficaNombre || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="um-card p-6">
+    <h2 class="um-section">Regenerar Masivo</h2>
+    <p class="text-sm text-um-muted">
+      Regenera todas las combinaciones de fecha y tipo de pago del rango. El avance se actualiza
+      automáticamente.
+    </p>
+
+    <div class="mt-4 grid gap-4 md:grid-cols-4">
+      <div>
+        <label class="um-label" for="fecha-desde">Fecha Desde</label>
+        <ui-input-fecha
+          inputId="fecha-desde"
+          [valor]="desde()"
+          (valorChange)="desde.set($event)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="fecha-hasta">Fecha Hasta</label>
+        <ui-input-fecha
+          inputId="fecha-hasta"
+          [valor]="hasta()"
+          (valorChange)="hasta.set($event)"
+        />
+      </div>
+      <div class="flex items-end">
+        <button type="button" class="um-btn-secondary w-full" title="Duplicar" (click)="duplicar()">
+          Duplicar rango
+        </button>
+      </div>
+      <div class="flex items-end">
+        <button
+          type="button"
+          class="um-btn-primary w-full"
+          id="btn-regenerar-masivo"
+          *uiPermiso="'contable.asiento_ingreso.masivo'"
+          [disabled]="iniciandoMasivo()"
+          (click)="iniciarMasivo()"
+        >
+          {{ iniciandoMasivo() ? 'Procesando…' : 'Regenerar Masivo' }}
+        </button>
+      </div>
+    </div>
+
+    @if (job(); as job) {
+      <div class="mt-6 rounded border border-slate-200 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm font-medium">
+            Job #{{ job.jobId }} · {{ etiquetaEstado(job.estado) }}
+            @if (job.fechaActual) {
+              · {{ job.fechaActual.slice(0, 10) }}
+              @if (job.tipoPagoActual !== null) {
+                · {{ nombreTipoPago(job.tipoPagoActual) }}
+              }
+            }
+          </p>
+          <p class="text-sm text-um-muted">
+            {{ job.tareasOk }} ok · {{ job.tareasError }} con error ·
+            {{ job.tareasSinMovimientos }} sin movimientos · {{ job.tareasPendientes }} pendientes
+          </p>
+        </div>
+
+        <progress class="mt-3 w-full" [value]="job.porcentaje" max="100"></progress>
+        <p class="mt-1 text-right text-sm text-um-muted">{{ job.porcentaje }} %</p>
+
+        @if (job.mensaje) {
+          <p class="mt-2 text-sm text-red-700">{{ job.mensaje }}</p>
+        }
+
+        @if (!esFinal(job.estado)) {
+          <div class="mt-3 flex justify-end">
+            <button
+              type="button"
+              class="um-btn-secondary"
+              [disabled]="cancelando()"
+              (click)="cancelarMasivo()"
+            >
+              {{ cancelando() ? 'Cancelando…' : 'Cancelar' }}
+            </button>
+          </div>
+        }
+
+        @if (job.resumenPorFecha.length > 0) {
+          <div class="mt-4 overflow-auto">
+            <table class="um-table min-w-full">
+              <thead>
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col" class="text-right">Ok</th>
+                  <th scope="col" class="text-right">Con error</th>
+                  <th scope="col" class="text-right">Sin movimientos</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (dia of job.resumenPorFecha; track dia.fecha) {
+                  <tr>
+                    <td class="whitespace-nowrap">{{ dia.fecha.slice(0, 10) }}</td>
+                    <td class="text-right">{{ dia.ok }}</td>
+                    <td class="text-right">{{ dia.error }}</td>
+                    <td class="text-right">{{ dia.sinMovimientos }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (job.errores.length > 0) {
+          <div class="mt-4">
+            <h3 class="um-label">Errores</h3>
+            <div class="overflow-auto">
+              <table class="um-table min-w-full">
+                <thead>
+                  <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Pago</th>
+                    <th scope="col">Código</th>
+                    <th scope="col">Mensaje</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (error of job.errores; track $index) {
+                    <tr>
+                      <td class="whitespace-nowrap">{{ error.fecha.slice(0, 10) }}</td>
+                      <td>{{ error.tipoPagoNombre || error.tipoPagoId }}</td>
+                      <td class="whitespace-nowrap">{{ error.codigo || '—' }}</td>
+                      <td>{{ error.mensaje || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
