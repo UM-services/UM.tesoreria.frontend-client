@@ -35,6 +35,12 @@ import { RouterModule } from '@angular/router';
             Repará las chequeras con cuotas sin precio: primero borradores, después la emisión.
           </p>
         </a>
+        <a class="um-card block" routerLink="/emision/envio">
+          <h2 class="text-lg font-semibold text-um-ink">Envío por facultad y sede</h2>
+          <p class="mt-2 text-sm text-um-muted">
+            Capturá correos, extendé débitos y enviá las chequeras de un lectivo y una sede.
+          </p>
+        </a>
       </div>
     </section>
   `,

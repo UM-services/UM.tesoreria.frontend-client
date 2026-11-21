@@ -1,0 +1,340 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Pagos</p>
+      <h1 class="um-page-title">Asignación de costos</h1>
+      <p class="um-page-desc">
+        Imputá los artículos de una factura de compra a su ubicación contable. Se eligen las
+        facturas con saldo, los artículos y la ubicación; el core genera la entrega y el asiento.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">{{ successMessage() }}</div>
+  }
+
+  <div class="um-card p-6">
+    <h2 class="um-section">Facturas del proveedor</h2>
+    <div class="mt-4 grid gap-4 md:grid-cols-4">
+      <div class="md:col-span-2">
+        <span class="um-label">Proveedor</span>
+        @if (proveedor(); as proveedor) {
+          <div class="flex flex-wrap items-center gap-3 rounded border border-um-border-strong p-3">
+            <div class="min-w-0">
+              <p class="text-sm font-medium">{{ proveedor.razonSocial }}</p>
+              <p class="text-sm text-um-muted">CUIT {{ proveedor.cuit }}</p>
+            </div>
+            <button type="button" class="um-link-btn" (click)="cambiarProveedor()">
+              Cambiar proveedor
+            </button>
+          </div>
+        } @else {
+          <ui-buscador-proveedor (proveedorSelected)="onProveedorSelected($event)" />
+        }
+      </div>
+      <div>
+        <label class="um-label" for="costos-desde">Desde</label>
+        <ui-input-fecha inputId="costos-desde" [valor]="desde()" (valorChange)="setDesde($event)" />
+      </div>
+      <div>
+        <label class="um-label" for="costos-hasta">Hasta</label>
+        <ui-input-fecha inputId="costos-hasta" [valor]="hasta()" (valorChange)="setHasta($event)" />
+      </div>
+    </div>
+    <div class="mt-4 flex justify-end">
+      <button
+        type="button"
+        class="um-btn-secondary"
+        [disabled]="cargandoFacturas() || !proveedor()"
+        (click)="cargarFacturas()"
+      >
+        {{ cargandoFacturas() ? 'Buscando…' : 'Buscar facturas' }}
+      </button>
+    </div>
+  </div>
+
+  @if (proveedor()) {
+    <div class="um-card p-6">
+      <h2 class="um-section">Facturas con saldo asignable</h2>
+      @if (cargandoFacturas()) {
+        <p class="mt-4 text-sm text-um-muted">Cargando facturas…</p>
+      } @else {
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table min-w-full">
+            <thead>
+              <tr>
+                <th scope="col">
+                  <input
+                    type="checkbox"
+                    [checked]="todasLasFacturas"
+                    aria-label="Seleccionar todas las facturas"
+                    (change)="toggleTodasLasFacturas($any($event.target).checked)"
+                  />
+                </th>
+                <th scope="col">Comprobante</th>
+                <th scope="col">Fecha</th>
+                <th scope="col" class="text-right">Importe</th>
+                <th scope="col" class="text-right">Artículos pendientes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (movimiento of movimientos(); track movimiento.proveedorMovimientoId) {
+                <tr>
+                  <td>
+                    <input
+                      type="checkbox"
+                      [checked]="facturasSeleccionadas().includes(movimiento.proveedorMovimientoId)"
+                      [attr.aria-label]="'Seleccionar factura ' + numeroFactura(movimiento)"
+                      (change)="toggleFactura(movimiento.proveedorMovimientoId, $any($event.target).checked)"
+                    />
+                  </td>
+                  <td>
+                    <p class="font-medium">{{ movimiento.comprobante?.descripcion ?? 'Factura' }}</p>
+                    <p class="text-sm text-um-muted">{{ numeroFactura(movimiento) }}</p>
+                  </td>
+                  <td class="whitespace-nowrap">{{ movimiento.fechaComprobante | umFecha }}</td>
+                  <td class="text-right">{{ formatear(movimiento.importe) }}</td>
+                  <td class="text-right">{{ articulosPendientes(movimiento) }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="py-6 text-center text-sm text-um-muted">
+                    El proveedor no tiene facturas con saldo asignable en el rango elegido.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="um-card p-6">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <h2 class="um-section">Artículos y ubicación</h2>
+        <div class="flex flex-wrap items-end gap-4">
+          <div>
+            <label class="um-label" for="costos-ubicacion">Ubicación</label>
+            <select
+              id="costos-ubicacion"
+              class="um-input min-w-56"
+              [value]="ubicacionId()?.toString() ?? ''"
+              (change)="setUbicacion($any($event.target).value)"
+            >
+              <option value="">Elegir ubicación…</option>
+              @for (ubicacion of ubicacionesDisponibles(); track ubicacion.ubicacionId) {
+                <option [value]="ubicacion.ubicacionId">{{ ubicacion.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="um-label" for="costos-porcentaje">Asignar (%)</label>
+            <input
+              id="costos-porcentaje"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              class="um-input w-32 text-right"
+              [value]="porcentaje()"
+              [disabled]="usarResto()"
+              (input)="setPorcentaje($any($event.target).value)"
+            />
+          </div>
+          <label class="flex items-center gap-2 pb-2 text-sm">
+            <input
+              type="checkbox"
+              [checked]="usarResto()"
+              (change)="setUsarResto($any($event.target).checked)"
+            />
+            Asignar el resto pendiente
+          </label>
+        </div>
+      </div>
+
+      @if (facturasSeleccionadas().length === 0) {
+        <p class="mt-4 text-sm text-um-muted">
+          Marcá al menos una factura para ver sus artículos.
+        </p>
+      } @else if (cargandoArticulos()) {
+        <p class="mt-4 text-sm text-um-muted">Cargando artículos…</p>
+      } @else {
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table min-w-full">
+            <thead>
+              <tr>
+                <th scope="col">
+                  <input
+                    type="checkbox"
+                    [checked]="todosLosArticulos"
+                    aria-label="Seleccionar todos los artículos"
+                    (change)="toggleTodosLosArticulos($any($event.target).checked)"
+                  />
+                </th>
+                <th scope="col">Artículo</th>
+                <th scope="col">Concepto</th>
+                <th scope="col" class="text-right">Precio final</th>
+                <th scope="col" class="text-right">Asignado</th>
+                <th scope="col" class="text-right">Pendiente</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (articulo of articulos(); track articulo.proveedorArticuloId) {
+                <tr>
+                  <td>
+                    <input
+                      type="checkbox"
+                      [checked]="articulosSeleccionados().includes(articulo.proveedorArticuloId)"
+                      [attr.aria-label]="'Seleccionar artículo ' + articulo.proveedorArticuloId"
+                      (change)="toggleArticulo(articulo.proveedorArticuloId, $any($event.target).checked)"
+                    />
+                  </td>
+                  <td>{{ articulo.articulo?.nombre ?? ('Artículo ' + articulo.articuloId) }}</td>
+                  <td>{{ articulo.concepto || '—' }}</td>
+                  <td class="text-right">{{ formatear(articulo.precioFinal) }}</td>
+                  <td class="text-right">{{ formatear(articulo.asignado) }}</td>
+                  <td class="text-right">
+                    {{ formatear(articulo.precioFinal - articulo.asignado) }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="py-6 text-center text-sm text-um-muted">
+                    Las facturas elegidas no tienen artículos pendientes.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="um-card p-6">
+      <h2 class="um-section">Preview de la asignación</h2>
+      @if (filas().length === 0) {
+        <p class="mt-4 text-sm text-um-muted">Seleccioná artículos para preparar la asignación.</p>
+      } @else {
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table min-w-full">
+            <thead>
+              <tr>
+                <th scope="col">Factura</th>
+                <th scope="col">Artículo</th>
+                <th scope="col">Cuenta contable</th>
+                <th scope="col" class="text-right">Importe</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of filas(); track fila.articulo.proveedorArticuloId) {
+                <tr>
+                  <td class="whitespace-nowrap">{{ numeroFactura(fila.movimiento) }}</td>
+                  <td>{{ nombreArticulo(fila) }}</td>
+                  <td class="whitespace-nowrap">{{ fila.ubicacion?.numeroCuenta ?? '—' }}</td>
+                  <td class="text-right">{{ formatear(fila.importe) }}</td>
+                  <td>
+                    @if (fila.error) {
+                      <span class="text-sm text-red-700">{{ fila.error }}</span>
+                    } @else {
+                      <span class="um-badge bg-green-100 text-green-800">Listo</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" colspan="3">Total a asignar</th>
+                <th class="text-right">{{ formatear(totalAsignar()) }}</th>
+                <th></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button
+            type="button"
+            id="btn-preparar-asignacion"
+            class="um-btn-primary"
+            [disabled]="!puedeAsignar()"
+            (click)="abrirConfirmacion()"
+          >
+            Continuar
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (confirmacionAbierta()) {
+      <div class="um-card border-amber-300 p-6">
+        <h2 class="um-section">Confirmar asignación</h2>
+        <p class="mt-2 text-sm text-um-ink">
+          Se van a generar {{ filas().length }} asignación(es) por un total de
+          {{ formatear(totalAsignar()) }}. Cada una crea la entrega y su asiento contable.
+        </p>
+        <div class="mt-4 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            class="um-btn-secondary"
+            [disabled]="enviando()"
+            (click)="cerrarConfirmacion()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            id="btn-confirmar-asignacion"
+            class="um-btn-primary"
+            [disabled]="enviando()"
+            (click)="confirmarAsignacion()"
+          >
+            {{ enviando() ? 'Asignando…' : 'Sí, asignar' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (resultados().length > 0) {
+      <div class="um-card p-6">
+        <h2 class="um-section">Resultado</h2>
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table min-w-full">
+            <thead>
+              <tr>
+                <th scope="col">Factura</th>
+                <th scope="col">Artículo</th>
+                <th scope="col" class="text-right">Importe</th>
+                <th scope="col">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (resultado of resultados(); track $index) {
+                <tr>
+                  <td class="whitespace-nowrap">{{ resultado.factura }}</td>
+                  <td>{{ resultado.articulo }}</td>
+                  <td class="text-right">{{ formatear(resultado.importe) }}</td>
+                  <td>
+                    @if (resultado.ok) {
+                      <span class="um-badge bg-green-100 text-green-800">
+                        {{ resultado.mensaje }}
+                      </span>
+                    } @else {
+                      <span class="text-sm text-red-700">{{ resultado.mensaje }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,123 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Contabilidad / Asientos</p>
+      <h1 class="um-page-title">{{ titulo }}</h1>
+      <p class="um-page-desc">
+        Calcula el saldo (debe - haber) del ejercicio por cuenta, invierte el sentido y genera el
+        asiento con vínculo {{ vinculoEsperado }}. Podés quitar líneas antes de generar.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  <div class="um-card p-6">
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="um-label" for="ejercicio-cierre">Ejercicio</label>
+        <input
+          id="ejercicio-cierre"
+          type="number"
+          class="um-input"
+          [value]="ejercicioId() ?? ''"
+          (input)="setEjercicio($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="concepto-cierre">Concepto</label>
+        <input
+          id="concepto-cierre"
+          type="text"
+          class="um-input"
+          [value]="concepto()"
+          (input)="concepto.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    <div class="mt-4 flex justify-end">
+      <button
+        type="button"
+        class="um-btn-secondary"
+        *uiPermiso="'contable.asiento_cierre.calcular'"
+        [disabled]="calculando()"
+        (click)="calcular()"
+      >
+        {{ calculando() ? 'Calculando…' : 'Calcular' }}
+      </button>
+    </div>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="um-table min-w-full">
+        <thead>
+          <tr>
+            <th>Cuenta</th>
+            <th>Nombre</th>
+            <th class="text-right">Debe</th>
+            <th class="text-right">Haber</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linea of lineas(); track $index) {
+            <tr>
+              <td>{{ linea.numeroCuenta }}</td>
+              <td>{{ linea.nombreCuenta ?? '' }}</td>
+              <td class="text-right">{{ linea.debita === 1 ? formatear(linea.importe) : '' }}</td>
+              <td class="text-right">{{ linea.debita === 0 ? formatear(linea.importe) : '' }}</td>
+              <td class="text-right">
+                <button type="button" class="um-btn-secondary" (click)="quitarLinea($index)">
+                  Quitar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="text-center text-slate-500">Calculá el asiento para ver las líneas</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Total Debe</p>
+        <p class="text-xl font-semibold">{{ formatear(totalDebe()) }}</p>
+      </div>
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Total Haber</p>
+        <p class="text-xl font-semibold">{{ formatear(totalHaber()) }}</p>
+      </div>
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Cuadre</p>
+        <p class="text-xl font-semibold" [class.text-red-600]="!cuadra()">
+          {{ cuadra() ? 'Cuadra' : 'No cuadra' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-6 flex justify-end">
+      <button
+        type="button"
+        class="um-btn-primary"
+        *uiPermiso="'contable.asiento_cierre.generar'"
+        [disabled]="generando()"
+        (click)="generar()"
+      >
+        {{ generando() ? 'Generando…' : 'Generar asiento' }}
+      </button>
+    </div>
+  </div>
+</div>

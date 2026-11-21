@@ -36,6 +36,11 @@ export const emisionRoutes: Route[] = [
     loadComponent: () => import('./incompletas/incompletas').then((m) => m.IncompletasComponent),
   },
   {
+    path: 'envio',
+    canActivate: [permisoGuard('chequeras.envio.consultar')],
+    loadComponent: () => import('./envio/envio').then((m) => m.EnvioChequerasComponent),
+  },
+  {
     path: '**',
     redirectTo: '',
   },
