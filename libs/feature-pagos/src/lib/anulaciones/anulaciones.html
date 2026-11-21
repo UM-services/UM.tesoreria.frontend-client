@@ -1,0 +1,328 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Pagos</p>
+      <h1 class="um-page-title">Anulaciones</h1>
+      <p class="um-page-desc">
+        Anulá o eliminá comprobantes de proveedor y anulá órdenes de pago. Las dos operaciones
+        son destructivas: el core revalida las reglas de negocio y cada acción pide confirmación.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">{{ successMessage() }}</div>
+  }
+
+  <div class="um-card p-6">
+    <h2 class="um-section">Operación</h2>
+    <div class="mt-4 grid gap-3 md:grid-cols-2">
+      <label
+        class="flex cursor-pointer items-start gap-3 rounded border border-um-border-strong p-4"
+        [class.ring-2]="modo() === 'comprobante'"
+      >
+        <input
+          type="radio"
+          name="anulaciones-modo"
+          value="comprobante"
+          [checked]="modo() === 'comprobante'"
+          (change)="setModo('comprobante')"
+        />
+        <span>
+          <span class="block text-sm font-bold text-um-ink">Anular / eliminar comprobante</span>
+          <span class="block text-sm text-um-muted">
+            Elimina el comprobante, sus pagos, valores y asientos. No se puede deshacer.
+          </span>
+        </span>
+      </label>
+      <label
+        class="flex cursor-pointer items-start gap-3 rounded border border-um-border-strong p-4"
+        [class.ring-2]="modo() === 'ordenPago'"
+      >
+        <input
+          type="radio"
+          name="anulaciones-modo"
+          value="ordenPago"
+          [checked]="modo() === 'ordenPago'"
+          (change)="setModo('ordenPago')"
+        />
+        <span>
+          <span class="block text-sm font-bold text-um-ink">Anular orden de pago</span>
+          <span class="block text-sm text-um-muted">
+            Marca la OP como anulada y anula sus valores, sin borrar los registros.
+          </span>
+        </span>
+      </label>
+    </div>
+    <p class="mt-4 text-sm text-um-muted">{{ descripcionModo() }}</p>
+  </div>
+
+  <div class="um-card p-6">
+    <h2 class="um-section">Buscar comprobantes del proveedor</h2>
+    <div class="mt-4 grid gap-4 md:grid-cols-4">
+      <div class="md:col-span-2">
+        <span class="um-label">Proveedor</span>
+        @if (proveedor(); as proveedor) {
+          <div class="flex flex-wrap items-center gap-3 rounded border border-um-border-strong p-3">
+            <div class="min-w-0">
+              <p class="text-sm font-medium">{{ proveedor.razonSocial }}</p>
+              <p class="text-sm text-um-muted">CUIT {{ proveedor.cuit }}</p>
+            </div>
+            <button type="button" class="um-link-btn" (click)="cambiarProveedor()">
+              Cambiar proveedor
+            </button>
+          </div>
+        } @else {
+          <ui-buscador-proveedor (proveedorSelected)="onProveedorSelected($event)" />
+        }
+      </div>
+      <div>
+        <label class="um-label" for="anulaciones-desde">Desde</label>
+        <ui-input-fecha
+          inputId="anulaciones-desde"
+          [valor]="desde()"
+          (valorChange)="setDesde($event)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="anulaciones-hasta">Hasta</label>
+        <ui-input-fecha
+          inputId="anulaciones-hasta"
+          [valor]="hasta()"
+          (valorChange)="setHasta($event)"
+        />
+      </div>
+    </div>
+
+    <div class="mt-4 grid gap-4 md:grid-cols-4">
+      <div>
+        <label class="um-label" for="anulaciones-id">Id de movimiento</label>
+        <input
+          id="anulaciones-id"
+          type="number"
+          min="1"
+          class="um-input"
+          [value]="movimientoId() ?? ''"
+          (input)="setMovimientoId($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="anulaciones-prefijo">Prefijo</label>
+        <input
+          id="anulaciones-prefijo"
+          type="number"
+          min="0"
+          class="um-input"
+          [value]="prefijo() ?? ''"
+          (input)="setPrefijo($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="anulaciones-numero">Número</label>
+        <input
+          id="anulaciones-numero"
+          type="number"
+          min="0"
+          class="um-input"
+          [value]="numeroComprobante() ?? ''"
+          (input)="setNumeroComprobante($any($event.target).value)"
+        />
+      </div>
+      <div class="flex items-end gap-2">
+        <button type="button" class="um-btn-secondary" [disabled]="buscando()" (click)="buscarPorId()">
+          Por id
+        </button>
+        <button
+          type="button"
+          class="um-btn-secondary"
+          [disabled]="buscando()"
+          (click)="buscarPorNumero()"
+        >
+          Por número
+        </button>
+      </div>
+    </div>
+
+    @if (ordenResuelta(); as orden) {
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded border border-um-border-strong p-4">
+        <div>
+          <p class="text-base font-bold text-um-ink">{{ orden.nombreBeneficiario }}</p>
+          <p class="text-sm text-um-muted">
+            {{ orden.comprobante?.descripcion ?? 'Comprobante' }}
+            {{ orden.prefijo }}-{{ orden.numeroComprobante }} · {{ orden.fechaComprobante | umFecha }}
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          @if (orden.fechaAnulacion) {
+            <span class="um-badge bg-red-100 text-red-800">Ya anulada</span>
+          }
+          <button
+            type="button"
+            class="um-btn-primary"
+            *uiPermiso="modo() === 'comprobante' ? 'pagos.comprobantes.anular' : 'pagos.orden_pago.anular'"
+            [disabled]="orden.fechaAnulacion !== null"
+            (click)="abrirConfirmacionOrden()"
+          >
+            {{ tituloModo() }}
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (proveedor()) {
+    <div class="um-card p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="um-section">Movimientos</h2>
+        <button type="button" class="um-btn-secondary" [disabled]="cargando()" (click)="buscar()">
+          {{ cargando() ? 'Buscando…' : 'Actualizar' }}
+        </button>
+      </div>
+
+      @if (cargando()) {
+        <p class="mt-4 text-sm text-um-muted">Cargando movimientos…</p>
+      } @else {
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table min-w-full">
+            <thead>
+              <tr>
+                <th scope="col">Comprobante</th>
+                <th scope="col">Fecha</th>
+                <th scope="col" class="text-right">Importe</th>
+                <th scope="col" class="text-right">Saldo</th>
+                <th scope="col">Estado</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (movimiento of visibles(); track movimiento.proveedorMovimientoId) {
+                <tr>
+                  <td>
+                    <p class="font-medium">{{ movimiento.comprobanteDescripcion }}</p>
+                    <p class="text-sm text-um-muted">{{ movimiento.numero }}</p>
+                  </td>
+                  <td class="whitespace-nowrap">{{ movimiento.fechaComprobante | umFecha }}</td>
+                  <td class="text-right">{{ formatear(movimiento.importe) }}</td>
+                  <td class="text-right">{{ formatear(movimiento.saldo) }}</td>
+                  <td>
+                    @if (movimiento.fechaAnulacion) {
+                      <span class="um-badge bg-red-100 text-red-800">Anulado</span>
+                    } @else if (movimiento.anulable) {
+                      <span class="um-badge bg-green-100 text-green-800">Anulable</span>
+                    } @else {
+                      <span class="um-badge bg-amber-100 text-amber-900">No anulable</span>
+                      @if (motivosFila(movimiento).length > 0) {
+                        <ul class="mt-1 list-disc pl-4 text-xs text-amber-900">
+                          @for (motivo of motivosFila(movimiento); track $index) {
+                            <li>{{ motivo }}</li>
+                          }
+                        </ul>
+                      }
+                    }
+                  </td>
+                  <td class="whitespace-nowrap text-right">
+                    <button
+                      type="button"
+                      class="um-link-btn"
+                      [disabled]="!puedeOperarFila(movimiento)"
+                      (click)="abrirConfirmacionFila(movimiento)"
+                    >
+                      {{ modo() === 'comprobante' ? 'Anular / eliminar' : 'Anular OP' }}
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="py-6 text-center text-sm text-um-muted">
+                    No hay movimientos para la operación elegida en el rango consultado.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  @if (confirmacion(); as confirmacion) {
+    <div class="um-card border-red-300 p-6">
+      <h2 class="um-section">Confirmar {{ confirmacion.modo === 'comprobante' ? 'anulación' : 'anulación de la orden de pago' }}</h2>
+      <p class="mt-2 text-sm text-um-ink">
+        {{ confirmacion.descripcion }} {{ confirmacion.comprobante }} — id
+        {{ confirmacion.proveedorMovimientoId }}.
+        @if (confirmacion.modo === 'comprobante') {
+          Se eliminan el comprobante, sus pagos, valores y asientos contables.
+        } @else {
+          La orden de pago queda marcada como anulada y sus valores se anulan.
+        }
+      </p>
+      <label class="mt-4 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          id="anulaciones-confirmo"
+          [checked]="confirmo()"
+          (change)="confirmo.set($any($event.target).checked)"
+        />
+        Confirmo la operación y entiendo que no se puede deshacer.
+      </label>
+      <div class="mt-4 flex flex-wrap justify-end gap-2">
+        <button
+          type="button"
+          class="um-btn-secondary"
+          [disabled]="procesando()"
+          (click)="cerrarConfirmacion()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          id="btn-confirmar-anulacion"
+          class="um-btn-primary"
+          [disabled]="procesando() || !confirmo()"
+          (click)="confirmar()"
+        >
+          {{ procesando() ? 'Procesando…' : 'Sí, continuar' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (resultados().length > 0) {
+    <div class="um-card p-6">
+      <h2 class="um-section">Resultado de las operaciones</h2>
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table min-w-full">
+          <thead>
+            <tr>
+              <th scope="col">Operación</th>
+              <th scope="col">Comprobante</th>
+              <th scope="col">Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (resultado of resultados(); track $index) {
+              <tr>
+                <td>
+                  {{ resultado.modo === 'comprobante' ? 'Anular / eliminar' : 'Anular OP' }}
+                </td>
+                <td>{{ resultado.comprobante }}</td>
+                <td>
+                  @if (resultado.ok) {
+                    <span class="um-badge bg-green-100 text-green-800">{{ resultado.mensaje }}</span>
+                  } @else {
+                    <span class="text-sm text-red-700">{{ resultado.mensaje }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

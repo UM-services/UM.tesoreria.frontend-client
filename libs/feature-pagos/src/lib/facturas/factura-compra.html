@@ -1,0 +1,359 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Pagos / Compras</p>
+      <h1 class="um-page-title">Facturas de compras</h1>
+      <p class="um-page-desc">
+        Registro de facturas de proveedores. El core valida el comprobante, aplica el signo según
+        Debe/Haber, numera el asiento y guarda el detalle de artículos.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  <div class="um-card p-6">
+    <div class="flex flex-wrap items-end gap-2">
+      <div>
+        <label class="um-label" for="consulta-factura">Consultar factura (ID movimiento)</label>
+        <input
+          id="consulta-factura"
+          type="number"
+          class="um-input w-48"
+          [value]="consultaId() ?? ''"
+          (input)="setConsultaId($any($event.target).value)"
+        />
+      </div>
+      <button
+        type="button"
+        class="um-btn-secondary"
+        *uiPermiso="'pagos.factura.consultar'"
+        [disabled]="consultando()"
+        (click)="consultar()"
+      >
+        Consultar
+      </button>
+    </div>
+  </div>
+
+  <div class="um-card p-6">
+    <div class="grid gap-4 md:grid-cols-4">
+      <div class="md:col-span-2">
+        <p class="um-label">Proveedor</p>
+        @if (proveedor(); as proveedor) {
+          <div class="flex flex-wrap items-center gap-3 rounded border border-slate-200 p-3">
+            <div class="min-w-0">
+              <p class="text-sm font-medium">{{ proveedor.razonSocial }}</p>
+              @if (proveedor.cuit) {
+                <p class="text-sm text-um-muted">CUIT {{ proveedor.cuit }}</p>
+              }
+            </div>
+            <button type="button" class="um-link-btn" (click)="cambiarProveedor()">
+              Cambiar proveedor
+            </button>
+          </div>
+        } @else {
+          <ui-buscador-proveedor (proveedorSelected)="onProveedorSelected($event)" />
+        }
+      </div>
+      <div>
+        <label class="um-label" for="comprobante-factura">Comprobante</label>
+        <select
+          id="comprobante-factura"
+          class="um-input"
+          [value]="comprobanteId()?.toString() ?? ''"
+          (change)="setComprobante($any($event.target).value)"
+        >
+          @for (comprobante of comprobantes(); track comprobante.comprobanteId) {
+            <option [value]="comprobante.comprobanteId">{{ comprobante.descripcion }}</option>
+          } @empty {
+            <option value="">Sin comprobantes disponibles</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="um-label" for="prefijo-factura">Prefijo</label>
+        <input
+          id="prefijo-factura"
+          type="number"
+          class="um-input"
+          [value]="prefijo()"
+          (input)="setPrefijo($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="numero-factura">Número</label>
+        <input
+          id="numero-factura"
+          type="number"
+          class="um-input"
+          [value]="numeroComprobante()"
+          (input)="setNumero($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="fecha-factura">Fecha comprobante</label>
+        <ui-input-fecha
+          inputId="fecha-factura"
+          [valor]="fechaComprobante()"
+          (valorChange)="setFechaComprobante($event)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="vencimiento-factura">Vencimiento</label>
+        <ui-input-fecha
+          inputId="vencimiento-factura"
+          [valor]="fechaVencimiento()"
+          (valorChange)="setFechaVencimiento($event)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="total-factura">Total</label>
+        <input
+          id="total-factura"
+          type="number"
+          step="0.01"
+          class="um-input"
+          [value]="total() ?? ''"
+          (input)="setTotal($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="neto-factura">Neto</label>
+        <input
+          id="neto-factura"
+          type="number"
+          step="0.01"
+          class="um-input"
+          [value]="neto() ?? ''"
+          (input)="setNeto($any($event.target).value)"
+        />
+      </div>
+      <div class="md:col-span-3">
+        <label class="um-label" for="concepto-factura">Observaciones</label>
+        <input
+          id="concepto-factura"
+          type="text"
+          class="um-input"
+          [value]="concepto()"
+          (input)="concepto.set($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <p class="um-label">Sede</p>
+        <p class="text-sm text-um-muted">{{ sede() || 'Sin sede en la sesión' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="um-card p-6">
+    <h2 class="um-section mb-3">Artículos</h2>
+    <div class="grid gap-3 md:grid-cols-6">
+      <div class="md:col-span-2">
+        <label class="um-label" for="articulo-busqueda">Artículo</label>
+        <div class="relative" (focusout)="alSalirDelBuscador($event)">
+          <input
+            id="articulo-busqueda"
+            type="text"
+            class="um-input"
+            placeholder="Buscar por código o nombre…"
+            autocomplete="off"
+            [formControl]="busquedaArticulo"
+            (focus)="mostrarSugerencias.set(busquedaArticulo.value.trim().length >= 2)"
+            (keydown.escape)="ocultarSugerencias()"
+          />
+          @if (mostrarSugerencias()) {
+            <div
+              class="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded border border-um-border bg-white shadow-xl"
+            >
+              <ul class="py-1">
+                @if (buscandoArticulo()) {
+                  <li class="px-4 py-3 text-sm italic text-um-muted">Buscando…</li>
+                } @else if (errorBusquedaArticulo()) {
+                  <li class="px-4 py-3 text-sm text-um-muted">{{ errorBusquedaArticulo() }}</li>
+                } @else if (resultadosArticulo().length === 0) {
+                  <li class="px-4 py-3 text-sm text-um-muted">No se encontraron artículos.</li>
+                }
+                @for (articulo of resultadosArticulo(); track articulo.articuloId) {
+                  <li
+                    class="cursor-pointer border-b border-um-border px-4 py-2 last:border-0 hover:bg-um-selected"
+                    tabindex="0"
+                    (click)="seleccionarArticulo(articulo)"
+                    (keydown.enter)="seleccionarArticulo(articulo)"
+                  >
+                    <p class="text-sm font-medium text-um-ink">{{ articulo.nombre }}</p>
+                    <p class="font-mono text-xs text-um-muted">Código {{ articulo.articuloId }}</p>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+        @if (articuloActual(); as articulo) {
+          <div class="mt-2 flex flex-wrap items-center gap-3 rounded border border-slate-200 p-2">
+            <div class="min-w-0">
+              <p class="text-sm font-medium">{{ articulo.nombre }}</p>
+              <p class="font-mono text-xs text-um-muted">Código {{ articulo.articuloId }}</p>
+            </div>
+            <button type="button" class="um-link-btn" (click)="limpiarArticulo()">Cambiar</button>
+          </div>
+        }
+      </div>
+      <div>
+        <label class="um-label" for="cantidad-articulo">Cantidad</label>
+        <input
+          id="cantidad-articulo"
+          type="number"
+          step="0.01"
+          class="um-input"
+          [value]="cantidad() ?? ''"
+          (input)="setCantidad($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="unitario-articulo">Precio unitario</label>
+        <input
+          id="unitario-articulo"
+          type="number"
+          step="0.01"
+          class="um-input"
+          [value]="precioUnitario() ?? ''"
+          (input)="setPrecioUnitario($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="final-articulo">Precio final</label>
+        <input
+          id="final-articulo"
+          type="number"
+          step="0.01"
+          class="um-input"
+          [value]="precioFinal() ?? ''"
+          (input)="setPrecioFinal($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="concepto-articulo">Concepto</label>
+        <input
+          id="concepto-articulo"
+          type="text"
+          class="um-input"
+          [value]="conceptoArticulo()"
+          (input)="conceptoArticulo.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    <div class="mt-3 flex justify-end">
+      <button type="button" class="um-btn-secondary" (click)="agregarArticulo()">
+        Agregar artículo
+      </button>
+    </div>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="um-table min-w-full">
+        <thead>
+          <tr>
+            <th>Artículo</th>
+            <th>Concepto</th>
+            <th class="text-right">Cantidad</th>
+            <th class="text-right">Unitario</th>
+            <th class="text-right">Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (articulo of articulos(); track $index) {
+            <tr>
+              <td>{{ articulo.articuloNombre }}</td>
+              <td>{{ articulo.concepto }}</td>
+              <td class="text-right">{{ formatear(articulo.cantidad) }}</td>
+              <td class="text-right">{{ formatear(articulo.precioUnitario) }}</td>
+              <td class="text-right">{{ formatear(articulo.precioFinal) }}</td>
+              <td class="text-right">
+                <button type="button" class="um-btn-secondary" (click)="quitarArticulo($index)">
+                  Quitar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="text-center text-slate-500">Sin artículos</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Suma artículos</p>
+        <p class="text-xl font-semibold">{{ formatear(sumaArticulos()) }}</p>
+      </div>
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Total factura</p>
+        <p class="text-xl font-semibold">{{ formatear(total()) }}</p>
+      </div>
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Cuadre</p>
+        <p class="text-xl font-semibold" [class.text-red-600]="!totalValido()">
+          {{ totalValido() ? 'Coincide' : 'No coincide' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-6 flex justify-end">
+      <button
+        type="button"
+        class="um-btn-primary"
+        *uiPermiso="'pagos.factura.crear'"
+        [disabled]="guardando()"
+        (click)="registrar()"
+      >
+        {{ guardando() ? 'Registrando…' : 'Registrar factura' }}
+      </button>
+    </div>
+  </div>
+
+  @if (resultado(); as resultado) {
+    <div class="um-card p-6">
+      <h2 class="um-label mb-3">Asiento generado</h2>
+      <p class="text-sm text-slate-600">
+        {{ resultado.vinculo }} — orden {{ resultado.ordenContable }} — debe
+        {{ formatear(resultado.totalDebe) }} / haber {{ formatear(resultado.totalHaber) }} ({{
+          resultado.cuadra ? 'cuadra' : 'no cuadra'
+        }})
+      </p>
+      <table class="um-table mt-4 min-w-full">
+        <thead>
+          <tr>
+            <th>Cuenta</th>
+            <th>Nombre</th>
+            <th class="text-right">Debe</th>
+            <th class="text-right">Haber</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linea of resultado.lineas; track $index) {
+            <tr>
+              <td>{{ linea.numeroCuenta }}</td>
+              <td>{{ linea.nombreCuenta ?? '' }}</td>
+              <td class="text-right">{{ linea.debita === 1 ? formatear(linea.importe) : '' }}</td>
+              <td class="text-right">{{ linea.debita === 0 ? formatear(linea.importe) : '' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
