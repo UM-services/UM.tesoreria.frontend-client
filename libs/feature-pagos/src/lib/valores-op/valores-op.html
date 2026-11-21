@@ -1,0 +1,370 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Pagos</p>
+      <h1 class="um-page-title">Valores de una orden de pago</h1>
+      <p class="um-page-desc">
+        Consultá los valores emitidos de una orden de pago, agregá nuevos y anulá o eliminá los
+        existentes. Anular y eliminar afectan asientos contables: siempre piden confirmación.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">{{ successMessage() }}</div>
+  }
+
+  <div class="um-card p-6">
+    <h2 class="um-section">Buscar orden de pago</h2>
+    <div class="mt-4 grid gap-4 md:grid-cols-4">
+      <div>
+        <label class="um-label" for="valores-prefijo">Prefijo</label>
+        <input
+          id="valores-prefijo"
+          type="number"
+          min="0"
+          class="um-input"
+          [value]="prefijo() ?? ''"
+          (input)="setPrefijo($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="valores-numero">Número</label>
+        <input
+          id="valores-numero"
+          type="number"
+          min="0"
+          class="um-input"
+          [value]="numeroComprobante() ?? ''"
+          (input)="setNumeroComprobante($any($event.target).value)"
+        />
+      </div>
+      <div class="flex items-end">
+        <button
+          type="button"
+          class="um-btn-primary w-full"
+          [disabled]="buscando()"
+          (click)="buscarPorNumero()"
+        >
+          {{ buscando() ? 'Buscando…' : 'Buscar por número' }}
+        </button>
+      </div>
+      <div class="flex items-end gap-2">
+        <div class="flex-1">
+          <label class="um-label" for="valores-id">Id de movimiento</label>
+          <input
+            id="valores-id"
+            type="number"
+            min="1"
+            class="um-input"
+            [value]="movimientoId() ?? ''"
+            (input)="setMovimientoId($any($event.target).value)"
+          />
+        </div>
+        <button
+          type="button"
+          class="um-btn-secondary"
+          [disabled]="buscando()"
+          (click)="buscarPorId()"
+        >
+          Buscar
+        </button>
+      </div>
+    </div>
+
+    @if (orden(); as orden) {
+      <div class="mt-4 flex flex-wrap items-end justify-between gap-3 rounded border border-um-border-strong p-4">
+        <div>
+          <p class="text-base font-bold text-um-ink">{{ orden.nombreBeneficiario }}</p>
+          <p class="text-sm text-um-muted">
+            {{ orden.comprobante?.descripcion ?? 'Comprobante' }}
+            {{ orden.prefijo }}-{{ orden.numeroComprobante }}
+            · {{ orden.fechaComprobante | umFecha }}
+          </p>
+        </div>
+        <div class="text-right">
+          <p class="um-label">Total vigente</p>
+          <p class="text-xl font-semibold">{{ formatear(totalVigente()) }}</p>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (orden()) {
+    <div class="um-card p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="um-section">Valores emitidos</h2>
+        <button type="button" class="um-btn-secondary" [disabled]="cargando()" (click)="recargar()">
+          Actualizar
+        </button>
+      </div>
+
+      @if (cargando()) {
+        <p class="mt-4 text-sm text-um-muted">Cargando valores…</p>
+      } @else {
+        <div class="mt-4 overflow-x-auto">
+          <table class="um-table min-w-full">
+            <thead>
+              <tr>
+                <th scope="col">Valor</th>
+                <th scope="col">Número</th>
+                <th scope="col">Emisión</th>
+                <th scope="col" class="text-right">Importe</th>
+                <th scope="col">Titular</th>
+                <th scope="col">Cuenta origen</th>
+                <th scope="col">Estado</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of filas(); track fila.proveedorValorId) {
+                <tr>
+                  <td>{{ concepto(fila.valorMovimiento) }}</td>
+                  <td>{{ fila.valorMovimiento?.numero ?? '—' }}</td>
+                  <td class="whitespace-nowrap">
+                    {{ fila.valorMovimiento?.fechaEmision | umFecha }}
+                  </td>
+                  <td class="text-right">{{ formatear(fila.valorMovimiento?.importe) }}</td>
+                  <td>{{ fila.valorMovimiento?.nombreTitular || '—' }}</td>
+                  <td>{{ cuentaOrigen(fila.valorMovimiento) }}</td>
+                  <td>
+                    @if (esAnulado(fila.valorMovimiento)) {
+                      <span class="um-badge bg-red-100 text-red-800">Anulado</span>
+                    } @else {
+                      <span class="um-badge bg-green-100 text-green-800">
+                        {{ fila.valorMovimiento?.estado ?? 'Emitido' }}
+                      </span>
+                    }
+                  </td>
+                  <td class="whitespace-nowrap text-right">
+                    <button
+                      type="button"
+                      class="um-link-btn"
+                      *uiPermiso="'pagos.valores.anular'"
+                      [disabled]="esAnulado(fila.valorMovimiento)"
+                      (click)="abrirAnulacion(fila)"
+                    >
+                      Anular
+                    </button>
+                    <button
+                      type="button"
+                      class="um-link-btn ml-3"
+                      *uiPermiso="'pagos.valores.eliminar'"
+                      (click)="abrirEliminacion(fila)"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="py-6 text-center text-sm text-um-muted">
+                    La orden de pago no tiene valores registrados.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="um-card p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="um-section">Agregar valores</h2>
+        <button
+          type="button"
+          class="um-btn-secondary"
+          [disabled]="catalogo().length === 0"
+          (click)="agregarFila()"
+        >
+          Agregar valor
+        </button>
+      </div>
+
+      <div class="mt-4 overflow-x-auto">
+        <table class="um-table min-w-full">
+          <thead>
+            <tr>
+              <th scope="col">Valor</th>
+              <th scope="col">Número</th>
+              <th scope="col">Emisión</th>
+              <th scope="col" class="text-right">Importe</th>
+              <th scope="col">Titular</th>
+              <th scope="col">CUIT</th>
+              <th scope="col">Letras</th>
+              <th scope="col">Cuenta origen</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of nuevos(); track fila.clave) {
+              <tr>
+                <td>
+                  <select
+                    class="um-input min-w-44"
+                    [attr.aria-label]="'Tipo de valor nuevo de la fila ' + $index"
+                    [value]="fila.valorId?.toString() ?? ''"
+                    (change)="cambiarValor(fila.clave, $any($event.target).value)"
+                  >
+                    @for (catalogo of catalogo(); track catalogo.valorId) {
+                      <option [value]="catalogo.valorId">{{ catalogo.concepto }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    min="0"
+                    class="um-input w-28"
+                    [attr.aria-label]="'Número del valor nuevo de la fila ' + $index"
+                    [value]="fila.numero ?? ''"
+                    (input)="cambiarNumero(fila.clave, $any($event.target).value)"
+                  />
+                </td>
+                <td>
+                  <ui-input-fecha
+                    [inputId]="'valores-nuevo-fecha-' + fila.clave"
+                    [valor]="fila.fechaEmision"
+                    (valorChange)="cambiarFechaEmision(fila.clave, $event)"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="um-input w-32 text-right"
+                    [attr.aria-label]="'Importe del valor nuevo de la fila ' + $index"
+                    [value]="fila.importe ?? ''"
+                    (input)="cambiarImporte(fila.clave, $any($event.target).value)"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="um-input min-w-40"
+                    [attr.aria-label]="'Titular del valor nuevo de la fila ' + $index"
+                    [value]="fila.nombreTitular"
+                    (input)="cambiarTitular(fila.clave, $any($event.target).value)"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="um-input w-32"
+                    [attr.aria-label]="'CUIT del titular de la fila ' + $index"
+                    [value]="fila.cuitTitular"
+                    (input)="cambiarCuit(fila.clave, $any($event.target).value)"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="um-input w-20"
+                    [attr.aria-label]="'Letras del valor nuevo de la fila ' + $index"
+                    [value]="fila.letras"
+                    (input)="cambiarLetras(fila.clave, $any($event.target).value)"
+                  />
+                </td>
+                <td>
+                  @if (requiereCuentaOrigen(fila)) {
+                    <select
+                      class="um-input min-w-44"
+                      [attr.aria-label]="'Cuenta origen del valor nuevo de la fila ' + $index"
+                      [value]="fila.bancariaIdOrigen?.toString() ?? ''"
+                      (change)="cambiarBancaria(fila.clave, $any($event.target).value)"
+                    >
+                      <option value="">Elegir cuenta…</option>
+                      @for (bancaria of bancarias(); track bancaria.bancariaId) {
+                        <option [value]="bancaria.bancariaId">
+                          {{ bancaria.banco }} - {{ bancaria.numero }}
+                        </option>
+                      }
+                    </select>
+                  } @else {
+                    <span class="text-sm text-um-muted">Según la cuenta del valor</span>
+                  }
+                </td>
+                <td class="text-right">
+                  <button type="button" class="um-link-btn" (click)="quitarFila(fila.clave)">
+                    Quitar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="py-6 text-center text-sm text-um-muted">
+                  Todavía no agregaste valores nuevos.
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" colspan="3">Total de valores nuevos</th>
+              <th class="text-right">{{ formatear(totalNuevos()) }}</th>
+              <th colspan="5"></th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="mt-4 flex justify-end">
+        <button
+          type="button"
+          id="btn-guardar-valores"
+          class="um-btn-primary"
+          [disabled]="!puedeAgregar()"
+          (click)="guardar()"
+        >
+          {{ guardando() ? 'Guardando…' : 'Guardar valores' }}
+        </button>
+      </div>
+    </div>
+
+    @if (confirmacion(); as confirmacion) {
+      <div class="um-card border-red-300 p-6">
+        <h2 class="um-section">
+          {{ confirmacion.tipo === 'anular' ? 'Confirmar anulación' : 'Confirmar eliminación' }}
+        </h2>
+        <p class="mt-2 text-sm text-um-ink">
+          @if (confirmacion.tipo === 'anular') {
+            Se anula el valor
+            <strong>{{ concepto(confirmacion.fila.valorMovimiento) }}</strong>
+            por {{ formatear(confirmacion.fila.valorMovimiento?.importe) }}. Si el ejercicio está
+            bloqueado se registra un contra-asiento.
+          } @else {
+            Se elimina el valor
+            <strong>{{ concepto(confirmacion.fila.valorMovimiento) }}</strong>
+            por {{ formatear(confirmacion.fila.valorMovimiento?.importe) }}, su asiento contable y
+            su movimiento bancario. No se puede deshacer.
+          }
+        </p>
+        <div class="mt-4 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            class="um-btn-secondary"
+            [disabled]="procesando()"
+            (click)="cerrarConfirmacion()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            id="btn-confirmar-accion-valor"
+            class="um-btn-primary"
+            [disabled]="procesando()"
+            (click)="confirmarAccion()"
+          >
+            {{ procesando() ? 'Procesando…' : 'Sí, continuar' }}
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>

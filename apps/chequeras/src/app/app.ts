@@ -63,6 +63,11 @@ export class AppComponent {
           path: '/emision/incompletas',
           permiso: 'chequeras.incompletas.consultar',
         },
+        {
+          label: 'Envío por facultad y sede',
+          path: '/emision/envio',
+          permiso: 'chequeras.envio.consultar',
+        },
       ],
     },
     {
