@@ -21,7 +21,7 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 ### Aplicaciones
 
 - **compras** - Gestión de compras y proveedores (puerto 4201)
-- **pagos** - Gestión de facturas pendientes y comprobantes de proveedor (puerto 4202)
+- **pagos** - Gestión de facturas, órdenes de pago, anulaciones y costos de proveedores (puerto 4202)
 - **chequeras** - Gestión de chequeras, cobranzas y consultas (puerto 4203)
 - **administrador** - Gestión administrativa (puerto 4204)
 - **contable** - Módulo contable (puerto 4205)
@@ -42,9 +42,9 @@ Este es un monorepo que contiene múltiples aplicaciones y librerías compartida
 - `@tesoreria/feature-permisos` - Seguridad del core: `/permisos`, `/roles`, `/catalogo` (inventario de sólo lectura y sincronización con `permisos.yaml`), `/simulador` y `/solicitudes` (app administrador)
 - `@tesoreria/feature-guarani` - Módulo Guaraní: rutas (`GUARANI_ROUTES`), pendientes, ubicaciones, beneficios, datos personales y su guard de sede principal, montado por la app guarani con `loadChildren`
 - `@tesoreria/feature-externo-consulta` - Módulo del portal externo: vista `/chequeras` (componente, store, service y utilidades), montada por la app externo-consulta con `loadComponent`
-- `@tesoreria/feature-contable` - Módulo contable: **Cuentas bancarias** (`CUENTAS_BANCARIAS_ROUTES`, montada por la app contable en `/cuentas-bancarias` con `loadChildren`) y **Asiento de ingreso** (`ASIENTO_INGRESO_ROUTES`, `/asientos/ingreso`: consulta del asiento por fecha y tipo de pago, lista de registrados, cuentas faltantes, regeneración unitaria y masivo por rango de fechas con job del core y progreso por polling)
-- `@tesoreria/feature-pagos` - Módulo Pagos: **Comprobantes de proveedor** (`PAGOS_ROUTES`, montada por la app pagos en `/comprobantes` con `loadChildren`): consulta de movimientos por proveedor y anulación con los permisos `pagos.comprobantes.consultar`, `pagos.comprobantes.anular` y `pagos.comprobantes.anular_op`
-- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas de **Cobranzas** (`cobranzaRoutes`, montadas por la app chequeras en `/cobranzas`: importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera), de **Consultas** (`consultaRoutes`, `/consultas`: planillas de cuotas por facultad y sede para un lectivo) y de **Emisión** (`emisionRoutes`, `/emision`: wizard de emisión individual de chequeras, borradores pendientes agrupados por facultad y sede, impresión de borradores como PDF y reparación de **Chequeras incompletas** en dos etapas —borradores y emisión— como job del core)
+- `@tesoreria/feature-contable` - Módulo contable: **Cuentas bancarias** (`CUENTAS_BANCARIAS_ROUTES`, montada por la app contable en `/cuentas-bancarias` con `loadChildren`), **Asiento de ingreso** (`ASIENTO_INGRESO_ROUTES`, `/asientos/ingreso`: consulta del asiento por fecha y tipo de pago, lista de registrados, cuentas faltantes, regeneración unitaria y masivo por rango de fechas con job del core y progreso por polling), **Asiento contable manual** (`ASIENTO_MANUAL_ROUTES`, `/asientos/manual`: alta, consulta por fecha y orden, importación XLS y baja), **Asiento de apertura** (`ASIENTO_APERTURA_ROUTES`, `/asientos/apertura`: cálculo desde un cierre de referencia, inversión Debe/Haber y generación) y **Asientos de cierre** (`ASIENTO_CIERRE_ROUTES`, `/asientos/cierre/resultado` y `/asientos/cierre/activo-pasivo`: cálculo y generación por variante)
+- `@tesoreria/feature-pagos` - Módulo Pagos, montado por la app pagos con `loadChildren`: **Comprobantes de proveedor** (`PAGOS_ROUTES`, `/comprobantes`: consulta de movimientos por proveedor y anulación con los permisos `pagos.comprobantes.consultar`, `pagos.comprobantes.anular` y `pagos.comprobantes.anular_op`), **Facturas de compras** (`FACTURAS_ROUTES`, `/facturas`: alta y consulta con artículos y asiento generado), **Órdenes de pago** (`ORDENES_PAGO_ROUTES`, `/ordenes-pago`: facturas pendientes, valores entregados y preview del asiento), **Órdenes de pago directas** (`ORDENES_PAGO_DIRECTAS_ROUTES`, `/ordenes-pago-directas`: beneficiario libre y gastos contra cuentas contables), **Traza contable** (`TRAZA_CONTABLE_ROUTES`, `/traza-contable`: análisis dry-run y reconstrucción idempotente), **Asignación de costos** (`COSTOS_ROUTES`, `/costos`: artículos de facturas imputados a una ubicación), **Valores de OP** (`VALORES_ROUTES`, `/valores`: consulta, alta, anulación y eliminación) y **Anulaciones** (`ANULACIONES_ROUTES`, `/anulaciones`: comprobantes y órdenes de pago con confirmación y motivos del core)
+- `@tesoreria/feature-chequeras` - Módulo Chequeras: rutas de **Cobranzas** (`cobranzaRoutes`, montadas por la app chequeras en `/cobranzas`: importación de rendiciones, historial de importaciones, generación de archivos, pago manual y baja de chequera), de **Consultas** (`consultaRoutes`, `/consultas`: planillas de cuotas por facultad y sede para un lectivo) y de **Emisión** (`emisionRoutes`, `/emision`: wizard de emisión individual de chequeras, borradores pendientes agrupados por facultad y sede, impresión de borradores como PDF, reparación de **Chequeras incompletas** en dos etapas —borradores y emisión— como job del core y **Envío por facultad y sede** con captura de correos, extensión de débitos y mailing masivo como job, con retención de deuda)
 
 La aplicación `guarani` también permite asociar tipos de chequera a propuestas, consultar el número de chequera y consultar o capturar datos personales de alumnos buscándolos por apellido y nombre o por número de documento.
 
@@ -152,9 +152,9 @@ El filtro por las asignaciones (facultad, sede geográfica y clase de chequera) 
         FPERM["feature-permisos<br/>Permisos, roles, catálogo y simulador"]
         FGUAR["feature-guarani<br/>GUARANI_ROUTES y vistas"]
         FEXT["feature-externo-consulta<br/>Vista chequeras del portal externo"]
-        FCHQ["feature-chequeras<br/>cobranzaRoutes, consultaRoutes y emisionRoutes<br/>Cobranzas, Consultas y Emisión"]
-        FCONT["feature-contable<br/>CUENTAS_BANCARIAS_ROUTES y ASIENTO_INGRESO_ROUTES<br/>Cuentas bancarias y Asiento de ingreso"]
-        FPAY["feature-pagos<br/>PAGOS_ROUTES<br/>Comprobantes de proveedor"]
+        FCHQ["feature-chequeras<br/>cobranzaRoutes, consultaRoutes y emisionRoutes<br/>Cobranzas, Consultas, Emisión y Envío"]
+        FCONT["feature-contable<br/>CUENTAS_BANCARIAS_ROUTES, ASIENTO_INGRESO_ROUTES,<br/>ASIENTO_MANUAL_ROUTES, ASIENTO_APERTURA_ROUTES y ASIENTO_CIERRE_ROUTES<br/>Cuentas bancarias, Asiento de ingreso,<br/>Manual, Apertura y Cierres"]
+        FPAY["feature-pagos<br/>PAGOS_ROUTES, FACTURAS_ROUTES, ORDENES_PAGO_ROUTES,<br/>ORDENES_PAGO_DIRECTAS_ROUTES, TRAZA_CONTABLE_ROUTES,<br/>COSTOS_ROUTES, VALORES_ROUTES y ANULACIONES_ROUTES<br/>Comprobantes, Facturas, Órdenes de pago, Traza,<br/>Costos, Valores y Anulaciones"]
     end
 
     C --> API
@@ -278,7 +278,7 @@ El `.dockerignore` es obligatorio para que esto sea rápido: sin él Docker envi
 Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 - `compras` - Gestión de compras
-- `pagos` - Gestión de facturas pendientes y comprobantes de proveedor
+- `pagos` - Gestión de facturas, órdenes de pago, anulaciones y costos de proveedores
 - `chequeras` - Gestión de chequeras
 - `administrador` - Gestión administrativa
 - `contable` - Módulo contable
@@ -290,7 +290,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.53.0**
+Versión actual: **0.54.0**
 
 ## Licencia
 
