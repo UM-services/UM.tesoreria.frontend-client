@@ -26,6 +26,26 @@ export class AppComponent {
           path: '/asientos/ingreso',
           permiso: 'contable.asiento_ingreso.consultar',
         },
+        {
+          label: 'Manual',
+          path: '/asientos/manual',
+          permiso: 'contable.asiento_manual.consultar',
+        },
+        {
+          label: 'Apertura',
+          path: '/asientos/apertura',
+          permiso: 'contable.asiento_apertura.calcular',
+        },
+        {
+          label: 'Cierre resultado',
+          path: '/asientos/cierre/resultado',
+          permiso: 'contable.asiento_cierre.calcular',
+        },
+        {
+          label: 'Cierre activo-pasivo',
+          path: '/asientos/cierre/activo-pasivo',
+          permiso: 'contable.asiento_cierre.calcular',
+        },
       ],
     },
     {

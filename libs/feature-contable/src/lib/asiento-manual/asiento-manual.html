@@ -1,0 +1,200 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Contabilidad / Asientos</p>
+      <h1 class="um-page-title">Asiento contable manual</h1>
+      <p class="um-page-desc">
+        Registro de asientos manuales e importación desde planilla (cuenta, debe, haber). La
+        numeración, el ejercicio bloqueado y el orden ocupado los valida el core.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="um-alert um-alert-success" role="status">
+      <p class="text-sm text-green-700">{{ successMessage() }}</p>
+    </div>
+  }
+
+  <div class="um-card p-6">
+    <div class="grid gap-4 md:grid-cols-4">
+      <div>
+        <label class="um-label" for="fecha-asiento">Fecha</label>
+        <ui-input-fecha inputId="fecha-asiento" [valor]="fecha()" (valorChange)="cambiarFecha($event)" />
+      </div>
+      <div>
+        <label class="um-label" for="numero-asiento">Número</label>
+        <input
+          id="numero-asiento"
+          type="number"
+          class="um-input"
+          placeholder="Automático"
+          [value]="numero() ?? ''"
+          (input)="setNumero($any($event.target).value)"
+        />
+      </div>
+      <div class="md:col-span-2">
+        <label class="um-label" for="concepto-asiento">Concepto</label>
+        <input
+          id="concepto-asiento"
+          type="text"
+          class="um-input"
+          [value]="concepto()"
+          (input)="concepto.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-end gap-2">
+      <div>
+        <label class="um-label" for="consulta-orden">Consultar asiento</label>
+        <input
+          id="consulta-orden"
+          type="number"
+          class="um-input w-40"
+          placeholder="Número"
+          [value]="consultaOrden() ?? ''"
+          (input)="setConsultaOrden($any($event.target).value)"
+        />
+      </div>
+      <button
+        type="button"
+        class="um-btn-secondary"
+        *uiPermiso="'contable.asiento_manual.consultar'"
+        [disabled]="cargando()"
+        (click)="consultar()"
+      >
+        Consultar
+      </button>
+      <label
+        class="um-btn-secondary cursor-pointer"
+        *uiPermiso="'contable.asiento_manual.importar'"
+      >
+        Importar XLS
+        <input
+          type="file"
+          accept=".xls,.xlsx"
+          class="hidden"
+          (change)="importar($event)"
+        />
+      </label>
+      <button
+        type="button"
+        class="um-btn-secondary"
+        *uiPermiso="'contable.asiento_manual.eliminar'"
+        [disabled]="eliminando()"
+        (click)="eliminar()"
+      >
+        Eliminar
+      </button>
+    </div>
+  </div>
+
+  <div class="um-card p-6">
+    <h2 class="um-label mb-3">Agregar línea</h2>
+    <div class="grid gap-3 md:grid-cols-4">
+      <div>
+        <label class="um-label" for="cuenta-linea">Cuenta</label>
+        <input
+          id="cuenta-linea"
+          type="number"
+          class="um-input"
+          [value]="cuenta() ?? ''"
+          (input)="setCuenta($any($event.target).value)"
+        />
+      </div>
+      <div>
+        <label class="um-label" for="debita-linea">Debe / Haber</label>
+        <select
+          id="debita-linea"
+          class="um-input"
+          [value]="debita()"
+          (change)="setDebita($any($event.target).value)"
+        >
+          <option value="1">Debe</option>
+          <option value="0">Haber</option>
+        </select>
+      </div>
+      <div>
+        <label class="um-label" for="importe-linea">Importe</label>
+        <input
+          id="importe-linea"
+          type="number"
+          step="0.01"
+          class="um-input"
+          [value]="importe() ?? ''"
+          (input)="setImporte($any($event.target).value)"
+        />
+      </div>
+      <div class="flex items-end">
+        <button type="button" class="um-btn-secondary w-full" (click)="agregarLinea()">Agregar</button>
+      </div>
+    </div>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="um-table min-w-full">
+        <thead>
+          <tr>
+            <th>Cuenta</th>
+            <th class="text-right">Debe</th>
+            <th class="text-right">Haber</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linea of lineas(); track $index) {
+            <tr>
+              <td>{{ linea.numeroCuenta }}</td>
+              <td class="text-right">{{ linea.debita === 1 ? formatear(linea.importe) : '' }}</td>
+              <td class="text-right">{{ linea.debita === 0 ? formatear(linea.importe) : '' }}</td>
+              <td class="text-right">
+                <button type="button" class="um-btn-secondary" (click)="quitarLinea($index)">
+                  Quitar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="text-center text-slate-500">Sin líneas</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Total Debe</p>
+        <p class="text-xl font-semibold">{{ formatear(totalDebe()) }}</p>
+      </div>
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Total Haber</p>
+        <p class="text-xl font-semibold">{{ formatear(totalHaber()) }}</p>
+      </div>
+      <div class="rounded border border-slate-200 p-4">
+        <p class="um-label">Cuadre</p>
+        <p class="text-xl font-semibold" [class.text-red-600]="!cuadra()">
+          {{ cuadra() ? 'Cuadra' : 'No cuadra' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-6 flex justify-end">
+      <button
+        type="button"
+        class="um-btn-primary"
+        *uiPermiso="'contable.asiento_manual.crear'"
+        [disabled]="guardando()"
+        (click)="generar()"
+      >
+        {{ guardando() ? 'Generando…' : 'Generar asiento' }}
+      </button>
+    </div>
+  </div>
+</div>

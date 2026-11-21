@@ -62,6 +62,39 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    // Asiento contable manual: alta, consulta, importación XLS y baja.
+    path: 'asientos/manual',
+    loadChildren: () =>
+      import('@tesoreria/feature-contable').then(m => m.ASIENTO_MANUAL_ROUTES),
+    canActivate: [
+      authGuard,
+      usuarioInternoGuard,
+      permisoGuard('contable.asiento_manual.consultar'),
+    ],
+  },
+  {
+    // Asiento de apertura: cálculo desde el cierre anterior y generación.
+    path: 'asientos/apertura',
+    loadChildren: () =>
+      import('@tesoreria/feature-contable').then(m => m.ASIENTO_APERTURA_ROUTES),
+    canActivate: [
+      authGuard,
+      usuarioInternoGuard,
+      permisoGuard('contable.asiento_apertura.calcular'),
+    ],
+  },
+  {
+    // Asientos de cierre: resultado y activo-pasivo.
+    path: 'asientos/cierre',
+    loadChildren: () =>
+      import('@tesoreria/feature-contable').then(m => m.ASIENTO_CIERRE_ROUTES),
+    canActivate: [
+      authGuard,
+      usuarioInternoGuard,
+      permisoGuard('contable.asiento_cierre.calcular'),
+    ],
+  },
+  {
     path: '',
     component: BlankComponent,
     canActivate: [authGuard, usuarioInternoGuard],
