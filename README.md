@@ -10,6 +10,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-11.6.2-CB3837?logo=npm&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Multistage-2496ED?logo=docker&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-alpine-009639?logo=nginx&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions&logoColor=white)
 
 Sistema de gestión de tesorería construido con Angular 22 y Nx Workspace.
@@ -273,6 +274,7 @@ El `.dockerignore` es obligatorio para que esto sea rápido: sin él Docker envi
 - **Multistage**: la compilación ocurre dentro de la imagen, en `node:24-alpine`
 - **SSL/TLS**: Certificados auto-firmados generados al construir la imagen
 - **Proxy Inverso**: Rutas `/api/` se redirigen al gateway de tesorería
+- **Timeouts de proxy**: `/api/` usa `proxy_connect_timeout 15s` y `proxy_send_timeout`/`proxy_read_timeout` de `300s` para que las operaciones contables largas (la regeneración del asiento de ingreso tarda ~1 min) no terminen en un `504` con el timeout por defecto de 60 s
 - **Redirect**: HTTP (80) redirige automáticamente a HTTPS (443)
 
 Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
@@ -290,7 +292,7 @@ Aplicaciones disponibles (todas vía `--build-arg APP=<nombre>`):
 
 Este proyecto sigue [Semantic Versioning](https://semver.org/).
 
-Versión actual: **0.54.0**
+Versión actual: **0.54.1**
 
 ## Licencia
 

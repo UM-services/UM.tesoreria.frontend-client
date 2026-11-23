@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.54.1] - 2026-11-23
+
+### Fixed
+
+- fix(deploy): los `nginx.conf` de las ocho aplicaciones (`compras`, `pagos`, `chequeras`, `administrador`, `contable`, `contratados`, `guarani` y `externo-consulta`) fijan `proxy_connect_timeout 15s` y `proxy_send_timeout`/`proxy_read_timeout` de `300s` en el proxy de `/api/` hacia `tesoreria-gateway-service:8301`. Con el timeout por defecto de 60 s Nginx devolvía **504** en las operaciones contables largas —la regeneración del asiento de ingreso tarda ~1 min— aunque el core terminara bien la transacción.
+
 ## [0.54.0] - 2026-11-21
 
 ### Added
