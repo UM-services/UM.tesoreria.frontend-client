@@ -7,6 +7,7 @@ import {
   FacultadSedeResumen,
   FormatoPlanilla,
   Lectivo,
+  OrigenDetalle,
 } from '../models/detalle-cuotas.models';
 
 /**
@@ -32,14 +33,21 @@ export class DetalleCuotasService {
     );
   }
 
+  resumenBorradores(lectivoId: number): Observable<FacultadSedeResumen[]> {
+    return this.http.get<FacultadSedeResumen[]>(
+      `${this.coreBase}/emision/chequera/borradores/resumen/lectivo/${lectivoId}`,
+    );
+  }
+
   descargarZip(
     lectivoId: number,
     formato: FormatoPlanilla,
+    origen: OrigenDetalle,
     destinos: DestinoPlanilla[],
   ): Observable<HttpResponse<Blob>> {
     return this.http.post(
       `${this.reportBase}/chequeras/planilla/detalle/zip`,
-      { lectivoId, formato: formato.toUpperCase(), destinos },
+      { lectivoId, formato: formato.toUpperCase(), origen, destinos },
       { observe: 'response', responseType: 'blob' },
     );
   }

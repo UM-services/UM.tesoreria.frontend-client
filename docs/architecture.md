@@ -295,8 +295,8 @@ asignación efectiva se hace en la pantalla de Usuarios.
     Cobranzas --> PagoManual["PagoManual Component<br/>chequeras.cobranzas.pagoManual"]
     Cobranzas --> Baja["BajaChequera Component<br/>chequeras.cobranzas.baja"]
 
-    Consultas --> ConsultasHome["ConsultasHome Component<br/>chequeras.consultas.detalleCuotas"]
-    Consultas --> DetalleCuotas["DetalleCuotasFacultadSede Component<br/>chequeras.consultas.detalleCuotas"]
+    Consultas --> ConsultasHome["ConsultasHome Component<br/>chequeras.consultas.detalleCuotas*"]
+    Consultas --> DetalleCuotas["DetalleCuotasFacultadSede Component<br/>origen chequeras/borradores<br/>chequeras.consultas.detalleCuotas*"]
 
     Emision --> EmisionHome["EmisionHome Component<br/>chequeras.emision.individual"]
     Emision --> EmisionIndividual["EmisionIndividual Component<br/>wizard de 4 pasos<br/>chequeras.emision.individual"]
