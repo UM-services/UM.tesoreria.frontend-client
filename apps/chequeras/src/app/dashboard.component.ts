@@ -63,5 +63,8 @@ export class DashboardComponent {
     'chequeras.cobranzas.pagoManual',
     'chequeras.cobranzas.baja',
   ];
-  readonly permisosConsultas = ['chequeras.consultas.detalleCuotas'];
+  readonly permisosConsultas = [
+    'chequeras.consultas.detalleCuotas',
+    'chequeras.consultas.detalleCuotasBorrador',
+  ];
 }

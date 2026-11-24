@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.55.0] - 2026-11-24
+
+### Added
+
+- feat(chequeras): la pantalla **Detalle de cuotas por facultad y sede** suma el selector **Origen**: «Chequeras emitidas» (comportamiento anterior) y «Borradores abiertos» (`ABIERTO` de cualquier usuario). `DetalleCuotasService` consume `GET /emision/chequera/borradores/resumen/lectivo/{lectivoId}` y envía `origen` (`CHEQUERAS`/`BORRADORES`) en el body del ZIP de `tesoreria-report`; al cambiar de origen se limpia la selección y se recarga el resumen. La tabla rotula la columna como **Borradores** y el vacío dice «No hay borradores abiertos para el lectivo seleccionado».
+- feat(chequeras): la opción **Borradores abiertos** sólo aparece con el permiso `chequeras.consultas.detalleCuotasBorrador`; la ruta usa `permisoAlgunoGuard` con las dos claves y la tarjeta de Consultas y el dashboard usan `uiPermisoAlguno`. Si el usuario sólo tiene la clave de borradores, la pantalla abre directamente en ese origen.
+- test(chequeras): los specs de `DetalleCuotasService` y de la pantalla cubren el resumen de borradores, el envío de `origen` en el ZIP, el cambio de origen con recarga y limpieza de la selección, el origen inicial según permisos, el vacío propio de borradores y la opción oculta sin `chequeras.consultas.detalleCuotasBorrador`.
+
+### Requisitos
+
+- Core con `GET /api/tesoreria/core/emision/chequera/borradores/resumen/lectivo/{lectivoId}`, el permiso `chequeras.consultas.detalleCuotasBorrador` en `permisos.yaml` y el body `{ lectivoId, formato, origen, destinos }` aceptado por `POST /api/tesoreria/report/chequeras/planilla/detalle/zip`.
+
 ## [0.54.1] - 2026-11-23
 
 ### Fixed

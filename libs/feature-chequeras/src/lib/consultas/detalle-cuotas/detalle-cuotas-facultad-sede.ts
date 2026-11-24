@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { PermisosService } from '@tesoreria/shared-api';
 import { descargarBlob } from '../../cobranzas/shared/descarga-archivo';
 import { DetalleCuotasService } from '../data-access/detalle-cuotas.service';
 import {
@@ -8,7 +9,11 @@ import {
   FacultadSedeResumen,
   FormatoPlanilla,
   Lectivo,
+  OrigenDetalle,
 } from '../models/detalle-cuotas.models';
+
+const PERMISO_CHEQUERAS = 'chequeras.consultas.detalleCuotas';
+const PERMISO_BORRADORES = 'chequeras.consultas.detalleCuotasBorrador';
 
 @Component({
   selector: 'app-detalle-cuotas-facultad-sede',
@@ -19,10 +24,14 @@ import {
 })
 export class DetalleCuotasFacultadSedeComponent implements OnInit {
   private readonly servicio = inject(DetalleCuotasService);
+  private readonly permisos = inject(PermisosService);
   private solicitud = 0;
+
+  readonly permiteBorradores = computed(() => this.permisos.hasPermiso(PERMISO_BORRADORES));
 
   readonly lectivos = signal<Lectivo[]>([]);
   readonly lectivoId = signal<number | null>(null);
+  readonly origen = signal<OrigenDetalle>(this.origenInicial());
   readonly filas = signal<FacultadSedeResumen[]>([]);
   readonly seleccionadas = signal<ReadonlySet<string>>(new Set<string>());
   readonly cargando = signal(false);
@@ -30,6 +39,8 @@ export class DetalleCuotasFacultadSedeComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
 
+  readonly esBorrador = computed(() => this.origen() === 'BORRADORES');
+  readonly etiquetaOrigen = computed(() => (this.esBorrador() ? 'borradores' : 'chequeras'));
   readonly cantidadSeleccionada = computed(() => this.seleccionadas().size);
   readonly todasSeleccionadas = computed(
     () => this.filas().length > 0 && this.seleccionadas().size === this.filas().length,
@@ -66,6 +77,20 @@ export class DetalleCuotasFacultadSedeComponent implements OnInit {
     }
     this.lectivoId.set(lectivoId);
     this.aviso.set(null);
+    this.cargarResumen();
+  }
+
+  cambiarOrigen(valor: string): void {
+    const origen: OrigenDetalle = valor === 'BORRADORES' ? 'BORRADORES' : 'CHEQUERAS';
+    if (origen === this.origen()) {
+      return;
+    }
+    if (origen === 'BORRADORES' && !this.permiteBorradores()) {
+      return;
+    }
+    this.origen.set(origen);
+    this.aviso.set(null);
+    this.error.set(null);
     this.cargarResumen();
   }
 
@@ -118,15 +143,17 @@ export class DetalleCuotasFacultadSedeComponent implements OnInit {
       this.error.set('Seleccioná hasta 50 facultades y sedes por descarga.');
       return;
     }
+    const origen = this.origen();
     this.generando.set(formato);
     this.error.set(null);
     this.aviso.set(null);
-    this.servicio.descargarZip(lectivoId, formato, destinos).subscribe({
+    this.servicio.descargarZip(lectivoId, formato, origen, destinos).subscribe({
       next: response => {
         if (response.body) {
+          const prefijo = origen === 'BORRADORES' ? 'detalle-borradores' : 'detalle-cuotas';
           descargarBlob(
             response.body,
-            `detalle-cuotas-${lectivoId}-${formato}.zip`,
+            `${prefijo}-${lectivoId}-${formato}.zip`,
             response.headers.get('Content-Disposition'),
           );
           this.aviso.set(`ZIP generado con ${destinos.length} planilla(s).`);
@@ -157,7 +184,10 @@ export class DetalleCuotasFacultadSedeComponent implements OnInit {
     this.aviso.set(null);
     this.seleccionadas.set(new Set());
     this.filas.set([]);
-    this.servicio.resumen(lectivoId).subscribe({
+    const solicitud$ = this.esBorrador()
+      ? this.servicio.resumenBorradores(lectivoId)
+      : this.servicio.resumen(lectivoId);
+    solicitud$.subscribe({
       next: filas => {
         if (token !== this.solicitud) {
           return;
@@ -173,6 +203,13 @@ export class DetalleCuotasFacultadSedeComponent implements OnInit {
         this.cargando.set(false);
       },
     });
+  }
+
+  private origenInicial(): OrigenDetalle {
+    if (this.permisos.hasPermiso(PERMISO_CHEQUERAS)) {
+      return 'CHEQUERAS';
+    }
+    return this.permisos.hasPermiso(PERMISO_BORRADORES) ? 'BORRADORES' : 'CHEQUERAS';
   }
 
   private mensaje(error: unknown): string {
