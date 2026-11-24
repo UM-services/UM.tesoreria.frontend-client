@@ -19,3 +19,6 @@ export interface DestinoPlanilla {
 }
 
 export type FormatoPlanilla = 'horizontal' | 'vertical';
+
+/** Origen de las planillas: chequeras emitidas o borradores abiertos. */
+export type OrigenDetalle = 'CHEQUERAS' | 'BORRADORES';

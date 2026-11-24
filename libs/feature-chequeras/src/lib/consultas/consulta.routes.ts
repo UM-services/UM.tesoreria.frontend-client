@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { permisoAlgunoGuard, permisoGuard } from '@tesoreria/shared-api';
+import { permisoAlgunoGuard } from '@tesoreria/shared-api';
 
 /**
  * Rutas de Consultas. Cada pantalla declara su permiso (`chequeras.consultas.*`); la home
@@ -13,7 +13,12 @@ export const consultaRoutes: Route[] = [
   },
   {
     path: 'detalle-cuotas',
-    canActivate: [permisoGuard('chequeras.consultas.detalleCuotas')],
+    canActivate: [
+      permisoAlgunoGuard([
+        'chequeras.consultas.detalleCuotas',
+        'chequeras.consultas.detalleCuotasBorrador',
+      ]),
+    ],
     loadComponent: () =>
       import('./detalle-cuotas/detalle-cuotas-facultad-sede').then(
         (m) => m.DetalleCuotasFacultadSedeComponent,
