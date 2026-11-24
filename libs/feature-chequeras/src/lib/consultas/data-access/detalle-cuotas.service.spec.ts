@@ -37,30 +37,42 @@ describe('DetalleCuotasService', () => {
     request.flush([]);
   });
 
+  it('pide el resumen de borradores abiertos del lectivo', () => {
+    service.resumenBorradores(38).subscribe();
+
+    const request = http.expectOne(
+      '/api/tesoreria/core/emision/chequera/borradores/resumen/lectivo/38',
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush([]);
+  });
+
   it('descarga el ZIP horizontal como blob desde el servicio report', () => {
     const destinos = [
       { facultadId: 6, geograficaId: 1 },
       { facultadId: 6, geograficaId: 2 },
     ];
 
-    service.descargarZip(38, 'horizontal', destinos).subscribe();
+    service.descargarZip(38, 'horizontal', 'CHEQUERAS', destinos).subscribe();
 
     const request = http.expectOne('/api/tesoreria/report/chequeras/planilla/detalle/zip');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({
       lectivoId: 38,
       formato: 'HORIZONTAL',
+      origen: 'CHEQUERAS',
       destinos,
     });
     expect(request.request.responseType).toBe('blob');
     request.flush(new Blob(['zip']));
   });
 
-  it('envía el formato vertical en mayúsculas', () => {
-    service.descargarZip(38, 'vertical', [{ facultadId: 6, geograficaId: 1 }]).subscribe();
+  it('envía el formato vertical en mayúsculas y el origen de borradores', () => {
+    service.descargarZip(38, 'vertical', 'BORRADORES', [{ facultadId: 6, geograficaId: 1 }]).subscribe();
 
     const request = http.expectOne('/api/tesoreria/report/chequeras/planilla/detalle/zip');
     expect(request.request.body.formato).toBe('VERTICAL');
+    expect(request.request.body.origen).toBe('BORRADORES');
     request.flush(new Blob(['zip']));
   });
 });

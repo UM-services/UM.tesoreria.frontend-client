@@ -8,7 +8,22 @@
     </p>
   </header>
 
-  <div class="um-card mt-6">
+  <div class="um-card mt-6 grid gap-4 md:grid-cols-2">
+    <div class="max-w-md">
+      <label class="um-label" for="detalleCuotasOrigen">Origen</label>
+      <select
+        id="detalleCuotasOrigen"
+        class="um-input mt-1"
+        [value]="origen()"
+        [disabled]="generando() !== null"
+        (change)="cambiarOrigen($any($event.target).value)"
+      >
+        <option value="CHEQUERAS">Chequeras emitidas</option>
+        @if (permiteBorradores()) {
+          <option value="BORRADORES">Borradores abiertos</option>
+        }
+      </select>
+    </div>
     <div class="max-w-md">
       <label class="um-label" for="detalleCuotasLectivo">Lectivo</label>
       <select
@@ -38,16 +53,25 @@
   }
 
   @if (cargando()) {
-    <p class="mt-6 text-sm text-um-muted" aria-busy="true">Cargando chequeras…</p>
+    <p class="mt-6 text-sm text-um-muted" aria-busy="true">
+      Cargando {{ esBorrador() ? 'borradores' : 'chequeras' }}…
+    </p>
   } @else if (!error() && filas().length === 0) {
-    <div class="um-alert mt-6">No hay chequeras para el lectivo seleccionado.</div>
+    <div class="um-alert mt-6">
+      @if (esBorrador()) {
+        No hay borradores abiertos para el lectivo seleccionado.
+      } @else {
+        No hay chequeras para el lectivo seleccionado.
+      }
+    </div>
   } @else if (filas().length > 0) {
     <div class="um-card mt-6">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 class="text-lg font-semibold text-um-ink">Facultades y sedes</h2>
           <p class="mt-1 text-sm text-um-muted">
-            {{ cantidadSeleccionada() }} de {{ filas().length }} seleccionadas
+            {{ cantidadSeleccionada() }} de {{ filas().length }}
+            {{ esBorrador() ? 'borradores' : 'chequeras' }} seleccionadas
           </p>
         </div>
         <button
@@ -78,7 +102,7 @@
               <th scope="col">#</th>
               <th scope="col">Facultad</th>
               <th scope="col">Sede</th>
-              <th scope="col">Chequeras</th>
+              <th scope="col">{{ esBorrador() ? 'Borradores' : 'Chequeras' }}</th>
             </tr>
           </thead>
           <tbody>
@@ -113,6 +137,8 @@
         >
           @if (generando() === 'horizontal') {
             Generando ZIP…
+          } @else if (esBorrador()) {
+            Descargar borradores - horizontal ({{ cantidadSeleccionada() }})
           } @else {
             Descargar horizontal ({{ cantidadSeleccionada() }})
           }
@@ -125,6 +151,8 @@
         >
           @if (generando() === 'vertical') {
             Generando ZIP…
+          } @else if (esBorrador()) {
+            Descargar borradores - vertical ({{ cantidadSeleccionada() }})
           } @else {
             Descargar vertical ({{ cantidadSeleccionada() }})
           }

@@ -10,15 +10,19 @@ borradores pendientes y entrega posterior).
 - Backend Cobranzas: `/api/tesoreria/core/cobranza/**`, `/chequeraSerie`, `/chequeraCuota`,
   `/chequeraPago`, `/baja` y `/processBaja` en `tesoreria-core`.
 - Backend Consultas: `GET /api/tesoreria/core/lectivo/reverse`,
-  `GET /api/tesoreria/core/chequeraSerie/resumen/lectivo/{lectivoId}` y
-  `POST /api/tesoreria/report/chequeras/planilla/detalle/zip` en `tesoreria-report`.
+  `GET /api/tesoreria/core/chequeraSerie/resumen/lectivo/{lectivoId}`,
+  `GET /api/tesoreria/core/emision/chequera/borradores/resumen/lectivo/{lectivoId}` y
+  `POST /api/tesoreria/report/chequeras/planilla/detalle/zip` en `tesoreria-report` (`origen`
+  `CHEQUERAS` o `BORRADORES`).
 - Backend Emisión: borradores, contexto, catálogos de diseño, cuotas, beca y emisión en
   `/api/tesoreria/core/emision/chequera/**`; la entrega (PDF y correo) va a
   `/api/tesoreria/sender/chequera/**` en `tesoreria-sender`.
 - Permisos Cobranzas: `chequeras.cobranzas.importar`, `chequeras.cobranzas.generar`,
   `chequeras.cobranzas.pagoManual` y `chequeras.cobranzas.baja`. La home autoriza con
   `permisoAlgunoGuard` (al menos una clave).
-- Permiso Consultas: `chequeras.consultas.detalleCuotas`.
+- Permiso Consultas: `chequeras.consultas.detalleCuotas` (chequeras emitidas) y
+  `chequeras.consultas.detalleCuotasBorrador` (borradores abiertos); la ruta autoriza con
+  `permisoAlgunoGuard` (al menos una clave).
 - Permiso Emisión: `chequeras.emision.individual` (las cuatro rutas lo exigen con
   `permisoGuard`).
 - Pantallas Cobranzas: `/cobranzas` (home), `/cobranzas/importar[/:canal]`,
@@ -36,3 +40,8 @@ borradores pendientes y entrega posterior).
 - **Detalle de cuotas por facultad y sede:** el usuario elige un lectivo, tilda una o varias
   combinaciones facultad/sede y descarga un único ZIP con una planilla horizontal o vertical
   por cada fila. El backend valida la selección y arma el ZIP; el front no genera Excel.
+- **Origen de las planillas:** el selector «Origen» alterna entre **chequeras emitidas** y
+  **borradores abiertos** (`ABIERTO`, sin filtrar por usuario). Los borradores usan un layout
+  propio: estado, importe original e importe a emitir, vencimientos y flags, sin columnas de
+  pagos. La opción de borradores sólo aparece con
+  `chequeras.consultas.detalleCuotasBorrador`.
