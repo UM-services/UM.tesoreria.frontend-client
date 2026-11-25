@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.56.0] - 2026-11-25
+
+### Added
+
+- feat(chequeras): la pantalla **Emisión individual** suma el botón **Guardar datos de contacto**, que persiste los mails personal e institucional en el domicilio de la persona: `EmisionService.domicilio()` lee el registro completo (`GET /domicilio/unique/{personaId}/{documentoId}`) y `actualizarDomicilio()` lo graba (`PUT /domicilio/{domicilioId}`) para no pisar calle, teléfono ni el resto de los campos; `emailPagador`, que es transitorio, se omite del request. Al continuar a la confirmación los mails también se guardan automáticamente si cambiaron, y el nuevo modelo `DomicilioCompleto` describe la respuesta.
+- feat(chequeras): los correos que usa el envío son los del domicilio y no los del borrador; al retomar un borrador o cargar el contexto se sincronizan desde el domicilio (`sincronizarMailsDesdeDomicilio`), de modo que un borrador viejo no pisa el mail actual. Los mails se envían recortados (`trim`) en los payloads de alta y actualización.
+- fix(chequeras): se quita la columna **Mail pagador** de la tarjeta **Situación de la persona** —el pagador es transitorio y no forma parte del domicilio persistible— y el texto de ayuda del paso de contacto explica la nueva semántica: guardar los mails los persiste en el domicilio y al continuar se guardan solos.
+- test(chequeras): el spec de la pantalla verifica que un borrador con mails viejos no pisa los mails actuales del domicilio.
+
+### Requisitos
+
+- Core con `GET /api/tesoreria/core/domicilio/unique/{personaId}/{documentoId}` y `PUT /api/tesoreria/core/domicilio/{domicilioId}` aceptando el domicilio completo sin `emailPagador`; `tesoreria-sender` toma los correos del domicilio para el envío de la chequera.
+
 ## [0.55.0] - 2026-11-24
 
 ### Added
