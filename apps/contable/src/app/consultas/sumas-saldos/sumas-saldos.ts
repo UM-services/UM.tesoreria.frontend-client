@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { InputFechaComponent } from '@tesoreria/ui-layout';
 import { Ejercicio, EjerciciosService } from '../../ejercicios/ejercicios.service';
+import { fecha as formatearFecha, importe as formatearImporte, soloDia } from '../formato';
 import {
   SumasSaldosFila,
   SumasSaldosRequest,
@@ -10,8 +11,6 @@ import {
 } from './sumas-saldos.service';
 
 const NOMBRE_EXCEL = 'sumas_y_saldos.xlsx';
-const FECHA_ISO = /^(\d{4})-(\d{2})-(\d{2})/;
-const NUMERO = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function descargarBlob(blob: Blob, nombre: string): void {
   const url = URL.createObjectURL(blob);
@@ -35,12 +34,6 @@ async function mensajeDeBlob(error: HttpErrorResponse, defecto: string): Promise
   } catch {
     return defecto;
   }
-}
-
-/** `2026-03-01T00:00:00+0000` → `2026-03-01`; son días calendario, no se pasa por `Date`. */
-function soloDia(valor: string | null): string {
-  const partes = valor ? FECHA_ISO.exec(valor) : null;
-  return partes ? `${partes[1]}-${partes[2]}-${partes[3]}` : '';
 }
 
 function hoy(): string {
@@ -193,14 +186,7 @@ export class SumasSaldosComponent implements OnInit {
     return (evento.target as HTMLInputElement).value;
   }
 
-  /** Importe tal como lo informa el core, con formato es-AR; vacío si no aplica. */
-  importe(n: number | null | undefined): string {
-    return n === null || n === undefined ? '' : NUMERO.format(n);
-  }
-
-  /** yyyy-MM-dd... → dd/MM/yyyy sin pasar por Date (evita el corrimiento de zona). */
-  fecha(iso: string | null): string {
-    const m = FECHA_ISO.exec(iso ?? '');
-    return m ? `${m[3]}/${m[2]}/${m[1]}` : (iso ?? '');
-  }
+  /** Formato compartido de las consultas contables (`../formato`). */
+  readonly importe = formatearImporte;
+  readonly fecha = formatearFecha;
 }

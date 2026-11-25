@@ -2,13 +2,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Cuenta, PlanCuentasService } from '../../plan-cuentas/plan-cuentas.service';
+import { fecha as formatearFecha, importe as formatearImporte } from '../formato';
 import { MayorRequest, MayorResponse, MayorService } from './mayor.service';
 
 export type ModoMayor = 'una' | 'rango' | 'varias';
 const FORMATO_CUENTA = /^\d{11}$/;
 const NOMBRE_EXCEL = 'mayor.xlsx';
 const NOMBRE_PDF = 'mayor.pdf';
-const NUMERO = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function descargarBlob(blob: Blob, nombre: string): void {
   const url = URL.createObjectURL(blob);
@@ -202,14 +202,7 @@ export class MayorComponent implements OnInit {
     });
   }
 
-  /** Importe tal como lo informa el core, con formato es-AR; vacío si no aplica. */
-  importe(n: number | null | undefined): string {
-    return n === null || n === undefined ? '' : NUMERO.format(n);
-  }
-
-  /** yyyy-MM-dd... → dd/MM/yyyy sin pasar por Date (evita el corrimiento de zona). */
-  fecha(iso: string | null): string {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
-    return m ? `${m[3]}/${m[2]}/${m[1]}` : (iso ?? '');
-  }
+  /** Formato compartido de las consultas contables (`../formato`). */
+  readonly importe = formatearImporte;
+  readonly fecha = formatearFecha;
 }
