@@ -157,6 +157,8 @@ export class EmisionIndividualComponent implements OnInit {
     this.contexto.set(null);
     this.borrador.set(null);
     this.resultado.set(null);
+    this.emailPersonal.set('');
+    this.emailInstitucional.set('');
     this.paso.set(1);
     this.cargarContexto();
   }
@@ -315,7 +317,7 @@ export class EmisionIndividualComponent implements OnInit {
       });
   }
 
-  guardar(siguientePaso = 2): void {
+  guardar(siguientePaso = 2, mensajeAviso = 'Borrador guardado'): void {
     const borrador = this.borrador();
     if (!borrador) {
       return;
@@ -324,10 +326,15 @@ export class EmisionIndividualComponent implements OnInit {
     this.emision.actualizar(borrador.borradorId, this.payload(borrador)).subscribe({
       next: (actualizado) => {
         this.aplicarBorrador(actualizado, siguientePaso);
-        this.aviso.set('Borrador guardado');
+        this.aviso.set(mensajeAviso);
       },
       error: (error) => this.fallar(error),
     });
+  }
+
+  /** Persiste los mails editados en el domicilio: es el dato que usa el envío. */
+  guardarDatosContacto(): void {
+    this.persistirDatosContacto(() => this.guardar(2, 'Datos de contacto guardados'));
   }
 
   irAConfirmacion(): void {
@@ -348,6 +355,15 @@ export class EmisionIndividualComponent implements OnInit {
       return;
     }
     this.emailEnviado.set(null);
+    const domicilio = this.contexto()?.domicilio;
+    const mailsCambiados =
+      !domicilio ||
+      (domicilio.emailPersonal ?? '') !== this.emailPersonal().trim() ||
+      (domicilio.emailInstitucional ?? '') !== this.emailInstitucional().trim();
+    if (mailsCambiados && domicilio) {
+      this.persistirDatosContacto(() => this.guardar(3));
+      return;
+    }
     this.guardar(3);
   }
 
@@ -513,6 +529,8 @@ export class EmisionIndividualComponent implements OnInit {
               });
               this.lectivoId.set(borrador.lectivoId);
               this.aplicarBorrador(borrador, 2);
+              // El domicilio es la fuente de verdad: un borrador viejo no debe pisar el mail actual.
+              this.sincronizarMailsDesdeDomicilio(contexto);
             },
             error: (error) => this.fallar(error),
           });
@@ -534,16 +552,75 @@ export class EmisionIndividualComponent implements OnInit {
       next: (contexto) => {
         this.contexto.set(contexto);
         this.cargando.set(false);
-        if (contexto.domicilio) {
-          this.emailPersonal.set(contexto.domicilio.emailPersonal ?? '');
-          this.emailInstitucional.set(contexto.domicilio.emailInstitucional ?? '');
-        }
+        this.sincronizarMailsDesdeDomicilio(contexto);
         const primera = contexto.series[0];
         if (primera) {
           this.facultadNueva.set(primera.facultadId);
           this.tipoNueva.set(primera.tipoChequeraId);
         }
         this.cargarFacultades();
+      },
+      error: (error) => this.fallar(error),
+    });
+  }
+
+  private sincronizarMailsDesdeDomicilio(contexto: ContextoEmision): void {
+    this.emailPersonal.set(contexto.domicilio?.emailPersonal ?? '');
+    this.emailInstitucional.set(contexto.domicilio?.emailInstitucional ?? '');
+  }
+
+  /**
+   * Persiste los mails editados en el domicilio. El envío (sender) toma los correos del domicilio,
+   * no del borrador; guardar acá es lo que hace que el cambio llegue al correo que recibe el alumno.
+   */
+  private persistirDatosContacto(accion: () => void): void {
+    const persona = this.persona();
+    const contexto = this.contexto();
+    const domicilio = contexto?.domicilio;
+    if (!persona || !contexto || !domicilio?.domicilioId) {
+      accion();
+      return;
+    }
+    const emailPersonal = this.emailPersonal().trim();
+    const emailInstitucional = this.emailInstitucional().trim();
+    if (emailPersonal && !emailValido(emailPersonal)) {
+      this.error.set('El mail personal no tiene un formato válido');
+      return;
+    }
+    if (emailInstitucional && !emailValido(emailInstitucional)) {
+      this.error.set('El mail institucional no tiene un formato válido');
+      return;
+    }
+    this.cargando.set(true);
+    this.error.set(null);
+    this.emision.domicilio(Number(persona.personaId), persona.documentoId).subscribe({
+      next: (domicilioActual) => {
+        // `emailPagador` es transitorio y no existe en el request del PUT: se omite.
+        const domicilioSinPagador = { ...domicilioActual };
+        delete domicilioSinPagador.emailPagador;
+        return this.emision
+          .actualizarDomicilio(domicilio.domicilioId, {
+            ...domicilioSinPagador,
+            emailPersonal,
+            emailInstitucional,
+          })
+          .subscribe({
+            next: (guardado) => {
+              this.cargando.set(false);
+              this.contexto.set({
+                ...contexto,
+                domicilio: {
+                  ...domicilio,
+                  emailPersonal: guardado.emailPersonal ?? '',
+                  emailInstitucional: guardado.emailInstitucional ?? '',
+                  emailPersonalValido: emailValido(guardado.emailPersonal),
+                  emailInstitucionalValido: emailValido(guardado.emailInstitucional),
+                },
+              });
+              accion();
+            },
+            error: (error) => this.fallar(error),
+          });
       },
       error: (error) => this.fallar(error),
     });
@@ -573,8 +650,8 @@ export class EmisionIndividualComponent implements OnInit {
       calculaBeca: this.calculaBeca(),
       fecha: `${this.fecha()}T00:00:00Z`,
       fuente: 'DISENO',
-      emailPersonal: this.emailPersonal() || null,
-      emailInstitucional: this.emailInstitucional() || null,
+      emailPersonal: this.emailPersonal().trim() || null,
+      emailInstitucional: this.emailInstitucional().trim() || null,
       incluyeBarras: this.incluyeBarras(),
       copiaFacultad: this.copiaFacultad(),
     };
@@ -605,8 +682,6 @@ export class EmisionIndividualComponent implements OnInit {
     this.becaFecha.set(fechaCorta(borrador.becaFecha) || hoy());
     this.calculaBeca.set(borrador.calculaBeca);
     this.hpum.set(borrador.hpum === 1);
-    this.emailPersonal.set(borrador.emailPersonal ?? '');
-    this.emailInstitucional.set(borrador.emailInstitucional ?? '');
     this.incluyeBarras.set(borrador.incluyeBarras);
     this.copiaFacultad.set(borrador.copiaFacultad);
     this.claveIdempotencia.set(globalThis.crypto?.randomUUID?.() ?? String(Date.now()));
@@ -635,8 +710,8 @@ export class EmisionIndividualComponent implements OnInit {
       becaFecha: `${this.becaFecha()}T00:00:00Z`,
       becaUserId: borrador.becaUserId,
       calculaBeca: this.calculaBeca(),
-      emailPersonal: this.emailPersonal() || null,
-      emailInstitucional: this.emailInstitucional() || null,
+      emailPersonal: this.emailPersonal().trim() || null,
+      emailInstitucional: this.emailInstitucional().trim() || null,
       incluyeBarras: this.incluyeBarras(),
       copiaFacultad: this.copiaFacultad(),
       cuotas: borrador.cuotas.map((cuota) => this.edicion(cuota, seleccionada)),
@@ -683,6 +758,10 @@ function fechaCorta(valor: string | null | undefined): string {
 
 function iso(valor: string): string | null {
   return valor ? `${valor}T00:00:00Z` : null;
+}
+
+function emailValido(valor: string | null | undefined): boolean {
+  return !!valor && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 }
 
 function mensaje(error: unknown): string {
