@@ -312,7 +312,7 @@ asignación efectiva se hace en la pantalla de Usuarios.
     DetalleCuotas --> ReportZip["report: /chequeras/planilla/detalle/zip"]
     PagoManual --> BuscadorPersona["BuscadorPersona Component<br/>@tesoreria/ui-layout"]
     Baja --> BuscadorPersona
-    EmisionIndividual --> EmisionAPI["core: /emision/chequera<br/>borradores, contexto, cuotas,<br/>beca y emisión"]
+    EmisionIndividual --> EmisionAPI["core: /emision/chequera<br/>borradores, contexto, cuotas,<br/>beca y emisión; /domicilio<br/>GET unique y PUT para los mails"]
     EmisionIndividual --> EntregaAPI["tesoreria-sender:<br/>PDF y correo de la chequera<br/>PDF del borrador (BORRADOR)"]
     Borradores --> EmisionAPI
     Borradores --> EntregaAPI

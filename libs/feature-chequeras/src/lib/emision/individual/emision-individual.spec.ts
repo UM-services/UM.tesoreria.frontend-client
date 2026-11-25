@@ -261,6 +261,29 @@ describe('EmisionIndividualComponent — catálogos del paso 1', () => {
     );
   });
 
+  it('un borrador viejo no pisa los mails actuales del domicilio', () => {
+    component.lectivoId.set(38);
+    component.elegirPersona({
+      uniqueId: 1,
+      personaId: '49024730',
+      documentoId: 1,
+      apellido: 'González',
+      nombre: 'Manuel',
+    });
+    crear.mockReturnValueOnce(
+      of({
+        ...borrador,
+        emailPersonal: 'viejo@example.com',
+        emailInstitucional: 'viejo-inst@example.com',
+      }),
+    );
+
+    component.usarSerie(contexto.series[0]);
+
+    expect(component.emailPersonal()).toBe('manuel.gonzalez@gmail.com');
+    expect(component.emailInstitucional()).toBe('manuel.gonzalez@um.edu.ar');
+  });
+
   it('muestra el curso resuelto como dato, sin pedirlo por input', () => {
     component.paso.set(2);
     component.borrador.set(borrador);
