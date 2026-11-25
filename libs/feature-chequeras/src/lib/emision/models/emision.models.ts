@@ -39,6 +39,29 @@ export interface DomicilioEmision {
   emailInstitucionalValido: boolean;
 }
 
+/** Domicilio completo tal como lo devuelve `GET /domicilio/unique/{personaId}/{documentoId}`. */
+export interface DomicilioCompleto {
+  domicilioId: number;
+  personaId: number;
+  documentoId: number;
+  fecha: string | null;
+  calle: string;
+  puerta: string;
+  piso: string;
+  dpto: string;
+  telefono: string;
+  movil: string;
+  observaciones: string;
+  codigoPostal: string;
+  facultadId: number | null;
+  provinciaId: number | null;
+  localidadId: number | null;
+  emailPersonal: string;
+  emailInstitucional: string;
+  laboral: string;
+  emailPagador?: string | null;
+}
+
 export interface DeudaEmision {
   cuotas: number;
   importe: number;
