@@ -55,6 +55,7 @@ export class AppComponent {
       children: [
         { label: 'Mayor', path: '/consultas/mayor' },
         { label: 'Sumas y saldos', path: '/consultas/sumas-saldos' },
+        { label: 'Libro Diario', path: '/consultas/libro-diario' },
       ],
     },
   ];

@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.57.0] - 2026-11-25
+
+### Added
+
+- feat(contable): pantalla **Libro Diario** (`/consultas/libro-diario`, entrada **Consultas › Libro Diario**). Consulta `POST /movimientoConsulta/libroDiario` con `{desde, hasta}` a medianoche UTC; por defecto, el mes actual. Muestra los asientos del rango en una sola `um-table` con un `<tbody>` por asiento (encabezado con fecha y número, líneas y totales), y arriba un resumen con el rango que devuelve el core, la cantidad de asientos, los totales de debe y haber del core y cuántos asientos están descuadrados.
+- feat(contable): el Libro Diario se muestra por páginas de asientos en el cliente (50 por página; selector de 25, 50 o 100). Los controles (primera, anterior, «Página X de Y», siguiente, última y el tamaño) van en un `uiStickyFooter` fuera del contenedor con scroll. La cabecera de columnas queda fija con clases locales.
+- feat(contable): un asiento con `totalDebe` ≠ `totalHaber` se marca con una insignia «Descuadrado: diferencia X» en su encabezado y en sus totales; la comparación se hace en centavos enteros.
+- feat(contable): validación del rango antes de consultar: desde posterior a hasta, o más de 400 días contando los dos extremos (igual que el core: `hasta − desde + 1`), avisa en pantalla y no llama al core. Mientras consulta, el botón y los filtros quedan deshabilitados y se ve el texto del rango consultado, con aviso de espera si supera 31 días; salir de la pantalla cancela el pedido. Un rechazo del core muestra su `message` (con `mensajeDeError`) y no deja el resultado anterior.
+- feat(contable): selector de **Ejercicio** en los filtros del Libro Diario, alimentado por `GET /ejercicio/` (más nuevo primero). Al elegir uno, las fechas pasan a su inicio y su fin y se pueden acotar; si se edita una fecha a mano, el selector queda sin elegir. Si el catálogo no carga, el selector queda deshabilitado y las fechas se escriben a mano. Equivale a los botones de ejercicio anterior, actual y siguiente de `frmLibroDiario`.
+- feat(contable): accesibilidad: `caption` y `scope="col"` en la tabla, región `aria-live` que anuncia la página, `aria-busy` en «Consultar», `aria-label` en los botones de página y controles de 44 px de alto mínimo.
+
+### Changed
+
+- refactor(contable): `importe()`, `fecha()`, `soloDia()` y el formato es-AR pasan de `mayor.ts` y `sumas-saldos.ts` a `apps/contable/src/app/consultas/formato.ts`, y el Mayor, Sumas y saldos y el Libro Diario lo usan. No cambia lo que se ve en el Mayor ni en Sumas y saldos.
+
+### Tests
+
+- test(contable): `libro-diario.spec.ts` cubre C1 a C9 de la issue #208, el límite de 400 días inclusivo, la paginación de 27.000 asientos con el DOM limitado a la página, el cambio de tamaño, el doble clic, la cancelación al salir, los nulos del core y los contratos de interfaz (una tabla con un `<tbody>` por asiento, `caption`, `aria-live`, pie fuera del contenedor). `formato.spec.ts` cubre `importe()` y `fecha()`. Son pruebas con respuestas armadas a mano: la prueba de punta a punta contra el core es aparte.
+
+### Requisitos
+
+- Core 12.12.0 o posterior, con `POST /api/tesoreria/core/movimientoConsulta/libroDiario` (core#562).
+
 ## [0.56.0] - 2026-11-25
 
 ### Added

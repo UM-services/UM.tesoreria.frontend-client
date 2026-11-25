@@ -1,0 +1,259 @@
+<div class="space-y-6">
+  <div class="um-page-header">
+    <div>
+      <p class="um-eyebrow">Contabilidad / Consultas / Libro Diario</p>
+      <h1 class="um-page-title">Libro Diario</h1>
+      <p class="um-page-desc">
+        Asientos contables de un rango de fechas, con sus líneas, sus totales y los totales del rango.
+      </p>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="um-alert um-alert-error" role="alert" data-testid="error">
+      <p class="text-sm text-red-700">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  <div class="um-card p-6">
+    <h2 class="text-base font-semibold text-um-ink">Filtros</h2>
+
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-12">
+      <div class="md:col-span-4">
+        <label for="ld-ejercicio" class="um-label">Ejercicio</label>
+        <select
+          id="ld-ejercicio"
+          class="um-input mt-1 min-h-[44px] w-full"
+          data-testid="ejercicio"
+          [disabled]="consultando() || ejercicios().length === 0"
+          [value]="ejercicioElegido() ?? ''"
+          (change)="elegirEjercicio(valor($event))"
+        >
+          @if (ejercicioElegido() === null) {
+            <option value="" disabled selected>Elegir un ejercicio</option>
+          }
+          @for (e of ejercicios(); track e.ejercicioId) {
+            <option [value]="e.ejercicioId" [selected]="e.ejercicioId === ejercicioElegido()">
+              {{ e.nombre }} ({{ fecha(e.fechaInicio) }} al {{ fecha(e.fechaFinal) }})
+            </option>
+          }
+        </select>
+      </div>
+      <div class="md:col-span-3">
+        <label for="ld-desde" class="um-label">Fecha desde</label>
+        <ui-input-fecha
+          class="mt-1 block"
+          inputId="ld-desde"
+          [valor]="desde()"
+          [disabled]="consultando()"
+          (valorChange)="desde.set($event)"
+        ></ui-input-fecha>
+      </div>
+      <div class="md:col-span-3">
+        <label for="ld-hasta" class="um-label">Fecha hasta</label>
+        <ui-input-fecha
+          class="mt-1 block"
+          inputId="ld-hasta"
+          [valor]="hasta()"
+          [disabled]="consultando()"
+          (valorChange)="hasta.set($event)"
+        ></ui-input-fecha>
+      </div>
+    </div>
+
+    @if (problemaFechas()) {
+      <p class="mt-3 text-sm text-red-700" role="alert" data-testid="problema-fechas">{{ problemaFechas() }}</p>
+    }
+
+    <div class="mt-4 flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="um-btn-primary min-h-[44px]"
+        data-testid="consultar"
+        [disabled]="!pedido() || consultando()"
+        [attr.aria-busy]="consultando()"
+        (click)="consultar()"
+      >
+        {{ consultando() ? 'Consultando…' : 'Consultar' }}
+      </button>
+    </div>
+  </div>
+
+  @if (consultando()) {
+    @if (rangoPedido(); as rango) {
+      <div class="um-card p-6" role="status" data-testid="consultando">
+        <p class="text-sm text-um-text">
+          Consultando el Libro Diario del {{ fecha(rango.desde) }} al {{ fecha(rango.hasta) }}…
+        </p>
+        @if (avisoEspera()) {
+          <p class="mt-2 text-sm text-um-muted" data-testid="aviso-espera">
+            Los rangos largos pueden tardar hasta 20 s.
+          </p>
+        }
+      </div>
+    }
+  }
+
+  <p class="sr-only" aria-live="polite" data-testid="anuncio">{{ anuncio() }}</p>
+
+  @if (resultado(); as r) {
+    <div class="um-card p-6" data-testid="resumen">
+      <h2 class="text-base font-semibold text-um-ink">
+        Libro Diario del {{ fecha(r.desde) }} al {{ fecha(r.hasta) }}
+      </h2>
+      <dl class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div>
+          <dt class="um-label">Asientos</dt>
+          <dd class="mt-1 text-sm font-semibold text-um-ink tabular-nums" data-testid="resumen-asientos">
+            {{ cantidadAsientos() }}
+          </dd>
+        </div>
+        <div>
+          <dt class="um-label">Total debe</dt>
+          <dd class="mt-1 text-sm font-semibold text-um-ink tabular-nums" data-testid="resumen-debe">
+            {{ importe(r.totalDebe) }}
+          </dd>
+        </div>
+        <div>
+          <dt class="um-label">Total haber</dt>
+          <dd class="mt-1 text-sm font-semibold text-um-ink tabular-nums" data-testid="resumen-haber">
+            {{ importe(r.totalHaber) }}
+          </dd>
+        </div>
+        <div>
+          <dt class="um-label">Asientos descuadrados</dt>
+          <dd class="mt-1 text-sm font-semibold text-um-ink tabular-nums" data-testid="resumen-descuadrados">
+            {{ descuadrados() }}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    @if (r.asientos.length === 0) {
+      <div class="um-alert um-alert-warn" role="status" data-testid="sin-movimientos">
+        <p class="text-sm">
+          No hay movimientos entre {{ fecha(r.desde) }} y {{ fecha(r.hasta) }}.
+        </p>
+      </div>
+    } @else {
+      <div #contenedor class="max-h-[70vh] overflow-auto" data-testid="contenedor-tabla">
+        <table class="um-table w-full whitespace-nowrap" data-testid="tabla">
+          <caption class="sr-only">
+            Asientos del Libro Diario del {{ fecha(r.desde) }} al {{ fecha(r.hasta) }}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="sticky top-0 z-[1] bg-white shadow-[inset_0_-1px_0_var(--color-um-border-strong)]">Ítem</th>
+              <th scope="col" class="sticky top-0 z-[1] bg-white shadow-[inset_0_-1px_0_var(--color-um-border-strong)]">Cuenta</th>
+              <th scope="col" class="sticky top-0 z-[1] bg-white shadow-[inset_0_-1px_0_var(--color-um-border-strong)]">Nombre de cuenta</th>
+              <th scope="col" class="sticky top-0 z-[1] bg-white shadow-[inset_0_-1px_0_var(--color-um-border-strong)]">Comprobante</th>
+              <th scope="col" class="sticky top-0 z-[1] bg-white shadow-[inset_0_-1px_0_var(--color-um-border-strong)]">Proveedor</th>
+              <th scope="col" class="sticky top-0 z-[1] bg-white shadow-[inset_0_-1px_0_var(--color-um-border-strong)]">Concepto</th>
+              <th scope="col" class="sticky top-0 z-[1] bg-white text-right shadow-[inset_0_-1px_0_var(--color-um-border-strong)]">Debe</th>
+              <th scope="col" class="sticky top-0 z-[1] bg-white text-right shadow-[inset_0_-1px_0_var(--color-um-border-strong)]">Haber</th>
+            </tr>
+          </thead>
+          @for (a of asientosPagina(); track claveAsiento(a)) {
+            @let dif = diferencia(a);
+            <tbody data-testid="asiento">
+              <tr class="bg-um-selected font-semibold hover:bg-um-selected" data-testid="asiento-encabezado">
+                <td colspan="8">
+                  Asiento {{ a.ordenContable }} · {{ fecha(a.fechaContable) }}
+                  @if (dif !== 0) {
+                    <span class="um-badge ml-2 border border-amber-500 bg-amber-50 text-amber-900" data-testid="descuadrado">
+                      Descuadrado: diferencia {{ importe(dif) }}
+                    </span>
+                  }
+                </td>
+              </tr>
+              @for (l of a.lineas; track $index) {
+                <tr data-testid="linea">
+                  <td>{{ l.item }}</td>
+                  <td>{{ l.numeroCuenta }}</td>
+                  <td>{{ l.nombreCuenta }}</td>
+                  <td>{{ l.comprobante }}</td>
+                  <td>{{ l.proveedor }}</td>
+                  <td>{{ l.concepto }}</td>
+                  <td class="text-right tabular-nums">{{ importe(l.debe) }}</td>
+                  <td class="text-right tabular-nums">{{ importe(l.haber) }}</td>
+                </tr>
+              }
+              <tr class="font-semibold" data-testid="asiento-totales">
+                <td colspan="6" class="border-t border-um-border-strong">
+                  Totales del asiento
+                  @if (dif !== 0) {
+                    <span class="um-badge ml-2 border border-amber-500 bg-amber-50 text-amber-900">
+                      Descuadrado: diferencia {{ importe(dif) }}
+                    </span>
+                  }
+                </td>
+                <td class="border-t border-um-border-strong text-right tabular-nums">{{ importe(a.totalDebe) }}</td>
+                <td class="border-t border-um-border-strong text-right tabular-nums">{{ importe(a.totalHaber) }}</td>
+              </tr>
+            </tbody>
+          }
+        </table>
+      </div>
+    }
+  }
+
+  @if (cantidadAsientos() > 0) {
+    <div uiStickyFooter data-testid="pie">
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="um-btn-secondary min-h-[44px]"
+          aria-label="Primera página"
+          [disabled]="pagina() === 0"
+          (click)="irA(0)"
+        >
+          Primera
+        </button>
+        <button
+          type="button"
+          class="um-btn-secondary min-h-[44px]"
+          aria-label="Página anterior"
+          [disabled]="pagina() === 0"
+          (click)="irA(pagina() - 1)"
+        >
+          Anterior
+        </button>
+        <span class="px-2 text-sm text-um-text tabular-nums" data-testid="pagina">
+          Página {{ pagina() + 1 }} de {{ totalPaginas() }}
+        </span>
+        <button
+          type="button"
+          class="um-btn-secondary min-h-[44px]"
+          aria-label="Página siguiente"
+          [disabled]="pagina() >= totalPaginas() - 1"
+          (click)="irA(pagina() + 1)"
+        >
+          Siguiente
+        </button>
+        <button
+          type="button"
+          class="um-btn-secondary min-h-[44px]"
+          aria-label="Última página"
+          [disabled]="pagina() >= totalPaginas() - 1"
+          (click)="irA(totalPaginas() - 1)"
+        >
+          Última
+        </button>
+      </div>
+      <div class="flex items-center gap-2">
+        <label for="ld-tamano" class="um-label">Asientos por página</label>
+        <select
+          id="ld-tamano"
+          class="um-input min-h-[44px]"
+          data-testid="tamano"
+          [value]="tamano()"
+          (change)="cambiarTamano(valor($event))"
+        >
+          @for (t of tamanosPagina; track t) {
+            <option [value]="t" [selected]="t === tamano()">{{ t }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  }
+</div>
