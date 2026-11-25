@@ -37,6 +37,13 @@ export const appRoutes: Route[] = [
       import('./consultas/sumas-saldos/sumas-saldos').then(m => m.SumasSaldosComponent),
     canActivate: [authGuard, usuarioInternoGuard],
   },
+  {
+    // Libro Diario: asientos de un rango de fechas, mostrados por páginas (los calcula el core).
+    path: 'consultas/libro-diario',
+    loadComponent: () =>
+      import('./consultas/libro-diario/libro-diario').then(m => m.LibroDiarioComponent),
+    canActivate: [authGuard, usuarioInternoGuard],
+  },
     {
     // Ejercicios: alta del siguiente, baja, bloqueo y desbloqueo (las reglas las aplica el core).
     path: 'ejercicios',
