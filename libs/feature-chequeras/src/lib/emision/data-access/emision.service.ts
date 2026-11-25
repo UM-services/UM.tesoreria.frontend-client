@@ -7,6 +7,7 @@ import {
   BorradorChequera,
   ContextoEmision,
   CrearBorradorRequest,
+  DomicilioCompleto,
   EmitirBorradorRequest,
   FacultadDisenho,
   LectivoOpcion,
@@ -51,6 +52,23 @@ export class EmisionService {
   contexto(personaId: number, documentoId: number, lectivoId: number): Observable<ContextoEmision> {
     return this.http.get<ContextoEmision>(
       `${this.base}/contexto/${personaId}/${documentoId}/${lectivoId}`,
+    );
+  }
+
+  /** Domicilio completo de la persona: se usa para no pisar el resto de los campos al guardar mails. */
+  domicilio(personaId: number, documentoId: number): Observable<DomicilioCompleto> {
+    return this.http.get<DomicilioCompleto>(
+      `${this.coreBase}/domicilio/unique/${personaId}/${documentoId}`,
+    );
+  }
+
+  actualizarDomicilio(
+    domicilioId: number,
+    domicilio: DomicilioCompleto,
+  ): Observable<DomicilioCompleto> {
+    return this.http.put<DomicilioCompleto>(
+      `${this.coreBase}/domicilio/${domicilioId}`,
+      domicilio,
     );
   }
 
